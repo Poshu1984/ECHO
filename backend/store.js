@@ -1,0 +1,148 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const dataDir = path.join(__dirname, "data");
+const usersPath = path.join(dataDir, "users.json");
+
+const JWT_SECRET = process.env.JWT_SECRET || "echoo-dev-secret-change-me";
+const ADMIN_USER = process.env.ECHOO_ADMIN_USER || "echoo-root";
+const ADMIN_PASS = process.env.ECHOO_ADMIN_PASSWORD || "Echoo#Root-2026";
+
+export function ensureStore() {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(usersPath)) fs.writeFileSync(usersPath, "[]");
+}
+
+function readUsers() {
+  ensureStore();
+  try {
+    return JSON.parse(fs.readFileSync(usersPath, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function writeUsers(users) {
+  ensureStore();
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+}
+
+export async function seedAdmin() {
+  const users = readUsers();
+  let admin = users.find((u) => u.username === ADMIN_USER);
+  const hash = await bcrypt.hash(ADMIN_PASS, 10);
+  if (!admin) {
+    users.push({
+      id: "admin-root",
+      username: ADMIN_USER,
+      passwordHash: hash,
+      role: "admin",
+      xp: 99999,
+      minutes: 0,
+      streak: 0,
+      unlocked: ["*"],
+      createdAt: Date.now(),
+    });
+    writeUsers(users);
+    return;
+  }
+  admin.role = "admin";
+  admin.passwordHash = hash;
+  admin.unlocked = ["*"];
+  writeUsers(users);
+}
+
+export function signToken(user) {
+  return jwt.sign({ sub: user.id, role: user.role, username: user.username }, JWT_SECRET, {
+    expiresIn: "14d",
+  });
+}
+
+export function verifyToken(token) {
+  return jwt.verify(token, JWT_SECRET);
+}
+
+export function publicUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    xp: user.xp || 0,
+    minutes: user.minutes || 0,
+    streak: user.streak || 0,
+    unlocked: user.unlocked || [],
+  };
+}
+
+export function findUserByName(username) {
+  return readUsers().find((u) => u.username.toLowerCase() === username.toLowerCase());
+}
+
+export function findUserById(id) {
+  return readUsers().find((u) => u.id === id);
+}
+
+export async function createUser(username, password) {
+  const users = readUsers();
+  if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
+    throw new Error("USERNAME_TAKEN");
+  }
+  const user = {
+    id: `u_${Date.now()}`,
+    username,
+    passwordHash: await bcrypt.hash(password, 10),
+    role: "user",
+    xp: 0,
+    minutes: 0,
+    streak: 0,
+    unlocked: [],
+    createdAt: Date.now(),
+  };
+  users.push(user);
+  writeUsers(users);
+  return user;
+}
+
+export async function checkPassword(user, password) {
+  return bcrypt.compare(password, user.passwordHash);
+}
+
+export function saveUser(updated) {
+  const users = readUsers();
+  const i = users.findIndex((u) => u.id === updated.id);
+  if (i < 0) throw new Error("NOT_FOUND");
+  users[i] = updated;
+  writeUsers(users);
+  return users[i];
+}
+
+export function listUsers() {
+  return readUsers().map(publicUser);
+}
+
+export function authMiddleware(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!token) {
+    res.status(401).json({ error: "UNAUTHORIZED" });
+    return;
+  }
+  try {
+    req.auth = verifyToken(token);
+    next();
+  } catch {
+    res.status(401).json({ error: "UNAUTHORIZED" });
+  }
+}
+
+export function adminMiddleware(req, res, next) {
+  if (req.auth?.role !== "admin") {
+    res.status(403).json({ error: "FORBIDDEN" });
+    return;
+  }
+  next();
+}

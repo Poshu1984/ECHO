@@ -1,11 +1,64 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Echoo Display";
+  src: local("Orbitron"), local("Rajdhani");
+  font-display: swap;
+}
+
+:root {
+  --bg: #07080c;
+  --panel: #0d1118;
+  --line: #1c3147;
+  --cyan: #39f3ff;
+  --magenta: #ff2d95;
+  --amber: #f0c14a;
+  --ink: #d7e6f2;
+  --mute: #6d8299;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; }
 body {
   margin: 0;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(57, 243, 255, 0.08), transparent 50%),
+    radial-gradient(900px 400px at 100% 0%, rgba(255, 45, 149, 0.07), transparent 45%),
+    var(--bg);
+  color: var(--ink);
+  font-family: "Rajdhani", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", sans-serif;
 }
-#root {
-  min-height: 100vh;
+h1, h2, .display {
+  font-family: "Orbitron", "Rajdhani", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-button, select, textarea, input {
+button, input, select, textarea {
   font: inherit;
+  color: inherit;
+}
+.scan {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(0, 0, 0, 0.12) 2px 3px
+  );
+  opacity: 0.25;
+}
+.panel {
+  background: linear-gradient(180deg, rgba(16, 22, 32, 0.95), rgba(8, 10, 14, 0.96));
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 1px rgba(57, 243, 255, 0.08), 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+.neon {
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(57, 243, 255, 0.45);
+}
+.mag { color: var(--magenta); }
+.lock {
+  opacity: 0.45;
+  filter: grayscale(0.4);
 }

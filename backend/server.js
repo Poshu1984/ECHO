@@ -3,6 +3,9 @@ import express from "express";
 import cors from "cors";
 import ttsRouter from "./routes/tts.js";
 import llmRouter from "./routes/llm.js";
+import authRouter from "./routes/auth.js";
+import progressRouter from "./routes/progress.js";
+import { seedAdmin, authMiddleware } from "./store.js";
 
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -49,9 +52,18 @@ app.get("/api/health", (_req, res) => {
   }
 });
 
-app.use("/api/tts", ttsRouter);
-app.use("/api/llm", llmRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/progress", progressRouter);
+app.use("/api/tts", authMiddleware, ttsRouter);
+app.use("/api/llm", authMiddleware, llmRouter);
 
-app.listen(port, "0.0.0.0", () => {
-    console.log(`TTS proxy listening on port ${port} (ttsConfigured=${ttsConfigured}, llmConfigured=${llmConfigured})`);
-});
+seedAdmin()
+  .then(() => {
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`ECHOO API on ${port} tts=${ttsConfigured} llm=${llmConfigured}`);
+    });
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
