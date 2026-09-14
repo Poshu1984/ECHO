@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
 import {
@@ -39,11 +39,21 @@ export default function App() {
   const [examI, setExamI] = useState(0);
   const [examPick, setExamPick] = useState(-1);
   const [nodes, setNodes] = useState([]);
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installHint, setInstallHint] = useState(false);
   const audioRef = useRef(null);
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
+  useEffect(() => {
+    const onPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
   useEffect(() => {
     if (!user) return;
     api.me().then((d) => setUser(d.user)).catch(() => { clearSession(); setUser(null); });
@@ -133,6 +143,18 @@ export default function App() {
     gain(6, 2);
   }
 
+  async function installApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      setInstallPrompt(null);
+      return;
+    }
+    setInstallHint(true);
+  }
+
+  const standalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
+
   function startChat() {
     const g = GREET[lang.code] || GREET.en;
     setMsgs([{ role: "ai", text: g }]);
@@ -144,8 +166,9 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="scan" />
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-6 md:p-8">
-          <p className="neon text-xs">{tr("tag")}</p>
-          <h1 className="text-3xl mt-2">{authMode === "login" ? tr("login") : tr("register")}</h1>
+          <img src="/logo.png" alt="ECHOO" className="w-24 h-24 mx-auto rounded-2xl" />
+          <p className="neon text-xs text-center mt-4">{tr("tag")}</p>
+          <h1 className="text-3xl mt-2 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-6 text-sm text-[var(--mute)]">{tr("username")}
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2" />
           </label>
@@ -157,6 +180,14 @@ export default function App() {
           <button type="button" className="mt-3 w-full text-sm text-[var(--mute)]" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>
             {authMode === "login" ? tr("needAccount") : tr("haveAccount")}
           </button>
+          {!standalone && (
+            <>
+              <button type="button" onClick={installApp} className="mt-5 w-full py-3 border-2 border-[var(--cyan)] font-bold">
+                {tr("install")}
+              </button>
+              {installHint && <p className="text-sm mt-2 text-[var(--mute)]">{tr("installHint")}</p>}
+            </>
+          )}
         </form>
       </div>
     );
@@ -184,6 +215,7 @@ export default function App() {
       <div className="scan" />
       <aside className="panel m-3 md:m-4 md:w-64 p-4 flex md:flex-col gap-3 overflow-x-auto">
         <div>
+          <img src="/logo.png" alt="ECHOO" className="w-12 h-12 rounded-lg mb-2" />
           <div className="neon text-xs">{tr("tag")}</div>
           <div className="display text-xl">ECHOO</div>
           <div className="text-sm mt-1">{user.username} {user.role === "admin" ? tr("admin") : ""}</div>

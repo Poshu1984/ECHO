@@ -52,7 +52,8 @@ const dict = {
     correct: "正確",
     wrong: "再試",
     reveal: "顯示解答",
-    install: "安裝到主畫面",
+    install: "加入主畫面",
+    installHint: "加入主畫面後可像 App 一樣開啟。iPhone 請用 Safari 分享選單裡的「加入主畫面」。",
   },
   en: {
     tag: "ECHOO // NET TUTOR",
@@ -98,7 +99,8 @@ const dict = {
     correct: "Clear",
     wrong: "Retry",
     reveal: "Reveal",
-    install: "Install app",
+    install: "Add to Home Screen",
+    installHint: "Install ECHOO like an app. On iPhone use Safari Share, then Add to Home Screen.",
   },
 };
 
