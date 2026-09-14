@@ -57,7 +57,8 @@ npm run dev
 5. 變數（名稱必須和服務名稱一致）：
    - **backend**
      - `GOOGLE_TTS_API_KEY` = 你的金鑰（只填在 Railway，不要提交到 git）
-     - `ANTHROPIC_API_KEY` = 對話／生成短文用（可選；沒有時朗讀會用內建練習短文）
+     - `ANTHROPIC_API_KEY` = Claude Sonnet（主）
+     - `GOOGLE_GEMINI_API_KEY` = Gemini（輔；可先省略，系統會嘗試同一把 Google key）
      - `JWT_SECRET` = 隨機長字串
      - `ECHOO_ADMIN_USER` = `poshu`
      - `ECHOO_ADMIN_PASSWORD` = 你的管理員密碼

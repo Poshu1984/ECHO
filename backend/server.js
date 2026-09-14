@@ -15,8 +15,11 @@ const app = express();
 const port = process.env.PORT || 3000;
 const ttsConfigured = Boolean(process.env.GOOGLE_TTS_API_KEY?.trim())
   && process.env.GOOGLE_TTS_API_KEY.trim() !== "your_key_here";
-const llmConfigured = Boolean(process.env.ANTHROPIC_API_KEY?.trim())
+const claudeConfigured = Boolean((process.env.ANTHROPIC_API_KEY || "").trim())
   && process.env.ANTHROPIC_API_KEY.trim() !== "your_key_here";
+const geminiConfigured = Boolean((process.env.GOOGLE_GEMINI_API_KEY || process.env.GOOGLE_TTS_API_KEY || "").trim())
+  && (process.env.GOOGLE_GEMINI_API_KEY || process.env.GOOGLE_TTS_API_KEY).trim() !== "your_key_here";
+const llmConfigured = claudeConfigured || geminiConfigured;
 
 function normalizeOrigin(url) {
   if (!url) return "";
@@ -46,7 +49,7 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
   try {
-    res.json({ ok: true, ttsConfigured, llmConfigured });
+    res.json({ ok: true, ttsConfigured, llmConfigured, claudeConfigured, geminiConfigured });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
