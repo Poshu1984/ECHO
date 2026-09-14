@@ -2,12 +2,11 @@
 
 賽博龐克 Noir 語言教練。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
 
-最高權限帳號（請上線後立刻改密碼）：
+最高權限帳號由環境變數設定（不要把真實密碼提交到 git）：
 
-- 代號：`echoo-root`
-- 通行碼：`Echoo#Root-2026`
-
-環境變數 `ECHOO_ADMIN_USER` / `ECHOO_ADMIN_PASSWORD` / `JWT_SECRET` 可覆寫。
+- `ECHOO_ADMIN_USER`
+- `ECHOO_ADMIN_PASSWORD`
+- `JWT_SECRET`
 
 ## 資料夾
 
@@ -60,7 +59,7 @@ npm run dev
      - `GOOGLE_TTS_API_KEY` = 你的金鑰（只填在 Railway，不要提交到 git）
      - `ANTHROPIC_API_KEY` = 對話／生成短文用（可選；沒有時朗讀會用內建練習短文）
      - `JWT_SECRET` = 隨機長字串
-     - `ECHOO_ADMIN_USER` = `echoo-root`
+     - `ECHOO_ADMIN_USER` = `poshu`
      - `ECHOO_ADMIN_PASSWORD` = 你的管理員密碼
      - `FRONTEND_URL` = `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}`
    - **frontend**

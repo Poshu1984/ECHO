@@ -9,8 +9,8 @@ const dataDir = path.join(__dirname, "data");
 const usersPath = path.join(dataDir, "users.json");
 
 const JWT_SECRET = process.env.JWT_SECRET || "echoo-dev-secret-change-me";
-const ADMIN_USER = process.env.ECHOO_ADMIN_USER || "echoo-root";
-const ADMIN_PASS = process.env.ECHOO_ADMIN_PASSWORD || "Echoo#Root-2026";
+const ADMIN_USER = process.env.ECHOO_ADMIN_USER || "poshu";
+const ADMIN_PASS = process.env.ECHOO_ADMIN_PASSWORD || "";
 
 export function ensureStore() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -32,8 +32,15 @@ function writeUsers(users) {
 }
 
 export async function seedAdmin() {
+  if (!ADMIN_PASS) {
+    console.warn("ECHOO_ADMIN_PASSWORD is not set; skip admin seed");
+    return;
+  }
   const users = readUsers();
-  let admin = users.find((u) => u.username === ADMIN_USER);
+  let admin =
+    users.find((u) => u.username === ADMIN_USER) ||
+    users.find((u) => u.id === "admin-root") ||
+    users.find((u) => u.role === "admin");
   const hash = await bcrypt.hash(ADMIN_PASS, 10);
   if (!admin) {
     users.push({
@@ -50,6 +57,7 @@ export async function seedAdmin() {
     writeUsers(users);
     return;
   }
+  admin.username = ADMIN_USER;
   admin.role = "admin";
   admin.passwordHash = hash;
   admin.unlocked = ["*"];
