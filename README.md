@@ -25,7 +25,7 @@ npm run dev
 | GET | `/api/tts/voices?languageCode=en-US` | 語音列表 |
 | POST | `/api/tts/synthesize` | 合成語音（SSML + timepoints） |
 
-正式環境（Railway）請設定：`GOOGLE_TTS_API_KEY`、`PORT`、`FRONTEND_URL`。
+正式環境（Railway）請設定：`GOOGLE_TTS_API_KEY`、`ANTHROPIC_API_KEY`、`PORT`、`FRONTEND_URL`。
 
 ## 前端
 
@@ -51,6 +51,7 @@ npm run dev
 5. 變數（名稱必須和服務名稱一致）：
    - **backend**
      - `GOOGLE_TTS_API_KEY` = 你的金鑰（只填在 Railway，不要提交到 git）
+     - `ANTHROPIC_API_KEY` = 對話／生成短文用（可選；沒有時朗讀會用內建練習短文）
      - `FRONTEND_URL` = `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}`
    - **frontend**
      - `VITE_API_URL` = `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}`

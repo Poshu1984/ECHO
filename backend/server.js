@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import ttsRouter from "./routes/tts.js";
+import llmRouter from "./routes/llm.js";
 
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -11,6 +12,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 const ttsConfigured = Boolean(process.env.GOOGLE_TTS_API_KEY?.trim())
   && process.env.GOOGLE_TTS_API_KEY.trim() !== "your_key_here";
+const llmConfigured = Boolean(process.env.ANTHROPIC_API_KEY?.trim())
+  && process.env.ANTHROPIC_API_KEY.trim() !== "your_key_here";
 
 function normalizeOrigin(url) {
   if (!url) return "";
@@ -40,14 +43,15 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
   try {
-    res.json({ ok: true, ttsConfigured });
+    res.json({ ok: true, ttsConfigured, llmConfigured });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 app.use("/api/tts", ttsRouter);
+app.use("/api/llm", llmRouter);
 
 app.listen(port, "0.0.0.0", () => {
-    console.log(`TTS proxy listening on port ${port} (ttsConfigured=${ttsConfigured})`);
+    console.log(`TTS proxy listening on port ${port} (ttsConfigured=${ttsConfigured}, llmConfigured=${llmConfigured})`);
 });

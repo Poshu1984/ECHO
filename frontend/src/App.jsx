@@ -26,14 +26,71 @@ const C = { paper: "#FBF8F3", ink: "#1B2A41", red: "#D8493A", green: "#2E7D5B", 
 const FONT = { fontFamily: "'Avenir Next', 'Helvetica Neue', 'Noto Sans TC', 'PingFang TC', sans-serif" };
 
 async function askClaude(system, messages) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(`${API_URL}/api/llm/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200, system, messages }),
+    body: JSON.stringify({ system, messages, max_tokens: 1200 }),
   });
   const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || data.error || res.statusText);
   const raw = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
   return JSON.parse(raw.replace(/```json|```/g, "").trim());
+}
+
+function fallbackPassage(lang) {
+  const bank = {
+    en: {
+      title: "A Slow Morning",
+      title_zh: "一個慢活的早上",
+      sentences: [
+        { text: "I woke up a little later than usual today.", zh: "我今天比平常晚了一點起床。" },
+        { text: "The light through the window felt warm and quiet.", zh: "窗外的光線溫暖又安靜。" },
+        { text: "I made coffee and sat by the table for a while.", zh: "我泡了咖啡，在桌邊坐了一會兒。" },
+        { text: "Nothing urgent was waiting, so I took my time.", zh: "沒有急事等著，所以我慢慢來。" },
+      ],
+    },
+    ja: {
+      title: "静かな朝",
+      title_zh: "安靜的早晨",
+      sentences: [
+        { text: "今朝はいつもより少し遅く起きました。", zh: "今天早上比平常晚了一點起床。" },
+        { text: "窓から入る光がやさしくて静かでした。", zh: "從窗戶進來的光很溫柔、很安靜。" },
+        { text: "コーヒーを入れて、しばらくテーブルのそばにいました。", zh: "我泡了咖啡，在桌邊待了一會兒。" },
+        { text: "急ぐ用事がなかったので、ゆっくりしました。", zh: "沒有急事，所以就慢慢來。" },
+      ],
+    },
+    fr: {
+      title: "Un matin calme",
+      title_zh: "一個平靜的早上",
+      sentences: [
+        { text: "Je me suis levé un peu plus tard que d'habitude.", zh: "我比平常晚了一點起床。" },
+        { text: "La lumière à la fenêtre était douce et calme.", zh: "窗邊的光線溫柔又平靜。" },
+        { text: "J'ai préparé un café et je me suis assis à table.", zh: "我泡了咖啡，坐在桌邊。" },
+        { text: "Rien n'était urgent, alors j'ai pris mon temps.", zh: "沒有急事，所以我不趕。" },
+      ],
+    },
+    ko: {
+      title: "느긋한 아침",
+      title_zh: "悠閒的早晨",
+      sentences: [
+        { text: "오늘은 평소보다 조금 늦게 일어났어요.", zh: "今天比平常晚了一點起床。" },
+        { text: "창문으로 들어오는 빛이 따뜻하고 조용했어요.", zh: "從窗戶進來的光溫暖又安靜。" },
+        { text: "커피를 내리고 잠시 테이블에 앉아 있었어요.", zh: "我泡了咖啡，在桌邊坐了一會兒。" },
+        { text: "급한 일이 없어서 천천히 보냈어요.", zh: "沒有急事，所以就慢慢過。" },
+      ],
+    },
+    es: {
+      title: "Una mañana tranquila",
+      title_zh: "一個平靜的早上",
+      sentences: [
+        { text: "Hoy me desperté un poco más tarde que de costumbre.", zh: "今天我比平常晚了一點起床。" },
+        { text: "La luz de la ventana se sentía cálida y tranquila.", zh: "窗邊的光線溫暖又平靜。" },
+        { text: "Preparé café y me senté un rato a la mesa.", zh: "我泡了咖啡，在桌邊坐了一會兒。" },
+        { text: "No había prisa, así que fui con calma.", zh: "不趕時間，所以慢慢來。" },
+      ],
+    },
+  };
+  return bank[lang.code] || bank.en;
 }
 
 function chatPrompt(lang, level, tutor) {
@@ -322,7 +379,11 @@ export default function App() {
       const p = await askClaude(readingPrompt(lang, level, topic), [{ role: "user", content: "Generate the passage." }]);
       const sentences = (p.sentences || []).map(s => ({ ...s, tokens: tokenizeSentence(s.text || "", lang.code) }));
       buildPassageFromSentences(sentences, p.title, p.title_zh, lang.code);
-    } catch { setErr("段落生成失敗，請再試一次。"); }
+    } catch {
+      const p = fallbackPassage(lang);
+      const sentences = p.sentences.map(s => ({ ...s, tokens: tokenizeSentence(s.text || "", lang.code) }));
+      buildPassageFromSentences(sentences, p.title, p.title_zh, lang.code);
+    }
     finally { setBusy(false); }
   }
 
