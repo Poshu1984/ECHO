@@ -8,6 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
 const usersPath = path.join(dataDir, "users.json");
 
+import { planOf, usageOf, periodKey, PLANS } from "./plans.js";
+
 const JWT_SECRET = process.env.JWT_SECRET || "echoo-dev-secret-change-me";
 const ADMIN_USER = process.env.ECHOO_ADMIN_USER || "poshu";
 const ADMIN_PASS = process.env.ECHOO_ADMIN_PASSWORD || "";
@@ -52,6 +54,8 @@ export async function seedAdmin() {
       minutes: 0,
       streak: 0,
       unlocked: ["*"],
+      plan: "pro",
+      usage: { period: periodKey(), tts: 0, llm: 0 },
       createdAt: Date.now(),
     });
     writeUsers(users);
@@ -61,6 +65,7 @@ export async function seedAdmin() {
   admin.role = "admin";
   admin.passwordHash = hash;
   admin.unlocked = ["*"];
+  admin.plan = "pro";
   writeUsers(users);
 }
 
@@ -75,6 +80,8 @@ export function verifyToken(token) {
 }
 
 export function publicUser(user) {
+  const usage = usageOf(user);
+  const plan = planOf(user);
   return {
     id: user.id,
     username: user.username,
@@ -83,6 +90,15 @@ export function publicUser(user) {
     minutes: user.minutes || 0,
     streak: user.streak || 0,
     unlocked: user.unlocked || [],
+    plan: user.role === "admin" ? "admin" : user.plan || "free",
+    quota: {
+      ttsUsed: usage.tts,
+      llmUsed: usage.llm,
+      ttsLimit: plan.tts,
+      llmLimit: plan.llm,
+      usd: plan.usd,
+      period: usage.period,
+    },
   };
 }
 
@@ -108,6 +124,8 @@ export async function createUser(username, password) {
     minutes: 0,
     streak: 0,
     unlocked: [],
+    plan: "free",
+    usage: { period: periodKey(), tts: 0, llm: 0 },
     createdAt: Date.now(),
   };
   users.push(user);
@@ -154,3 +172,31 @@ export function adminMiddleware(req, res, next) {
   }
   next();
 }
+
+export function consumeQuota(userId, kind) {
+  const user = findUserById(userId);
+  if (!user) throw new Error("NOT_FOUND");
+  if (user.role === "admin") return user;
+  const plan = planOf(user);
+  const usage = usageOf(user);
+  const limit = kind === "llm" ? plan.llm : plan.tts;
+  if (usage[kind] >= limit) {
+    const err = new Error("QUOTA_EXCEEDED");
+    err.kind = kind;
+    err.limit = limit;
+    throw err;
+  }
+  user.usage = { period: usage.period, tts: usage.tts, llm: usage.llm };
+  user.usage[kind] += 1;
+  return saveUser(user);
+}
+
+export function setUserPlan(userId, plan) {
+  if (!PLANS[plan]) throw new Error("INVALID_PLAN");
+  const user = findUserById(userId);
+  if (!user) throw new Error("NOT_FOUND");
+  user.plan = plan;
+  return saveUser(user);
+}
+
+export { PLANS };

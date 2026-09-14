@@ -41,6 +41,7 @@ export const api = {
   register: (username, password) => req("/api/auth/register", { method: "POST", body: JSON.stringify({ username, password }) }),
   me: () => req("/api/auth/me"),
   users: () => req("/api/auth/users"),
+  setPlan: (id, plan) => req(`/api/auth/users/${id}/plan`, { method: "POST", body: JSON.stringify({ plan }) }),
   addXp: (xp, minutes) => req("/api/progress/xp", { method: "POST", body: JSON.stringify({ xp, minutes }) }),
   voices: (languageCode) => req(`/api/tts/voices?languageCode=${encodeURIComponent(languageCode)}`),
   synthesize: (body) => req("/api/tts/synthesize", { method: "POST", body: JSON.stringify(body) }),

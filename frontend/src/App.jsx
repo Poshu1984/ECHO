@@ -187,7 +187,12 @@ export default function App() {
           <div className="neon text-xs">{tr("tag")}</div>
           <div className="display text-xl">ECHOO</div>
           <div className="text-sm mt-1">{user.username} {user.role === "admin" ? tr("admin") : ""}</div>
-          <div className="text-[var(--amber)] text-sm">{tr("xp")} {user.xp}</div>
+            <div className="text-[var(--amber)] text-sm">{tr("xp")} {user.xp}</div>
+            {user.quota && (
+              <div className="text-xs text-[var(--mute)] mt-1">
+                PLAN {user.plan} // TTS {user.quota.ttsUsed}/{user.quota.ttsLimit === null || user.quota.ttsLimit === Infinity ? "INF" : user.quota.ttsLimit} // AI {user.quota.llmUsed}/{user.quota.llmLimit === null || user.quota.llmLimit === Infinity ? "INF" : user.quota.llmLimit}
+              </div>
+            )}
         </div>
         <nav className="flex md:flex-col gap-1 min-w-max">
           {nav.map((n) => {
@@ -248,7 +253,22 @@ export default function App() {
             {user.role === "admin" && (
               <div>
                 <h3 className="display text-sm mt-4">{tr("users")}</h3>
-                {nodes.map((n) => <div key={n.id} className="text-sm border-b border-[var(--line)] py-1">{n.username} // {n.role} // XP {n.xp}</div>)}
+                {nodes.map((n) => (
+                  <div key={n.id} className="text-sm border-b border-[var(--line)] py-1 flex gap-2 items-center">
+                    <span className="flex-1">{n.username} // {n.role} // XP {n.xp} // {n.plan}</span>
+                    {n.role !== "admin" && (
+                      <select value={n.plan || "free"} onChange={async (e) => {
+                        const d = await api.setPlan(n.id, e.target.value);
+                        setNodes((list) => list.map((x) => x.id === n.id ? d.user : x));
+                      }} className="bg-black/40 border border-[var(--line)]">
+                        <option value="free">free $0</option>
+                        <option value="starter">starter $9</option>
+                        <option value="plus">plus $19</option>
+                        <option value="pro">pro $49</option>
+                      </select>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </section>

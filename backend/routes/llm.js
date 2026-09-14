@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { consumeQuota } from "../store.js";
 
 const router = Router();
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
@@ -11,6 +12,15 @@ router.post("/messages", async (req, res) => {
         error: "ANTHROPIC_API_KEY is not configured on the server",
       });
       return;
+    }
+    try {
+      consumeQuota(req.auth.sub, "llm");
+    } catch (error) {
+      if (error.message === "QUOTA_EXCEEDED") {
+        res.status(429).json({ error: "QUOTA_EXCEEDED", kind: "llm" });
+        return;
+      }
+      throw error;
     }
 
     const { system, messages, max_tokens } = req.body ?? {};

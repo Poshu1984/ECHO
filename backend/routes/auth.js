@@ -9,6 +9,8 @@ import {
   listUsers,
   authMiddleware,
   adminMiddleware,
+  setUserPlan,
+  PLANS,
 } from "../store.js";
 
 const router = Router();
@@ -58,6 +60,19 @@ router.get("/me", authMiddleware, (req, res) => {
 
 router.get("/users", authMiddleware, adminMiddleware, (_req, res) => {
   res.json({ users: listUsers() });
+});
+
+router.post("/users/:id/plan", authMiddleware, adminMiddleware, (req, res) => {
+  try {
+    const user = setUserPlan(req.params.id, String(req.body?.plan || ""));
+    res.json({ user: publicUser(user), plans: PLANS });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.get("/plans", (_req, res) => {
+  res.json({ plans: PLANS });
 });
 
 export default router;

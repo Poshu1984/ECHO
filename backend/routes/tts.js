@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { consumeQuota } from "../store.js";
 
 const router = Router();
 const TTS_BASE = "https://texttospeech.googleapis.com/v1";
@@ -46,6 +47,15 @@ router.post("/synthesize", async (req, res) => {
   try {
     const key = requireApiKey(res);
     if (!key) return;
+    try {
+      consumeQuota(req.auth.sub, "tts");
+    } catch (error) {
+      if (error.message === "QUOTA_EXCEEDED") {
+        res.status(429).json({ error: "QUOTA_EXCEEDED", kind: "tts" });
+        return;
+      }
+      throw error;
+    }
 
     const incoming = req.body ?? {};
     const googleBody =
