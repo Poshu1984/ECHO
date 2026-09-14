@@ -37,3 +37,23 @@ npm run dev
 ```
 
 `VITE_API_URL` 開發時為 `http://localhost:3000`，正式環境改成 Railway 後端網址。
+
+## Railway
+
+同一個 GitHub repo（`Poshu1984/ECHOO`）建兩個服務：
+
+1. 到 [Railway](https://railway.app) 用 GitHub 登入 → **New Project** → **Empty project**，專案名稱可設為 `ECHOO`。
+2. 新增兩個 Empty service，改名為 `backend` 與 `frontend`。
+3. 兩個服務都連到 GitHub repo `ECHOO`：
+   - `backend` → Root Directory：`/backend`
+   - `frontend` → Root Directory：`/frontend`
+4. 兩個服務都按 **Generate Domain**。
+5. 變數（名稱必須和服務名稱一致）：
+   - **backend**
+     - `GOOGLE_TTS_API_KEY` = 你的金鑰（只填在 Railway，不要提交到 git）
+     - `FRONTEND_URL` = `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}`
+   - **frontend**
+     - `VITE_API_URL` = `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}`
+6. Deploy。前端的 `VITE_API_URL` 是 **build 時** 寫進去的，改變數後要重新部署 frontend。
+
+健康檢查路徑：`/api/health`。

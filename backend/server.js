@@ -6,9 +6,16 @@ import ttsRouter from "./routes/tts.js";
 const app = express();
 const port = process.env.PORT || 3000;
 
+function normalizeOrigin(url) {
+  if (!url) return "";
+  const trimmed = String(url).replace(/\/$/, "");
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONTEND_URL,
+  normalizeOrigin(process.env.FRONTEND_URL),
 ].filter(Boolean);
 
 app.use(
@@ -35,6 +42,6 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/tts", ttsRouter);
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`TTS proxy listening on port ${port}`);
 });
