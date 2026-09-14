@@ -1,4 +1,4 @@
-# language-tutor-app
+# ECHOO
 
 全端語言學習家教：React（Vite）前端 + Express 後端。後端只負責安全代理 Google Cloud Text-to-Speech，API 金鑰只存在後端環境變數。
 

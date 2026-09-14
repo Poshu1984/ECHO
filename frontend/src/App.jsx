@@ -434,7 +434,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: C.paper, color: C.ink, ...FONT }}>
         <div className="px-6 pt-10 pb-6 max-w-md w-full mx-auto flex-1 flex flex-col">
-          <p className="text-sm" style={{ color: C.mute }}>AI 語言家教 · Demo</p>
+          <p className="text-sm" style={{ color: C.mute }}>ECHOO · AI 語言家教</p>
           <h1 className="text-3xl font-semibold leading-tight mt-2" style={{ letterSpacing: "-0.01em" }}>邊聊邊改，<br />錯的地方當場看到。</h1>
 
           <p className="mt-7 mb-2 text-sm" style={{ color: C.mute }}>語言</p>
