@@ -3,8 +3,8 @@
   "short_name": "ECHOO",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#07080c",
-  "theme_color": "#07080c",
+  "background_color": "#ebe6df",
+  "theme_color": "#5f6f62",
   "icons": [
     { "src": "/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" }
   ]

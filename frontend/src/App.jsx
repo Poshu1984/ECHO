@@ -147,13 +147,13 @@ export default function App() {
           <p className="neon text-xs">{tr("tag")}</p>
           <h1 className="text-3xl mt-2">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-6 text-sm text-[var(--mute)]">{tr("username")}
-            <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2" />
+            <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2" />
           </label>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("password")}
-            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2" />
+            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2" />
           </label>
           {authErr && <p className="mag text-sm mt-3">{authErr}</p>}
-          <button className="mt-6 w-full py-3 bg-[var(--cyan)] text-black font-bold">{authMode === "login" ? tr("enter") : tr("create")}</button>
+          <button className="mt-6 w-full py-3 bg-[var(--cyan)] text-white font-bold">{authMode === "login" ? tr("enter") : tr("create")}</button>
           <button type="button" className="mt-3 w-full text-sm text-[var(--mute)]" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>
             {authMode === "login" ? tr("needAccount") : tr("haveAccount")}
           </button>
@@ -213,7 +213,7 @@ export default function App() {
           <section className="panel p-5 space-y-4">
             <h2>{tr("settings")}</h2>
             <label className="block text-sm">{tr("uiLang")}
-              <select value={ui} onChange={(e) => setUi(e.target.value)} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2">
+              <select value={ui} onChange={(e) => setUi(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
                 <option value="zh">繁體中文</option>
                 <option value="en">English</option>
                 <option value="ja">日本語</option>
@@ -223,12 +223,12 @@ export default function App() {
               </select>
             </label>
             <label className="block text-sm">{tr("learnLang")}
-              <select value={lang.code} onChange={(e) => setLang(LEARN_LANGS.find((l) => l.code === e.target.value))} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2">
+              <select value={lang.code} onChange={(e) => setLang(LEARN_LANGS.find((l) => l.code === e.target.value))} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
               </select>
             </label>
             <label className="block text-sm">{tr("level")}
-              <select value={level} onChange={(e) => setLevel(e.target.value)} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2">
+              <select value={level} onChange={(e) => setLevel(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
                 {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.id} {l.zh}</option>)}
               </select>
             </label>
@@ -243,7 +243,7 @@ export default function App() {
               ))}
             </div>
             <label className="block text-sm">{tr("voiceEngine")}
-              <select value={engine} onChange={(e) => setEngine(e.target.value)} className="mt-1 w-full bg-black/40 border border-[var(--line)] px-3 py-2">
+              <select value={engine} onChange={(e) => setEngine(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
                 <option value="cloud">{tr("cloud")}</option>
                 <option value="device">{tr("device")}</option>
               </select>
@@ -260,7 +260,7 @@ export default function App() {
                       <select value={n.plan || "free"} onChange={async (e) => {
                         const d = await api.setPlan(n.id, e.target.value);
                         setNodes((list) => list.map((x) => x.id === n.id ? d.user : x));
-                      }} className="bg-black/40 border border-[var(--line)]">
+                      }} className="bg-[var(--paper)] border border-[var(--line)]">
                         <option value="free">free $0</option>
                         <option value="starter">starter $9</option>
                         <option value="plus">plus $19</option>
@@ -277,7 +277,7 @@ export default function App() {
         {tab === "chat" && (
           <section className="panel p-5 min-h-[60vh] flex flex-col">
             <h2>{tr("chat")} // {tutor.name}</h2>
-            {msgs.length === 0 && <button className="mt-4 py-3 bg-[var(--magenta)] text-black font-bold" onClick={startChat}>{tr("startChat")}</button>}
+            {msgs.length === 0 && <button className="mt-4 py-3 bg-[var(--magenta)] text-white font-bold" onClick={startChat}>{tr("startChat")}</button>}
             <div className="flex-1 space-y-3 mt-4">
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "me" ? "text-right" : ""}>
@@ -288,8 +288,8 @@ export default function App() {
             </div>
             {err && <p className="mag text-sm">{err}</p>}
             <div className="flex gap-2 mt-4">
-              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-black/40 border border-[var(--line)] px-3 py-2" rows={2} />
-              <button disabled={busy} onClick={send} className="px-4 bg-[var(--cyan)] text-black font-bold">{tr("send")}</button>
+              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-[var(--paper)] border border-[var(--line)] px-3 py-2" rows={2} />
+              <button disabled={busy} onClick={send} className="px-4 bg-[var(--cyan)] text-white font-bold">{tr("send")}</button>
             </div>
           </section>
         )}
@@ -305,7 +305,7 @@ export default function App() {
                 {passage.sentences.map((s, i) => (
                   <p key={i} className="text-xl mt-3 leading-relaxed">{s.tokens.join(lang.code === "ja" || lang.code === "zh" ? "" : " ")}</p>
                 ))}
-                <button className="mt-4 px-4 py-2 bg-[var(--magenta)] text-black" onClick={() => speak(passage.sentences.map((s) => s.text).join(" "))}>{tr("listen")}</button>
+                <button className="mt-4 px-4 py-2 bg-[var(--magenta)] text-white" onClick={() => speak(passage.sentences.map((s) => s.text).join(" "))}>{tr("listen")}</button>
               </div>
             )}
           </section>
@@ -350,7 +350,7 @@ export default function App() {
                 <button key={i} onClick={() => setExamPick(i)} className={`text-left px-3 py-2 border ${examPick === i ? "border-[var(--cyan)]" : "border-[var(--line)]"}`}>{opt}</button>
               ))}
             </div>
-            <button className="mt-4 px-4 py-2 bg-[var(--cyan)] text-black" onClick={() => {
+            <button className="mt-4 px-4 py-2 bg-[var(--cyan)] text-white" onClick={() => {
               if (examPick === item.a) { gain(12); setErr(tr("correct")); }
               else setErr(tr("wrong"));
               setExamPick(-1); setExamI(examI + 1);
