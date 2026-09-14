@@ -4,8 +4,8 @@ const router = Router();
 const TTS_BASE = "https://texttospeech.googleapis.com/v1";
 
 function requireApiKey(res) {
-  const key = process.env.GOOGLE_TTS_API_KEY;
-  if (!key) {
+  const key = (process.env.GOOGLE_TTS_API_KEY || "").trim();
+  if (!key || key === "your_key_here") {
     res.status(500).json({
       error: "GOOGLE_TTS_API_KEY is not configured on the server",
     });

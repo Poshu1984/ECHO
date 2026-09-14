@@ -1,10 +1,16 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import ttsRouter from "./routes/tts.js";
 
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
+
 const app = express();
 const port = process.env.PORT || 3000;
+const ttsConfigured = Boolean(process.env.GOOGLE_TTS_API_KEY?.trim())
+  && process.env.GOOGLE_TTS_API_KEY.trim() !== "your_key_here";
 
 function normalizeOrigin(url) {
   if (!url) return "";
@@ -34,7 +40,7 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
   try {
-    res.json({ ok: true });
+    res.json({ ok: true, ttsConfigured });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -43,5 +49,5 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/tts", ttsRouter);
 
 app.listen(port, "0.0.0.0", () => {
-  console.log(`TTS proxy listening on port ${port}`);
+    console.log(`TTS proxy listening on port ${port} (ttsConfigured=${ttsConfigured})`);
 });
