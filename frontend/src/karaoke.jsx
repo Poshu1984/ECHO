@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { nativeProgress } from "./beats.js";
 
 export function useBeatAudio() {
   const audioRef = useRef(null);
@@ -119,7 +120,8 @@ export function useBeatAudio() {
   return { active, playing, loop, attach, attachClock, playFrom, stop, setLoop, audioRef, timesRef };
 }
 
-export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeOn, fromHere, className = "" }) {
+export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "" }) {
+  const { lit, rest } = nativeProgress(native, nativeRatio);
   return (
     <div className={`beat-block ${className}`.trim()}>
       <p className="beat-line">
@@ -137,7 +139,12 @@ export function BeatLine({ tokens, joiner = " ", active, onToken, native, native
           </span>
         ))}
       </p>
-      {native ? <p className={`beat-native ${nativeOn ? "on" : ""}`}>{native}</p> : null}
+      {native ? (
+        <p className="beat-native">
+          <span className="zh-lit">{lit}</span>
+          <span className="zh-rest">{rest}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

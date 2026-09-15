@@ -67,13 +67,11 @@ export function sentenceRange(sentences, sentenceIndex) {
   return [start, start + Math.max(0, len - 1)];
 }
 
-export function nativeLangName(ui) {
-  return {
-    zh: "Traditional Chinese",
-    en: "English",
-    ja: "Japanese",
-    ko: "Korean",
-    fr: "French",
-    es: "Spanish",
-  }[ui] || "Traditional Chinese";
+export function nativeProgress(zh, ratio) {
+  const chars = Array.from(zh || "");
+  if (!chars.length) return { lit: "", rest: "" };
+  const clamped = Math.max(0, Math.min(1, Number(ratio) || 0));
+  const n = Math.round(clamped * chars.length);
+  return { lit: chars.slice(0, n).join(""), rest: chars.slice(n).join("") };
 }
+

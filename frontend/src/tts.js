@@ -1,15 +1,15 @@
-const CLASSIC_VOICE = /-(Neural2|Wavenet|Standard|News|Studio|Polyglot)-/;
+const CLASSIC_VOICE = /-(Neural2|Wavenet|Standard)-/;
+const TIERS = ["Neural2", "Wavenet", "Standard"];
 
-/** Chirp 3 HD names like "Achernar" need a model field and fail on v1 synthesize. */
 export function classicVoices(voices) {
-  return (voices || []).filter((v) => CLASSIC_VOICE.test(v?.name || ""));
+  const list = voices || [];
+  const strict = list.filter((v) => CLASSIC_VOICE.test(v?.name || ""));
+  return strict.length ? strict : list.filter((v) => !/Chirp/i.test(v?.name || ""));
 }
 
 export function pickGoogleVoice(voices, tutor, speechLang) {
   const want = tutor?.gender === "m" ? "MALE" : "FEMALE";
   const list = classicVoices(voices);
-  const prefer = tutor?.preferred || "";
-  const token = prefer.split("-")[0];
   const lang = speechLang || "";
   const langOk = (v) => {
     const codes = v.languageCodes || [];
@@ -18,15 +18,13 @@ export function pickGoogleVoice(voices, tutor, speechLang) {
     const prefix = lang.split("-")[0];
     return codes.some((c) => c === prefix || c.startsWith(`${prefix}-`));
   };
-  return (
-    list.find((v) => v.ssmlGender === want && prefer && v.name.includes(prefer) && langOk(v))
-    || list.find((v) => v.ssmlGender === want && token && v.name.includes(token) && langOk(v))
-    || list.find((v) => v.ssmlGender === want && langOk(v))
-    || list.find((v) => langOk(v))
-    || list.find((v) => v.ssmlGender === want)
-    || list[0]
-    || null
-  );
+  const gendered = list.filter((v) => v.ssmlGender === want && langOk(v));
+  const pool = gendered.length ? gendered : list.filter(langOk);
+  for (const tier of TIERS) {
+    const hit = pool.find((v) => v.name.includes(tier));
+    if (hit) return hit;
+  }
+  return pool[0] || list.find((v) => v.ssmlGender === want) || list[0] || null;
 }
 
 const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
@@ -46,22 +44,69 @@ export function armAudio() {
   } catch { /* ignore */ }
 }
 
-export function speakOnDevice(text, { lang, pitch }) {
-  if (typeof window === "undefined" || !window.speechSynthesis || !text) return false;
+export function listDeviceVoices(speechLang) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return [];
+  const all = window.speechSynthesis.getVoices() || [];
+  const prefix = String(speechLang || "").split("-")[0];
+  const matched = all.filter((v) => {
+    const lang = v.lang || "";
+    return lang === speechLang || lang.startsWith(`${prefix}-`) || lang === prefix;
+  });
+  return (matched.length ? matched : all).map((v) => ({
+    name: v.name,
+    lang: v.lang,
+    gender: /female|woman|girl|samantha|victoria|kyoko|zira|heami|paulina/i.test(v.name)
+      ? "f"
+      : /male|man|david|mark|daniel|thomas|jorge/i.test(v.name)
+        ? "m"
+        : "",
+  }));
+}
+
+export function pickDeviceVoice(speechLang, tutor, chosenName) {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    return { voice: null, substituted: false };
+  }
+  const all = window.speechSynthesis.getVoices() || [];
+  const prefix = String(speechLang || "").split("-")[0];
+  const langMatch = all.filter((v) => {
+    const lang = v.lang || "";
+    return lang === speechLang || lang.startsWith(`${prefix}-`) || lang === prefix;
+  });
+  const pool = langMatch.length ? langMatch : all;
+  if (chosenName) {
+    const named = pool.find((v) => v.name === chosenName) || all.find((v) => v.name === chosenName);
+    if (named) return { voice: named, substituted: false };
+  }
+  const namedTutor = pool.find((v) => v.name.toLowerCase().includes((tutor?.name || "").toLowerCase()));
+  if (namedTutor) return { voice: namedTutor, substituted: false };
+  const wantF = tutor?.gender !== "m";
+  const gendered = pool.filter((v) => {
+    const female = /female|woman|girl|samantha|victoria|kyoko|zira|heami|paulina/i.test(v.name);
+    const male = /male|man|david|mark|daniel|thomas|jorge/i.test(v.name);
+    return wantF ? female && !male : male && !female;
+  });
+  if (gendered[0]) return { voice: gendered[0], substituted: false };
+  if (pool[0]) return { voice: pool[0], substituted: true };
+  return { voice: null, substituted: true };
+}
+
+export function speakOnDevice(text, { lang, pitch, rate, voiceName, tutor }) {
+  if (typeof window === "undefined" || !window.speechSynthesis || !text) return { ok: false, substituted: false };
   const speakNow = () => {
+    const picked = pickDeviceVoice(lang, tutor, voiceName);
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang || "en-US";
     u.pitch = pitch ?? 1;
-    const voices = window.speechSynthesis.getVoices() || [];
-    const match = voices.find((v) => v.lang === u.lang)
-      || voices.find((v) => v.lang?.startsWith(String(u.lang).split("-")[0]));
-    if (match) u.voice = match;
+    u.rate = rate ?? 1;
+    if (picked.voice) u.voice = picked.voice;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
+    return picked;
   };
-  speakNow();
+  const first = speakNow();
   if (!(window.speechSynthesis.getVoices() || []).length) {
     window.speechSynthesis.addEventListener("voiceschanged", speakNow, { once: true });
   }
-  return true;
+  return { ok: true, substituted: first.substituted };
 }

@@ -13,13 +13,11 @@ export const LEVELS = [
   { id: "B2", zh: "中高級", toeic: "785-944", ielts: "5.5-6.5" },
 ];
 
+export const LEVEL_DISCLAIMER = "對照為常見公開換算區間，非官方成績預測";
+
 export const TUTORS = [
-  { id: "nova", gender: "f", name: "NOVA", style: "冷冽精準", preferred: "Neural2-C", pitch: 1.02, blurb: "短指令、零廢話。" },
-  { id: "nyx", gender: "f", name: "NYX", style: "沉穩帶路", preferred: "Wavenet-F", pitch: 0.98, blurb: "慢、清楚、會等你。" },
-  { id: "vesper", gender: "f", name: "VESPER", style: "高壓特訓", preferred: "News-K", pitch: 1.08, blurb: "節奏快，逼你開口。" },
-  { id: "hex", gender: "m", name: "HEX", style: "分析口吻", preferred: "Neural2-D", pitch: 0.92, blurb: "拆句、標錯誤。" },
-  { id: "orion", gender: "m", name: "ORION", style: "沉著教練", preferred: "Wavenet-D", pitch: 0.95, blurb: "穩定、鼓勵但不甜。" },
-  { id: "drift", gender: "m", name: "DRIFT", style: "敘事noir", preferred: "Studio-Q", pitch: 0.88, blurb: "用故事帶出句型。" },
+  { id: "audrey", gender: "f", name: "Audrey", style: "溫暖帶路", preferred: "Neural2-C", pitch: 1, blurb: "女聲。清楚、有耐心。" },
+  { id: "brad", gender: "m", name: "Brad", style: "沉穩教練", preferred: "Neural2-D", pitch: 1, blurb: "男聲。穩、不催促。" },
 ];
 
 export const UNLOCKS = [
@@ -39,12 +37,12 @@ export function canAccess(user, featureId) {
 }
 
 export const GREET = {
-  en: { text: "Signal locked. What did you do this morning?", zh: "訊號鎖定。你今天早上做了什麼？" },
-  ja: { text: "回線接続。今朝は何をしましたか？", zh: "訊號鎖定。你今天早上做了什麼？" },
-  fr: { text: "Signal verrouille. Qu'as-tu fait ce matin ?", zh: "訊號鎖定。你今天早上做了什麼？" },
-  ko: { text: "신호 접속. 오늘 아침에 뭐 했어요?", zh: "訊號鎖定。你今天早上做了什麼？" },
-  es: { text: "Senal fija. Que hiciste esta manana?", zh: "訊號鎖定。你今天早上做了什麼？" },
-  zh: { text: "訊號鎖定。你今天早上做了什麼？", zh: "Signal locked. What did you do this morning?" },
+  en: { text: "Hi. How was your morning?", zh: "嗨。你今天早上過得怎麼樣？" },
+  ja: { text: "こんにちは。今朝はどんな感じでしたか？", zh: "你好。你今天早上過得怎麼樣？" },
+  fr: { text: "Salut. Comment s'est passee ta matinee ?", zh: "嗨。你今天早上過得怎麼樣？" },
+  ko: { text: "안녕. 오늘 아침은 어땠어요?", zh: "嗨。你今天早上過得怎麼樣？" },
+  es: { text: "Hola. Que tal te fue esta manana?", zh: "嗨。你今天早上過得怎麼樣？" },
+  zh: { text: "嗨。你今天早上過得怎麼樣？", zh: "Hi. How was your morning?" },
 };
 
 export const VOCAB = {

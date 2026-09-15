@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
-import { armAudio, pickGoogleVoice, speakOnDevice } from "./tts.js";
+import { armAudio, listDeviceVoices, pickGoogleVoice, speakOnDevice } from "./tts.js";
 import {
-  LEARN_LANGS, LEVELS, TUTORS, UNLOCKS, canAccess, GREET, VOCAB, SCENES, EXAMS, PASSAGES,
+  LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess, GREET, VOCAB, SCENES, EXAMS, PASSAGES,
 } from "./content.js";
 import {
-  beatsOf, isCjk, joinBeats, nativeLangName, sentenceRange, ssmlFromBeats,
+  beatsOf, isCjk, joinBeats, sentenceRange, ssmlFromBeats,
   timesEstimated, timesFromPoints,
 } from "./beats.js";
 import { BeatLine, useBeatAudio } from "./karaoke.jsx";
+import { chatPrompt, parseModelJson, readingPrompt, SPEAK_RATES } from "./prompts.js";
+import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
+import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 
 export default function App() {
   const [user, setUser] = useState(loadUser);
@@ -21,8 +24,17 @@ export default function App() {
   const [tab, setTab] = useState("chat");
   const [lang, setLang] = useState(LEARN_LANGS[0]);
   const [level, setLevel] = useState("B1");
-  const [tutorId, setTutorId] = useState("nova");
+  const [tutorId, setTutorId] = useState("audrey");
   const [engine, setEngine] = useState("cloud");
+  const [rate, setRate] = useState("normal");
+  const [pitchTrim, setPitchTrim] = useState(0);
+  const [deviceVoice, setDeviceVoice] = useState("");
+  const [deviceVoices, setDeviceVoices] = useState([]);
+  const [voiceNote, setVoiceNote] = useState("");
+  const [showZh, setShowZh] = useState(true);
+  const [saves, setSaves] = useState(loadSaves);
+  const [week, setWeek] = useState(loadWeek);
+  const [scoreOpen, setScoreOpen] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState([]);
@@ -40,9 +52,12 @@ export default function App() {
   const trackRef = useRef({ id: "", tokens: [], text: "", mode: "" });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
-  const showNative = ui !== lang.code;
+  const levelRow = LEVELS.find((l) => l.id === level) || LEVELS[1];
   const joiner = isCjk(lang.code) ? "" : " ";
   const highlight = beat.active;
+  const speakPitch = (tutor.pitch || 1) + Number(pitchTrim || 0);
+  const speakRate = SPEAK_RATES[rate] || SPEAK_RATES.normal;
+  const trackKey = `${engine}:${rate}:${tutorId}:${pitchTrim}:${deviceVoice}`;
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
   useEffect(() => {
@@ -61,6 +76,15 @@ export default function App() {
   useEffect(() => {
     if (user?.role === "admin") api.users().then((d) => setNodes(d.users)).catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    function refresh() {
+      setDeviceVoices(listDeviceVoices(lang.speech));
+    }
+    refresh();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", refresh);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refresh);
+  }, [lang.speech]);
 
   async function submitAuth(e) {
     e.preventDefault();
@@ -82,8 +106,21 @@ export default function App() {
     } catch { /* ignore */ }
   }
 
+  function notePractice(mode, minutes = 1) {
+    setWeek(recordPractice({ lang: lang.code, mode, minutes }));
+  }
+
   function playDevice(text) {
-    return speakOnDevice(text, { lang: lang.speech, pitch: tutor.pitch });
+    const result = speakOnDevice(text, {
+      lang: lang.speech,
+      pitch: speakPitch,
+      rate: speakRate,
+      voiceName: deviceVoice,
+      tutor,
+    });
+    if (result?.substituted) setVoiceNote(tr("voiceSub"));
+    else setVoiceNote("");
+    return result?.ok;
   }
 
   function waitMeta(audio) {
@@ -106,13 +143,13 @@ export default function App() {
   async function loadTrack(id, text, tokens) {
     armAudio();
     const want = engine === "device" ? "clock" : "cloud";
-    if (trackRef.current.id === id && trackRef.current.mode === want && beat.audioRef.current) {
+    if (trackRef.current.id === id && trackRef.current.mode === want && trackRef.current.key === trackKey && beat.audioRef.current) {
       setTrackId(id);
       return;
     }
     if (want === "clock") {
       beat.attachClock(estimateTimes(tokens));
-      trackRef.current = { id, tokens, text, mode: "clock" };
+      trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
       setTrackId(id);
       return;
     }
@@ -124,7 +161,7 @@ export default function App() {
         ssml: ssmlFromBeats(tokens, lang.code),
         marks: true,
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
-        audioConfig: { audioEncoding: "MP3", speakingRate: 0.95 },
+        audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
       });
       if (!data.audioContent) throw new Error("NO_AUDIO");
       const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
@@ -133,12 +170,12 @@ export default function App() {
         ? duration
         : Math.max(1.2, tokens.join("").length * 0.11);
       beat.attach(audio, timesFromPoints(data.timepoints, tokens, dur));
-      trackRef.current = { id, tokens, text, mode: "cloud" };
+      trackRef.current = { id, tokens, text, mode: "cloud", key: trackKey };
       setTrackId(id);
     } catch (e) {
       if (e.status === 429) setErr(tr("voiceQuota"));
       beat.attachClock(estimateTimes(tokens));
-      trackRef.current = { id, tokens, text, mode: "clock" };
+      trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
       setTrackId(id);
     }
   }
@@ -178,36 +215,75 @@ export default function App() {
         role: m.role === "me" ? "user" : "assistant",
         content: m.text,
       }));
-      const nativeName = nativeLangName(ui);
-      const system = `You are ${tutor.name}, ${tutor.style}. Reply in ${lang.name} at CEFR ${level}, 1-3 sentences, end with a question. Also give a faithful mother-tongue gloss in ${nativeName}. JSON only: {"reply":"...","native":"...","corrections":[],"praise":""}`;
+      const system = chatPrompt(tutor, lang, levelRow);
       const data = await api.llm(system, history);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
-      const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
+      const p = parseModelJson(raw);
       const reply = p.reply || "";
-      const native = showNative ? (p.native || p.reply_zh || "") : "";
-      const tm = { role: "ai", text: reply, native, tokens: beatsOf(reply, lang.code), corrections: p.corrections || [] };
+      const native = p.reply_zh || p.native || "";
+      const tm = {
+        role: "ai",
+        text: reply,
+        native,
+        tokens: beatsOf(reply, lang.code),
+        corrections: Array.isArray(p.corrections) ? p.corrections : [],
+        praise: p.praise || "",
+      };
       setMsgs((m) => [...m, tm]);
       await playTokens(`chat-${next.length}`, reply, tm.tokens, 0, null);
       await gain(8, 2);
+      notePractice("chat", 2);
     } catch {
       setErr("鏈路中斷。可先練朗讀與單字。");
     } finally { setBusy(false); }
   }
 
-  function openPassage() {
-    const p = PASSAGES[lang.code] || PASSAGES.en;
+  function hydratePassage(raw, meta = {}) {
     let offset = 0;
-    const sentences = p.sentences.map((s) => {
+    const sentences = (raw.sentences || []).map((s) => {
       const tokens = beatsOf(s.text, lang.code);
       const start = offset;
       offset += tokens.length;
       return { ...s, tokens, start };
     });
-    setPassage({ ...p, sentences, allTokens: sentences.flatMap((s) => s.tokens) });
-    trackRef.current = { id: "", tokens: [], text: "" };
+    return {
+      id: raw.id || `${lang.code}-${level}-${Date.now()}`,
+      title: raw.title,
+      title_zh: raw.title_zh,
+      lang: meta.lang || lang.code,
+      level: meta.level || level,
+      sentences,
+      allTokens: sentences.flatMap((s) => s.tokens),
+    };
+  }
+
+  function openPassage(raw) {
+    const packed = hydratePassage(raw || PASSAGES[lang.code] || PASSAGES.en);
+    setPassage(packed);
+    trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
     beat.stop();
     beat.setLoop(null);
     gain(6, 2);
+    notePractice("read", 2);
+  }
+
+  async function generatePassage() {
+    setBusy(true);
+    setErr("");
+    try {
+      const data = await api.llm(readingPrompt(lang, levelRow), [
+        { role: "user", content: "Please write the passage now." },
+      ], 1800);
+      const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+      const p = parseModelJson(raw);
+      if (!p.sentences?.length) throw new Error("NO_PASSAGE");
+      openPassage(p);
+    } catch {
+      openPassage(PASSAGES[lang.code] || PASSAGES.en);
+      setErr(tr("genFallback"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function passageText() {
@@ -245,14 +321,33 @@ export default function App() {
   async function startChat() {
     setErr("");
     armAudio();
-    const g = GREET[lang.code] || GREET.en;
-    const tokens = beatsOf(g.text, lang.code);
-    setMsgs([{ role: "ai", text: g.text, native: showNative ? g.zh : "", tokens }]);
-    await playTokens("chat-0", g.text, tokens, 0, null);
+    try {
+      const data = await api.llm(chatPrompt(tutor, lang, levelRow), [
+        { role: "user", content: "Please start the conversation." },
+      ]);
+      const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+      const p = parseModelJson(raw);
+      const reply = p.reply || "";
+      const tokens = beatsOf(reply, lang.code);
+      setMsgs([{ role: "ai", text: reply, native: p.reply_zh || "", tokens, corrections: [], praise: "" }]);
+      await playTokens("chat-0", reply, tokens, 0, null);
+      notePractice("chat", 1);
+    } catch {
+      const g = GREET[lang.code] || GREET.en;
+      const tokens = beatsOf(g.text, lang.code);
+      setMsgs([{ role: "ai", text: g.text, native: g.zh, tokens }]);
+      await playTokens("chat-0", g.text, tokens, 0, null);
+    }
   }
 
   function gloss(text) {
-    return showNative ? text : "";
+    return showZh ? text : "";
+  }
+
+  function zhRatio(local, tokenCount) {
+    if (!tokenCount) return 0;
+    if (local < 0) return 0;
+    return Math.min(1, (local + 1) / tokenCount);
   }
 
   if (!user) {
@@ -293,6 +388,7 @@ export default function App() {
     { id: "examples", label: tr("examples") },
     { id: "scenes", label: tr("scenes") },
     { id: "exams", label: tr("exams") },
+    { id: "saves", label: tr("saves") },
     { id: "board", label: tr("board") },
     { id: "settings", label: tr("settings") },
   ];
@@ -362,28 +458,45 @@ export default function App() {
             </label>
             <label className="block text-sm">{tr("level")}
               <select value={level} onChange={(e) => setLevel(e.target.value)} className="field mt-1">
-                {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.id} {l.zh}</option>)}
+                {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.id} {l.zh} · TOEIC {l.toeic} · IELTS {l.ielts}</option>)}
               </select>
             </label>
+            <p className="text-xs text-[var(--mute)]">{LEVEL_DISCLAIMER}</p>
             <p className="text-sm text-[var(--mute)]">{tr("tutor")}</p>
             <div className="tutor-grid">
               {TUTORS.map((x) => (
                 <button key={x.id} onClick={() => setTutorId(x.id)} className={`p-3 text-left rounded-xl border ${tutorId === x.id ? "border-[var(--magenta)] bg-[var(--paper)]" : "border-[var(--line)]"}`}>
                   <div className="display text-sm">{x.name}</div>
-                  <div className="text-xs text-[var(--mute)]">{x.gender === "f" ? "FEM" : "MASC"} · {x.style}</div>
+                  <div className="text-xs text-[var(--mute)]">{x.gender === "f" ? tr("female") : tr("male")} · {x.blurb}</div>
                 </button>
               ))}
             </div>
             <label className="block text-sm">{tr("voiceEngine")}
               <select value={engine} onChange={(e) => {
                 setEngine(e.target.value);
-                trackRef.current = { id: "", tokens: [], text: "", mode: "" };
+                trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
                 beat.stop();
               }} className="field mt-1">
                 <option value="cloud">{tr("cloud")}</option>
                 <option value="device">{tr("device")}</option>
               </select>
             </label>
+            {engine === "device" && (
+              <>
+                <label className="block text-sm">{tr("deviceVoice")}
+                  <select value={deviceVoice} onChange={(e) => setDeviceVoice(e.target.value)} className="field mt-1">
+                    <option value="">{tr("autoVoice")}</option>
+                    {deviceVoices.map((v) => (
+                      <option key={v.name} value={v.name}>{v.name} ({v.lang})</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm">{tr("pitch")} {pitchTrim.toFixed(2)}
+                  <input type="range" min="-0.3" max="0.3" step="0.05" value={pitchTrim} onChange={(e) => setPitchTrim(Number(e.target.value))} className="w-full mt-1" />
+                </label>
+              </>
+            )}
+            {voiceNote && <p className="notice">{voiceNote}</p>}
             <button onClick={() => speak((GREET[lang.code] || GREET.en).text)} className="btn btn-line">{tr("listen")}</button>
             {user.role === "admin" && (
               <div>
@@ -424,16 +537,29 @@ export default function App() {
                   {m.role === "me" ? (
                     <div className="bubble me">{m.text}</div>
                   ) : (
-                    <div className="bubble">
-                      <BeatLine
-                        tokens={m.tokens || beatsOf(m.text, lang.code)}
-                        joiner={joiner}
-                        active={trackId === `chat-${i}` ? highlight : -1}
-                        native={m.native}
-                        nativeOn={trackId === `chat-${i}` && highlight >= 0}
-                        fromHere={tr("fromHere")}
-                        onToken={(tok) => playTokens(`chat-${i}`, m.text, m.tokens || beatsOf(m.text, lang.code), tok, null)}
-                      />
+                    <div className="ai-turn">
+                      {(m.corrections || []).map((c, ci) => (
+                        <div key={ci} className="fix-card">
+                          <p>
+                            <span className="fix-orig">{c.original}</span>
+                            <span className="fix-arrow"> → </span>
+                            <span className="fix-new">{c.fixed}</span>
+                          </p>
+                          {c.why ? <p className="fix-why">{c.why}</p> : null}
+                        </div>
+                      ))}
+                      {m.praise ? <p className="praise">{m.praise}</p> : null}
+                      <div className="bubble">
+                        <BeatLine
+                          tokens={m.tokens || beatsOf(m.text, lang.code)}
+                          joiner={joiner}
+                          active={trackId === `chat-${i}` ? highlight : -1}
+                          native={gloss(m.native)}
+                          nativeRatio={trackId === `chat-${i}` ? zhRatio(highlight, (m.tokens || []).length) : 0}
+                          fromHere={tr("fromHere")}
+                          onToken={(tok) => playTokens(`chat-${i}`, m.text, m.tokens || beatsOf(m.text, lang.code), tok, null)}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -450,7 +576,11 @@ export default function App() {
         {tab === "read" && (
           <section className="panel">
             <h2>{tr("reading")}</h2>
-            {!passage && <button className="btn btn-line mt-3 w-full" onClick={openPassage}>{tr("reading")}</button>}
+            {!passage && (
+              <div className="empty-pane">
+                <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={generatePassage}>{busy ? "…" : tr("newPassage")}</button>
+              </div>
+            )}
             {passage && (
               <div className="scroll-pane mt-3">
                 <h3 className="display">{passage.title}</h3>
@@ -458,19 +588,29 @@ export default function App() {
                 <div className="read-tools mt-3">
                   <button className="btn btn-accent" onClick={() => playPassageFrom(0, beat.loop)}>{tr("playAll")}</button>
                   <button className="btn btn-ghost" onClick={() => beat.stop()}>{tr("stop")}</button>
+                  <button className="btn btn-ghost" onClick={() => setShowZh((v) => !v)}>{showZh ? tr("hideZh") : tr("showZh")}</button>
+                  <button className="btn btn-line" onClick={() => setSaves(savePassage(passage))}>{isSaved(passage.id) ? tr("saved") : tr("save")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={generatePassage}>{tr("newPassage")}</button>
+                </div>
+                <div className="rate-row">
+                  {["slow", "normal", "fast"].map((id) => (
+                    <button key={id} className={`btn btn-mini ${rate === id ? "btn-accent" : "btn-ghost"}`} onClick={() => { setRate(id); trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" }; }}>{tr(id)}</button>
+                  ))}
                 </div>
                 {passage.sentences.map((s, i) => {
                   const range = sentenceRange(passage.sentences, i);
-                  const local = highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
+                  const local = trackId === "read" && highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
+                  const done = trackId === "read" && highlight > range[1];
                   const looping = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
+                  const ratio = local >= 0 ? zhRatio(local, s.tokens.length) : (done ? 1 : 0);
                   return (
                     <article key={i} className={`read-sent ${local >= 0 ? "live" : ""} ${looping ? "looping" : ""}`}>
                       <BeatLine
                         tokens={s.tokens}
                         joiner={joiner}
-                        active={trackId === "read" ? local : -1}
+                        active={local}
                         native={gloss(s.zh)}
-                        nativeOn={trackId === "read" && local >= 0}
+                        nativeRatio={ratio}
                         fromHere={tr("fromHere")}
                         onToken={(tok) => playPassageFrom(s.start + tok, beat.loop)}
                       />
@@ -496,7 +636,7 @@ export default function App() {
                 joiner={joiner}
                 active={trackId === "vocab-word" ? highlight : -1}
                 native={gloss(v.hint)}
-                nativeOn={trackId === "vocab-word" && highlight >= 0}
+                nativeRatio={trackId === "vocab-word" ? zhRatio(highlight, vocabTokens.length) : 0}
                 fromHere={tr("fromHere")}
                 onToken={(tok) => playTokens("vocab-word", v.word, vocabTokens, tok, null)}
               />
@@ -507,7 +647,7 @@ export default function App() {
                     joiner={joiner}
                     active={trackId === "vocab-sent" ? highlight : -1}
                     native={gloss(v.sentence_zh)}
-                    nativeOn={trackId === "vocab-sent" && highlight >= 0}
+                    nativeRatio={trackId === "vocab-sent" ? zhRatio(highlight, vocabSentTokens.length) : 0}
                     fromHere={tr("fromHere")}
                     onToken={(tok) => playTokens("vocab-sent", v.sentence, vocabSentTokens, tok, null)}
                   />
@@ -531,7 +671,7 @@ export default function App() {
                 joiner={joiner}
                 active={trackId === "example" ? highlight : -1}
                 native={gloss(v.sentence_zh)}
-                nativeOn={trackId === "example" && highlight >= 0}
+                nativeRatio={trackId === "example" ? zhRatio(highlight, vocabSentTokens.length) : 0}
                 fromHere={tr("fromHere")}
                 onToken={(tok) => { playTokens("example", v.sentence, vocabSentTokens, tok, null); gain(2); }}
               />
@@ -555,7 +695,7 @@ export default function App() {
                   joiner={joiner}
                   active={trackId === "scene" ? highlight : -1}
                   native={gloss(scene.prompt_zh)}
-                  nativeOn={trackId === "scene" && highlight >= 0}
+                  nativeRatio={trackId === "scene" ? zhRatio(highlight, sceneTokens.length) : 0}
                   fromHere={tr("fromHere")}
                   onToken={(tok) => playTokens("scene", scene.prompt, sceneTokens, tok, null)}
                 />
@@ -589,20 +729,65 @@ export default function App() {
           </section>
         )}
 
+        {tab === "saves" && (
+          <section className="panel">
+            <h2>{tr("saves")}</h2>
+            <div className="scroll-pane mt-2 space-y-2">
+              <p className="text-sm text-[var(--mute)]">{tr("savesHint")}</p>
+              {saves.length === 0 && <p className="empty-pane">{tr("savesEmpty")}</p>}
+              {saves.map((row) => (
+                <div key={row.id} className="save-row">
+                  <button className="btn btn-ghost btn-wrap flex-1" onClick={() => { openPassage(row); setTab("read"); }}>
+                    <span>{row.title}</span>
+                    {row.title_zh ? <span className="opt-native">{row.title_zh}</span> : null}
+                  </button>
+                  <button className="btn btn-line btn-mini" onClick={() => setSaves(removeSave(row.id))}>{tr("remove")}</button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {tab === "board" && (
           <section className="panel">
             <h2>{tr("board")}</h2>
             <div className="scroll-pane mt-2">
-              <p>{user.username} · XP {user.xp} · min {user.minutes}</p>
-              <p className="text-sm text-[var(--mute)] mt-3">{tr("unlockHint")}</p>
-              <ul className="mt-2 space-y-2 text-sm">
-                {UNLOCKS.map((u) => (
-                  <li key={u.id} className="flex justify-between border-b border-[var(--line)] py-1">
-                    <span>{u.id}</span>
-                    <span>{u.xp} XP · {canAccess(user, u.id) ? "OPEN" : "LOCK"}</span>
-                  </li>
-                ))}
-              </ul>
+              {(() => {
+                const score = computeScore(week);
+                const rows = fakeFriends(score.total, user.username);
+                return (
+                  <>
+                    <p className="display text-3xl">{score.total}</p>
+                    <p className="text-sm text-[var(--mute)]">{tr("weekScore")} · {week.week}</p>
+                    <button className="btn btn-ghost mt-3" onClick={() => setScoreOpen((v) => !v)}>{tr("scoreHow")}</button>
+                    {scoreOpen && (
+                      <ul className="score-bars mt-3">
+                        {[
+                          ["frequency", tr("freq"), 400],
+                          ["duration", tr("dur"), 300],
+                          ["diversity", tr("div"), 200],
+                          ["streak", tr("streak"), 100],
+                        ].map(([key, label, max]) => (
+                          <li key={key}>
+                            <div className="flex justify-between text-sm"><span>{label}</span><span>{score[key]} / {max}</span></div>
+                            <div className="bar"><i style={{ width: `${Math.min(100, (score[key] / max) * 100)}%` }} /></div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <h3 className="display text-sm mt-4">{tr("friends")}</h3>
+                    <p className="text-xs text-[var(--mute)]">{tr("friendsHint")}</p>
+                    <ul className="mt-2 space-y-2 text-sm">
+                      {rows.map((row) => (
+                        <li key={row.name} className={`flex justify-between border-b border-[var(--line)] py-1 ${row.me ? "font-bold" : ""}`}>
+                          <span>{row.rank}. {row.name}{row.me ? ` · ${tr("you")}` : ""}</span>
+                          <span>{row.score}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                );
+              })()}
             </div>
           </section>
         )}
