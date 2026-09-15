@@ -24,10 +24,11 @@ Respond ONLY with JSON, no markdown fences:
 
 export function readingPrompt(lang, levelRow, topic = "") {
   const topicBit = topic ? ` about ${topic}` : "";
-  return `Write a short ${lang.name} passage for read-aloud practice, CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}), 4-6 sentences total, everyday topic${topicBit}. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
-Break it into individual sentences. For EACH sentence provide the ${lang.name} text and its Traditional Chinese translation, sentence-for-sentence (same meaning, same order).
+  return `Write a short ${lang.name} story passage for a read-along video, CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}), 4-6 sentences, everyday adult life${topicBit}. Cinematic but not gory. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
+Pick ONE scene mood from: rain, cafe, commute, market, office, night.
+Break it into individual sentences. For EACH sentence provide the ${lang.name} text AND its Traditional Chinese translation on its own line (same meaning, same order). Every sentence must have zh.
 Respond ONLY with JSON, no markdown fences:
-{"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<對應的繁體中文翻譯>"}]}`;
+{"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","scene":"rain|cafe|commute|market|office|night","hook_zh":"<6-12字中文畫面標語>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<該句繁體中文翻譯>"}]}`;
 }
 
 function avoidLine(items) {

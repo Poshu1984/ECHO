@@ -291,68 +291,76 @@ export const EXAMS = {
 
 export const PASSAGES = {
   en: [
-    { title: "Night Shift", title_zh: "夜班", sentences: [
-      { text: "The corridor lights flickered once, then held.", zh: "走廊的燈閃了一下，然後穩定下來。" },
-      { text: "I checked the log and found a missing line.", zh: "我核對紀錄，發現少了一行。" },
-      { text: "Repeat the last phrase until the rhythm sits in your mouth.", zh: "重複最後一句，直到節奏留在嘴裡。" },
+    { title: "Night Drive", title_zh: "夜車", scene: "rain", hook_zh: "雨夜裡的陌生人", sentences: [
+      { text: "The wipers dragged rain across the glass.", zh: "雨刷把雨水從玻璃上拉開。" },
+      { text: "She accepted a ride from a quiet stranger.", zh: "她上了一個寡言陌生人的車。" },
+      { text: "He smiled and talked about his ordinary life.", zh: "他微笑著，談起自己平凡的生活。" },
+      { text: "Then she reached for the door and froze.", zh: "接著她去拉車門，整個人愣住了。" },
     ]},
-    { title: "Saturday Market", title_zh: "週六市集", sentences: [
+    { title: "Saturday Market", title_zh: "週六市集", scene: "market", hook_zh: "雨前的芒果", sentences: [
       { text: "The fruit stall opened before the rain.", zh: "水果攤在下雨前就開了。" },
       { text: "I asked for two mangoes that were not too soft.", zh: "我要了兩顆不要太軟的芒果。" },
       { text: "She weighed them and rounded the price down.", zh: "她秤完，把價錢往下取整。" },
       { text: "I paid by card and put the bag on my shoulder.", zh: "我用卡付帳，把袋子掛上肩。" },
     ]},
-    { title: "After Lunch", title_zh: "午餐之後", sentences: [
+    { title: "After Lunch", title_zh: "午餐之後", scene: "office", hook_zh: "會議拖太久了", sentences: [
       { text: "The meeting ran long, so we skipped dessert.", zh: "會議拖太久，我們沒吃甜點。" },
       { text: "I walked around the block to clear my head.", zh: "我繞了街區一圈，讓腦袋清醒。" },
       { text: "When I got back, the slides were already open.", zh: "我回來時，投影片已經打開了。" },
     ]},
-    { title: "Rainy Commute", title_zh: "下雨通勤", sentences: [
+    { title: "Rainy Commute", title_zh: "下雨通勤", scene: "commute", hook_zh: "差半分鐘的公車", sentences: [
       { text: "I missed the first bus by half a minute.", zh: "我差半分鐘沒搭上第一班公車。" },
       { text: "The next one was packed, but a seat opened at the third stop.", zh: "下一班很擠，但第三站空出一個位子。" },
       { text: "I messaged the team that I would be ten minutes late.", zh: "我傳訊跟小組說我會晚十分鐘。" },
     ]},
+    { title: "Corner Cafe", title_zh: "轉角咖啡", scene: "cafe", hook_zh: "窗邊那杯美式", sentences: [
+      { text: "The cafe was quiet except for the espresso machine.", zh: "咖啡廳很安靜，只剩義式咖啡機的聲音。" },
+      { text: "I asked for an Americano and a seat by the window.", zh: "我點了美式，還要靠窗的位子。" },
+      { text: "Rain started, and the street lights came on early.", zh: "開始下雨，路燈提早亮了。" },
+      { text: "I opened my notes and tried the first sentence aloud.", zh: "我打開筆記，把第一句大聲唸出來。" },
+    ]},
   ],
   zh: [
-    { title: "夜班", title_zh: "Night Shift", sentences: [
-      { text: "走廊的燈閃了一下，然後又亮著。", zh: "The lights flickered, then held." },
-      { text: "我核對紀錄，發現少了一行。", zh: "A line was missing in the log." },
+    { title: "夜車", title_zh: "Night Drive", scene: "rain", hook_zh: "雨夜裡的陌生人", sentences: [
+      { text: "雨刷把雨水從玻璃上拉開。", zh: "The wipers dragged rain across the glass." },
+      { text: "她上了一個寡言陌生人的車。", zh: "She accepted a ride from a quiet stranger." },
     ]},
-    { title: "週六市場", title_zh: "Saturday Market", sentences: [
+    { title: "週六市場", title_zh: "Saturday Market", scene: "market", hook_zh: "雨前的芒果", sentences: [
       { text: "水果攤在下雨前就開了。", zh: "The fruit stall opened before the rain." },
       { text: "我要了兩顆不要太軟的芒果。", zh: "I asked for two mangoes that were not too soft." },
     ]},
   ],
   ja: [
-    { title: "夜勤", title_zh: "夜班", sentences: [
-      { text: "廊下の明かりが一度点滅して、また安定した。", zh: "走廊燈閃了一下又穩了。" },
+    { title: "夜の車", title_zh: "夜車", scene: "rain", hook_zh: "雨夜的車窗", sentences: [
+      { text: "ワイパーがガラスの雨を払った。", zh: "雨刷把玻璃上的雨拉開。" },
+      { text: "彼女は寡黙な見知らぬ人の車に乗った。", zh: "她上了一個寡言陌生人的車。" },
     ]},
-    { title: "土曜の市場", title_zh: "週六市集", sentences: [
+    { title: "土曜の市場", title_zh: "週六市集", scene: "market", hook_zh: "雨前的水果攤", sentences: [
       { text: "雨の前に果物屋が開いた。", zh: "下雨前水果攤就開了。" },
       { text: "柔らかすぎないマンゴーを二つ頼んだ。", zh: "我要了兩顆不要太軟的芒果。" },
     ]},
   ],
   fr: [
-    { title: "Quart de nuit", title_zh: "夜班", sentences: [
-      { text: "Les lumieres du couloir ont clignote, puis se sont tenues.", zh: "走廊燈閃了一下然後穩住。" },
+    { title: "Nuit sous la pluie", title_zh: "雨夜", scene: "rain", hook_zh: "雨夜的車程", sentences: [
+      { text: "Les essuie-glaces tiraient la pluie sur la vitre.", zh: "雨刷把雨水從玻璃上拉開。" },
     ]},
-    { title: "Marche du samedi", title_zh: "週六市集", sentences: [
+    { title: "Marche du samedi", title_zh: "週六市集", scene: "market", hook_zh: "雨前的攤位", sentences: [
       { text: "Le stand de fruits a ouvert avant la pluie.", zh: "水果攤在下雨前就開了。" },
     ]},
   ],
   ko: [
-    { title: "야간 근무", title_zh: "夜班", sentences: [
-      { text: "복도 불이 한 번 깜빡이더니 다시 안정됐다.", zh: "走廊燈閃了一下又穩定了。" },
+    { title: "밤 운전", title_zh: "夜車", scene: "rain", hook_zh: "雨夜的車窗", sentences: [
+      { text: "와이퍼가 유리의 비를 밀어냈다.", zh: "雨刷把玻璃上的雨拉開。" },
     ]},
-    { title: "토요일 시장", title_zh: "週六市集", sentences: [
+    { title: "토요일 시장", title_zh: "週六市集", scene: "market", hook_zh: "雨前的水果攤", sentences: [
       { text: "비가 오기 전에 과일 가게가 열렸다.", zh: "下雨前水果攤就開了。" },
     ]},
   ],
   es: [
-    { title: "Turno de noche", title_zh: "夜班", sentences: [
-      { text: "Las luces del pasillo parpadearon y se quedaron.", zh: "走廊燈閃了一下然後穩住。" },
+    { title: "Noche de lluvia", title_zh: "雨夜", scene: "rain", hook_zh: "雨夜的車程", sentences: [
+      { text: "Los limpiaparabrisas arrastraban la lluvia en el cristal.", zh: "雨刷把雨水從玻璃上拉開。" },
     ]},
-    { title: "Mercado del sabado", title_zh: "週六市集", sentences: [
+    { title: "Mercado del sabado", title_zh: "週六市集", scene: "market", hook_zh: "雨前的攤位", sentences: [
       { text: "El puesto de fruta abrio antes de la lluvia.", zh: "水果攤在下雨前就開了。" },
     ]},
   ],
@@ -366,5 +374,11 @@ export function fallbackPassage(code) {
   const pool = PASSAGES[code] || PASSAGES.en;
   const list = Array.isArray(pool) ? pool : [pool];
   return list[Math.floor(Math.random() * list.length)];
+}
+
+export function previewPassage(code) {
+  const pool = PASSAGES[code] || PASSAGES.en;
+  const list = Array.isArray(pool) ? pool : [pool];
+  return list[0];
 }
 

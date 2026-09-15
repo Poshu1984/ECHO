@@ -19,6 +19,8 @@ export function savePassage(passage) {
     lang: passage.lang,
     level: passage.level,
     sentences: passage.sentences.map((s) => ({ text: s.text, zh: s.zh })),
+    scene: passage.scene,
+    hook_zh: passage.hook_zh,
     savedAt: Date.now(),
   });
   localStorage.setItem(KEY, JSON.stringify(rows.slice(0, 40)));

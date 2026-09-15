@@ -2,8 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt } from "./prompts.js";
 import { t } from "./i18n.js";
+import { inferScene, formatClock } from "./story.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -52,5 +53,17 @@ describe("prompts", () => {
     assert.match(examplePrompt(lang, level, ["Hello"]), /Hello/);
     assert.match(scenePrompt(lang, level, ["Airport"]), /Airport/);
     assert.match(examPrompt(lang, level, ["until"]), /until/);
+    assert.match(readingPrompt(lang, level), /hook_zh/);
+    assert.match(readingPrompt(lang, level), /scene/);
+  });
+});
+
+describe("story scene", () => {
+  it("infers rain from the text and formats the clock", () => {
+    assert.equal(inferScene({ scene: "rain" }), "rain");
+    assert.equal(inferScene({ title: "Rainy taxi", sentences: [{ text: "The wipers dragged rain." }] }), "rain");
+    assert.equal(inferScene({ title: "Office notes", sentences: [{ text: "The meeting ran long." }] }), "office");
+    assert.equal(formatClock(29), "0:29");
+    assert.equal(formatClock(75.4), "1:15");
   });
 });

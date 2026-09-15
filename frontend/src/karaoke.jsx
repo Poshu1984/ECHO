@@ -120,10 +120,10 @@ export function useBeatAudio() {
   return { active, playing, loop, attach, attachClock, playFrom, stop, setLoop, audioRef, timesRef };
 }
 
-export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "" }) {
+export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "", variant = "karaoke" }) {
   const { lit, rest } = nativeProgress(native, nativeRatio);
   return (
-    <div className={`beat-block ${className}`.trim()}>
+    <div className={`beat-block is-${variant} ${className}`.trim()}>
       <p className="beat-line">
         {tokens.map((tok, i) => (
           <span key={i}>

@@ -5,13 +5,15 @@ import { armAudio, listDeviceVoices, pickGoogleVoice, speakOnDevice } from "./tt
 import {
   LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess,
   GREET, VOCAB, EXAMPLES, SCENES, EXAMS,
-  greetOf, examBoard, fallbackPassage,
+  greetOf, examBoard, fallbackPassage, previewPassage,
 } from "./content.js";
 import {
   beatsOf, isCjk, joinBeats, sentenceRange, ssmlFromBeats,
   timesEstimated, timesFromPoints,
 } from "./beats.js";
 import { BeatLine, useBeatAudio } from "./karaoke.jsx";
+import { StoryStage } from "./storyStage.jsx";
+import { inferScene } from "./story.js";
 import {
   chatPrompt, chatStartPrompt, parseModelJson, readingPrompt, SPEAK_RATES,
   vocabPrompt, examplePrompt, scenePrompt, examPrompt,
@@ -287,6 +289,8 @@ export default function App() {
       id: raw.id || `${lang.code}-${level}-${Date.now()}`,
       title: raw.title,
       title_zh: raw.title_zh,
+      hook_zh: raw.hook_zh || raw.title_zh || "",
+      scene: inferScene(raw),
       lang: meta.lang || lang.code,
       level: meta.level || level,
       sentences,
@@ -302,6 +306,7 @@ export default function App() {
     beat.setLoop(null);
     gain(6, 2);
     notePractice("read", 2);
+    return packed;
   }
 
   async function generatePassage() {
@@ -309,38 +314,50 @@ export default function App() {
     setErr("");
     try {
       const data = await api.llm(readingPrompt(lang, levelRow), [
-        { role: "user", content: "Please write the passage now. Pick a new everyday topic." },
+        { role: "user", content: "Please write the story passage now. Pick a new everyday scene." },
       ], 1800, 0.95);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       const p = parseModelJson(raw);
       if (!p.sentences?.length) throw new Error("NO_PASSAGE");
-      openPassage(p);
+      const packed = openPassage(p);
+      await playPassageFrom(0, null, packed);
     } catch {
-      openPassage(fallbackPassage(lang.code));
+      const packed = openPassage(fallbackPassage(lang.code));
       setErr(tr("genFallback"));
+      try { await playPassageFrom(0, null, packed); } catch { /* ignore */ }
     } finally {
       setBusy(false);
     }
   }
 
-  function passageText() {
-    return (passage?.sentences || []).map((s) => s.text).join(isCjk(lang.code) ? "" : " ");
+  function passageText(packed = passage) {
+    return (packed?.sentences || []).map((s) => s.text).join(isCjk(lang.code) ? "" : " ");
   }
 
-  async function playPassageFrom(globalIndex, loopRange = beat.loop) {
-    if (!passage) return;
-    await playTokens("read", passageText(), passage.allTokens, globalIndex, loopRange);
+  async function playPassageFrom(globalIndex, loopRange = beat.loop, packed = passage) {
+    if (!packed) return;
+    await playTokens("read", passageText(packed), packed.allTokens, globalIndex, loopRange);
   }
 
-  function toggleLoopSentence(i) {
-    if (!passage) return;
-    const range = sentenceRange(passage.sentences, i);
+  function toggleLoopSentence(i, packed = passage) {
+    if (!packed) return;
+    const range = sentenceRange(packed.sentences, i);
     const on = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
     if (on) {
       beat.setLoop(null);
       return;
     }
-    playPassageFrom(range[0], range);
+    playPassageFrom(range[0], range, packed);
+  }
+
+  function toggleStoryPlay() {
+    if (!passage) return;
+    if (beat.playing && trackId === "read") {
+      beat.stop();
+      return;
+    }
+    const start = trackId === "read" && highlight >= 0 ? highlight : 0;
+    playPassageFrom(start, beat.loop, passage);
   }
 
   async function installApp() {
@@ -531,6 +548,11 @@ export default function App() {
     if (local < 0) return 0;
     return Math.min(1, (local + 1) / tokenCount);
   }
+
+  useEffect(() => {
+    if (tab !== "read" || trackId !== "read") return;
+    document.querySelector(".read-sent.live")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [highlight, tab, trackId]);
 
   if (!user) {
     return (
@@ -781,54 +803,70 @@ export default function App() {
         )}
 
         {tab === "read" && (
-          <section className="panel">
-            <h2>{tr("reading")}</h2>
+          <section className="panel story-read">
             {!passage && (
-              <div className="empty-pane">
-                <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={generatePassage}>{busy ? "…" : tr("newPassage")}</button>
+              <div className="story-empty">
+                <StoryStage
+                  passage={previewPassage(lang.code)}
+                  playing={false}
+                  duration={29}
+                  onToggle={generatePassage}
+                  playLabel={tr("playStory")}
+                  pauseLabel={tr("pauseStory")}
+                />
+                <div className="story-empty-copy">
+                  <p>{tr("storyHint")}</p>
+                  <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={generatePassage}>{busy ? "…" : tr("playStory")}</button>
+                </div>
               </div>
             )}
             {passage && (
-              <div className="scroll-pane mt-3">
-                <h3 className="display">{passage.title}</h3>
-                {gloss(passage.title_zh) ? <p className="text-[var(--mute)] text-sm">{passage.title_zh}</p> : null}
-                <div className="read-tools mt-3">
-                  <button className="btn btn-accent" onClick={() => playPassageFrom(0, beat.loop)}>{tr("playAll")}</button>
-                  <button className="btn btn-ghost" onClick={() => beat.stop()}>{tr("stop")}</button>
-                  <button className="btn btn-ghost" onClick={() => setShowZh((v) => !v)}>{showZh ? tr("hideZh") : tr("showZh")}</button>
-                  <button className="btn btn-line" onClick={() => setSaves(savePassage(passage))}>{isSaved(passage.id) ? tr("saved") : tr("save")}</button>
-                  <button className="btn btn-ghost" disabled={busy} onClick={generatePassage}>{tr("newPassage")}</button>
+              <>
+                <StoryStage
+                  passage={passage}
+                  playing={beat.playing && trackId === "read"}
+                  current={trackId === "read" && highlight >= 0 ? (beat.timesRef.current[highlight]?.start || 0) : 0}
+                  duration={trackId === "read" ? (beat.timesRef.current[beat.timesRef.current.length - 1]?.end || 0) : 0}
+                  onToggle={toggleStoryPlay}
+                  playLabel={tr("playStory")}
+                  pauseLabel={tr("pauseStory")}
+                />
+                <div className="scroll-pane story-page">
+                  <h2 className="story-title">{passage.title}</h2>
+                  {gloss(passage.title_zh) ? <p className="story-title-zh">{passage.title_zh}</p> : null}
+                  {passage.sentences.map((s, i) => {
+                    const range = sentenceRange(passage.sentences, i);
+                    const local = trackId === "read" && highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
+                    const done = trackId === "read" && highlight > range[1];
+                    const looping = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
+                    const ratio = local >= 0 ? zhRatio(local, s.tokens.length) : (done ? 1 : 0);
+                    return (
+                      <article key={i} className={`read-sent ${local >= 0 ? "live" : ""} ${looping ? "looping" : ""}`}>
+                        <BeatLine
+                          variant="story"
+                          tokens={s.tokens}
+                          joiner={joiner}
+                          active={local}
+                          native={gloss(s.zh)}
+                          nativeRatio={ratio}
+                          fromHere={tr("fromHere")}
+                          onToken={(tok) => playPassageFrom(s.start + tok, beat.loop, passage)}
+                        />
+                      </article>
+                    );
+                  })}
                 </div>
-                <div className="rate-row">
+                <div className="story-tools">
+                  <button className="btn btn-accent btn-mini" onClick={() => playPassageFrom(0, beat.loop, passage)}>{tr("playAll")}</button>
+                  <button className="btn btn-ghost btn-mini" onClick={() => beat.stop()}>{tr("stop")}</button>
+                  <button className="btn btn-ghost btn-mini" onClick={() => setShowZh((v) => !v)}>{showZh ? tr("hideZh") : tr("showZh")}</button>
+                  <button className="btn btn-line btn-mini" onClick={() => setSaves(savePassage(passage))}>{isSaved(passage.id) ? tr("saved") : tr("save")}</button>
+                  <button className="btn btn-ghost btn-mini" disabled={busy} onClick={generatePassage}>{tr("newPassage")}</button>
                   {["slow", "normal", "fast"].map((id) => (
                     <button key={id} className={`btn btn-mini ${rate === id ? "btn-accent" : "btn-ghost"}`} onClick={() => { setRate(id); trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" }; }}>{tr(id)}</button>
                   ))}
                 </div>
-                {passage.sentences.map((s, i) => {
-                  const range = sentenceRange(passage.sentences, i);
-                  const local = trackId === "read" && highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
-                  const done = trackId === "read" && highlight > range[1];
-                  const looping = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
-                  const ratio = local >= 0 ? zhRatio(local, s.tokens.length) : (done ? 1 : 0);
-                  return (
-                    <article key={i} className={`read-sent ${local >= 0 ? "live" : ""} ${looping ? "looping" : ""}`}>
-                      <BeatLine
-                        tokens={s.tokens}
-                        joiner={joiner}
-                        active={local}
-                        native={gloss(s.zh)}
-                        nativeRatio={ratio}
-                        fromHere={tr("fromHere")}
-                        onToken={(tok) => playPassageFrom(s.start + tok, beat.loop)}
-                      />
-                      <div className="sent-tools">
-                        <button className="btn btn-ghost btn-mini" onClick={() => playPassageFrom(s.start, beat.loop)}>{tr("replay")}</button>
-                        <button className={`btn btn-mini ${looping ? "btn-accent" : "btn-line"}`} onClick={() => toggleLoopSentence(i)}>{tr("loop")}</button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+              </>
             )}
           </section>
         )}
@@ -954,7 +992,11 @@ export default function App() {
               {saves.length === 0 && <p className="empty-pane">{tr("savesEmpty")}</p>}
               {saves.map((row) => (
                 <div key={row.id} className="save-row">
-                  <button className="btn btn-ghost btn-wrap flex-1" onClick={() => { openPassage(row); setTab("read"); }}>
+                  <button className="btn btn-ghost btn-wrap flex-1" onClick={() => {
+                    const packed = openPassage(row);
+                    setTab("read");
+                    playPassageFrom(0, null, packed);
+                  }}>
                     <span>{row.title}</span>
                     {row.title_zh ? <span className="opt-native">{row.title_zh}</span> : null}
                   </button>
