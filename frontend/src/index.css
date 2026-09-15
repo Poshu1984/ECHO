@@ -485,7 +485,6 @@ input, select, textarea {
   font-weight: 800;
   letter-spacing: -0.03em;
   text-transform: none;
-  letter-spacing: 0.04em;
   text-align: left;
   text-shadow: 0 2px 12px rgba(0,0,0,0.55);
   z-index: 2;
