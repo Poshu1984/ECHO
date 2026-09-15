@@ -14,12 +14,23 @@ export function pickGoogleVoice(voices, tutor, speechLang) {
   const langOk = (v) => {
     const codes = v.languageCodes || [];
     if (codes.includes(lang)) return true;
-    if (lang === "zh-TW" && codes.some((c) => c.startsWith("cmn-TW"))) return true;
+    if (lang === "zh-TW" && codes.some((c) => c.startsWith("cmn-TW") || c.startsWith("cmn-CN"))) return true;
     const prefix = lang.split("-")[0];
     return codes.some((c) => c === prefix || c.startsWith(`${prefix}-`));
   };
   const gendered = list.filter((v) => v.ssmlGender === want && langOk(v));
   const pool = gendered.length ? gendered : list.filter(langOk);
+  const prefix = lang.split("-")[0] || "en";
+  const preferred = tutor?.voices?.[prefix] || tutor?.preferred;
+  if (preferred) {
+    const hit = pool.find((v) => v.name === preferred)
+      || pool.find((v) => v.name.endsWith(preferred) || v.name.includes(preferred));
+    if (hit) return hit;
+  }
+  const neural = pool.filter((v) => /Neural2|Wavenet/.test(v.name));
+  const same = (neural.length ? neural : pool).filter((v) => !want || v.ssmlGender === want || !v.ssmlGender);
+  const idx = Number(tutor?.voiceIndex) || 0;
+  if (same.length) return same[idx % same.length];
   for (const tier of TIERS) {
     const hit = pool.find((v) => v.name.includes(tier));
     if (hit) return hit;

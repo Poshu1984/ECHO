@@ -7,12 +7,12 @@ function RainDrop({ i }) {
   return <i className="drop" style={{ left, animationDelay: delay, animationDuration: dur }} />;
 }
 
-export function StoryStage({ passage, playing, current = 0, duration = 0, onToggle, playLabel, pauseLabel }) {
+export function StoryStage({ passage, playing, preview = false, current = 0, duration = 0, onToggle, playLabel, pauseLabel }) {
   const scene = inferScene(passage);
   const hook = passage?.hook_zh || passage?.title_zh || passage?.title || "";
   const clock = playing ? formatClock(current) : formatClock(duration);
   return (
-    <button type="button" className={`story-stage is-${scene} ${playing ? "is-live" : ""}`} onClick={onToggle} aria-label={playing ? pauseLabel : playLabel}>
+    <button type="button" className={`story-stage is-${scene} ${playing ? "is-live" : ""} ${preview ? "is-preview" : ""}`} onClick={onToggle} aria-label={playing ? pauseLabel : playLabel}>
       <div className="story-fx" aria-hidden="true">
         {scene === "rain" && (
           <>

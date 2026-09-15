@@ -42,7 +42,11 @@ export default function App() {
   const [tab, setTab] = useState("chat");
   const [lang, setLang] = useState(LEARN_LANGS[0]);
   const [level, setLevel] = useState("B1");
-  const [tutorId, setTutorId] = useState("audrey");
+  const [tutorId, setTutorId] = useState(() => {
+    const saved = localStorage.getItem("echoo-tutor") || "audrey";
+    return TUTORS.some((x) => x.id === saved) ? saved : "audrey";
+  });
+  const [ttsLive, setTtsLive] = useState(null);
   const [engine, setEngine] = useState("cloud");
   const [rate, setRate] = useState("normal");
   const [pitchTrim, setPitchTrim] = useState(0);
@@ -83,6 +87,26 @@ export default function App() {
   const trackKey = `${engine}:${rate}:${tutorId}:${pitchTrim}:${deviceVoice}`;
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
+  useEffect(() => { localStorage.setItem("echoo-tutor", tutorId); }, [tutorId]);
+  useEffect(() => {
+    if (!user) return undefined;
+    let gone = false;
+    setTtsLive(null);
+    (async () => {
+      try {
+        const health = await api.health();
+        if (!health.ttsConfigured) {
+          if (!gone) setTtsLive(false);
+          return;
+        }
+        const status = await api.ttsStatus();
+        if (!gone) setTtsLive(Boolean(status.ok));
+      } catch {
+        if (!gone) setTtsLive(false);
+      }
+    })();
+    return () => { gone = true; };
+  }, [user]);
   useEffect(() => {
     const onPrompt = (e) => {
       e.preventDefault();
@@ -231,7 +255,10 @@ export default function App() {
     try {
       await beat.playFrom(start);
     } catch {
+      beat.attachClock(estimateTimes(tokens));
+      trackRef.current = { ...trackRef.current, mode: "clock" };
       playDevice(joinBeats(tokens.slice(start), lang.code) || text);
+      try { await beat.playFrom(start); } catch { /* ignore */ }
     }
   }
 
@@ -675,12 +702,16 @@ export default function App() {
             <p className="text-sm text-[var(--mute)]">{tr("tutor")}</p>
             <div className="tutor-grid">
               {TUTORS.map((x) => (
-                <button key={x.id} onClick={() => setTutorId(x.id)} className={`p-3 text-left rounded-xl border ${tutorId === x.id ? "border-[var(--magenta)] bg-[var(--paper)]" : "border-[var(--line)]"}`}>
+                <button key={x.id} type="button" onClick={() => setTutorId(x.id)} className={`p-3 text-left rounded-xl border ${tutorId === x.id ? "border-[var(--orange)] bg-[var(--paper)]" : "border-[var(--line)]"}`}>
                   <div className="display text-sm">{x.name}</div>
+                  <div className="text-xs">{x.style}</div>
                   <div className="text-xs text-[var(--mute)]">{x.gender === "f" ? tr("female") : tr("male")} · {x.blurb}</div>
                 </button>
               ))}
             </div>
+            <p className={`notice ${ttsLive ? "is-ok" : ""}`}>
+              {ttsLive === null ? tr("ttsChecking") : ttsLive ? tr("ttsOk") : tr("ttsOff")}
+            </p>
             <label className="block text-sm">{tr("voiceEngine")}
               <select value={engine} onChange={(e) => {
                 setEngine(e.target.value);
@@ -815,6 +846,7 @@ export default function App() {
                 <StoryStage
                   passage={previewPassage(lang.code)}
                   playing={false}
+                  preview
                   duration={29}
                   onToggle={generatePassage}
                   playLabel={tr("playStory")}

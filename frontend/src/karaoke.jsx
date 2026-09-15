@@ -27,16 +27,17 @@ export function useBeatAudio() {
         onLoopRef.current?.();
       }
     } else if (times[times.length - 1] && t >= times[times.length - 1].end - 0.02) {
-      a.ended = true;
-      a.paused = true;
+      try { a.pause(); } catch { /* ignore */ }
       setPlaying(false);
-      setActive(-1);
+      setActive(times.length - 1);
       return;
     }
     let i = times.findIndex((x) => t < x.end - 0.001);
     if (i < 0) i = times.length - 1;
     setActive(i);
-    if (!a.paused && !a.ended) rafRef.current = requestAnimationFrame(pump);
+    const paused = Boolean(a.paused);
+    const ended = Boolean(a.ended);
+    if (!paused && !ended) rafRef.current = requestAnimationFrame(pump);
     else setPlaying(false);
   }
 
@@ -54,7 +55,7 @@ export function useBeatAudio() {
         return;
       }
       setPlaying(false);
-      setActive(-1);
+      setActive(Math.max(0, timesRef.current.length - 1));
     };
   }
 
@@ -88,7 +89,9 @@ export function useBeatAudio() {
     const a = audioRef.current;
     const times = timesRef.current;
     if (!a || !times[i]) return;
-    a.ended = false;
+    if (Object.prototype.hasOwnProperty.call(a, "ended")) {
+      try { a.ended = false; } catch { /* HTMLAudioElement.ended is readonly */ }
+    }
     a.currentTime = Math.max(0, times[i].start);
     setPlaying(true);
     setActive(i);

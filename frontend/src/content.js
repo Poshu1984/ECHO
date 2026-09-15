@@ -16,8 +16,36 @@ export const LEVELS = [
 export const LEVEL_DISCLAIMER = "對照為常見公開換算區間，非官方成績預測";
 
 export const TUTORS = [
-  { id: "audrey", gender: "f", name: "Audrey", style: "溫暖帶路", preferred: "Neural2-C", pitch: 1, blurb: "女聲。清楚、有耐心。" },
-  { id: "brad", gender: "m", name: "Brad", style: "沉穩教練", preferred: "Neural2-D", pitch: 1, blurb: "男聲。穩、不催促。" },
+  {
+    id: "audrey", gender: "f", name: "Audrey", style: "溫暖帶路", preferred: "Neural2-C", pitch: 1, voiceIndex: 0,
+    voices: { en: "en-US-Neural2-C", ja: "ja-JP-Neural2-B", fr: "fr-FR-Neural2-A", ko: "ko-KR-Neural2-A", es: "es-ES-Neural2-A", zh: "cmn-TW-Wavenet-A" },
+    blurb: "女聲。清楚、有耐心。",
+  },
+  {
+    id: "maya", gender: "f", name: "Maya", style: "輕快清楚", preferred: "Neural2-F", pitch: 1.05, voiceIndex: 1,
+    voices: { en: "en-US-Neural2-F", ja: "ja-JP-Neural2-A", fr: "fr-FR-Neural2-E", ko: "ko-KR-Wavenet-A", es: "es-ES-Neural2-C", zh: "cmn-TW-Wavenet-C" },
+    blurb: "女聲。節奏明快、咬字利落。",
+  },
+  {
+    id: "elena", gender: "f", name: "Elena", style: "沉靜溫柔", preferred: "Neural2-H", pitch: 0.96, voiceIndex: 2,
+    voices: { en: "en-US-Neural2-H", ja: "ja-JP-Wavenet-B", fr: "fr-FR-Wavenet-A", ko: "ko-KR-Wavenet-B", es: "es-ES-Wavenet-C", zh: "cmn-TW-Standard-A" },
+    blurb: "女聲。慢一點、聽起來安定。",
+  },
+  {
+    id: "brad", gender: "m", name: "Brad", style: "沉穩教練", preferred: "Neural2-D", pitch: 1, voiceIndex: 0,
+    voices: { en: "en-US-Neural2-D", ja: "ja-JP-Neural2-C", fr: "fr-FR-Neural2-B", ko: "ko-KR-Neural2-C", es: "es-ES-Neural2-B", zh: "cmn-TW-Wavenet-B" },
+    blurb: "男聲。穩、不催促。",
+  },
+  {
+    id: "owen", gender: "m", name: "Owen", style: "清楚穩健", preferred: "Neural2-J", pitch: 0.97, voiceIndex: 1,
+    voices: { en: "en-US-Neural2-J", ja: "ja-JP-Neural2-D", fr: "fr-FR-Neural2-D", ko: "ko-KR-Wavenet-C", es: "es-ES-Neural2-D", zh: "cmn-TW-Standard-B" },
+    blurb: "男聲。中氣足、適合跟讀。",
+  },
+  {
+    id: "kai", gender: "m", name: "Kai", style: "年輕有力", preferred: "Neural2-A", pitch: 1.04, voiceIndex: 2,
+    voices: { en: "en-US-Neural2-A", ja: "ja-JP-Wavenet-C", fr: "fr-FR-Wavenet-B", ko: "ko-KR-Wavenet-D", es: "es-ES-Wavenet-B", zh: "cmn-CN-Wavenet-C" },
+    blurb: "男聲。比較年輕、節奏清楚。",
+  },
 ];
 
 export const UNLOCKS = [

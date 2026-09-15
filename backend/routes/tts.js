@@ -5,9 +5,15 @@ const router = Router();
 const TTS_V1 = "https://texttospeech.googleapis.com/v1";
 const TTS_BETA = "https://texttospeech.googleapis.com/v1beta1";
 
-function requireApiKey(res) {
+function apiKey() {
   const key = (process.env.GOOGLE_TTS_API_KEY || "").trim();
-  if (!key || key === "your_key_here") {
+  if (!key || key === "your_key_here") return "";
+  return key;
+}
+
+function requireApiKey(res) {
+  const key = apiKey();
+  if (!key) {
     res.status(500).json({
       error: "GOOGLE_TTS_API_KEY is not configured on the server",
     });
@@ -34,6 +40,29 @@ async function readJsonResponse(googleRes) {
     return { status: googleRes.status, body: { error: text || "Unknown error from TTS service" } };
   }
 }
+
+router.get("/status", async (_req, res) => {
+  const key = apiKey();
+  if (!key) {
+    res.json({ ok: false, configured: false, voices: 0 });
+    return;
+  }
+  try {
+    const url = new URL(`${TTS_V1}/voices`);
+    url.searchParams.set("languageCode", "en-US");
+    url.searchParams.set("key", key);
+    const googleRes = await fetch(url);
+    const { body } = await readJsonResponse(googleRes);
+    const voices = Array.isArray(body?.voices) ? body.voices.length : 0;
+    res.json({
+      ok: googleRes.ok && voices > 0,
+      configured: true,
+      voices,
+    });
+  } catch {
+    res.json({ ok: false, configured: true, voices: 0 });
+  }
+});
 
 router.get("/voices", async (req, res) => {
   try {

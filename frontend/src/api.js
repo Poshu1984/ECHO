@@ -47,6 +47,8 @@ export const api = {
   users: () => req("/api/auth/users"),
   setPlan: (id, plan) => req(`/api/auth/users/${id}/plan`, { method: "POST", body: JSON.stringify({ plan }) }),
   addXp: (xp, minutes) => req("/api/progress/xp", { method: "POST", body: JSON.stringify({ xp, minutes }) }),
+  health: () => req("/api/health"),
+  ttsStatus: () => req("/api/tts/status"),
   voices: (languageCode) => req(`/api/tts/voices?languageCode=${encodeURIComponent(languageCode)}`),
   synthesize: (body) => req("/api/tts/synthesize", { method: "POST", body: JSON.stringify(body) }),
   llm: (system, messages, max_tokens = 1200, temperature) => req("/api/llm/messages", {

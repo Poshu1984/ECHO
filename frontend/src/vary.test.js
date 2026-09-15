@@ -5,6 +5,8 @@ import { micErrorKey } from "./speech.js";
 import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt } from "./prompts.js";
 import { t } from "./i18n.js";
 import { inferScene, formatClock } from "./story.js";
+import { pickGoogleVoice } from "./tts.js";
+import { TUTORS } from "./content.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -42,6 +44,8 @@ describe("labels", () => {
     assert.equal(t("zh", "login"), "登入");
     assert.equal(t("en", "logout"), "Log out");
     assert.equal(t("zh", "mic"), "語音回覆");
+    assert.equal(t("zh", "ttsOk"), "雲端語音已連上 Google Cloud。");
+    assert.match(t("zh", "ttsOff"), /雲端語音/);
   });
 });
 
@@ -65,5 +69,31 @@ describe("story scene", () => {
     assert.equal(inferScene({ title: "Office notes", sentences: [{ text: "The meeting ran long." }] }), "office");
     assert.equal(formatClock(29), "0:29");
     assert.equal(formatClock(75.4), "1:15");
+  });
+});
+
+describe("google tutors", () => {
+  const voices = [
+    { name: "en-US-Neural2-C", ssmlGender: "FEMALE", languageCodes: ["en-US"] },
+    { name: "en-US-Neural2-F", ssmlGender: "FEMALE", languageCodes: ["en-US"] },
+    { name: "en-US-Neural2-H", ssmlGender: "FEMALE", languageCodes: ["en-US"] },
+    { name: "en-US-Neural2-D", ssmlGender: "MALE", languageCodes: ["en-US"] },
+    { name: "en-US-Neural2-J", ssmlGender: "MALE", languageCodes: ["en-US"] },
+    { name: "en-US-Neural2-A", ssmlGender: "MALE", languageCodes: ["en-US"] },
+    { name: "en-US-Chirp-HD-F", ssmlGender: "FEMALE", languageCodes: ["en-US"] },
+  ];
+
+  it("lists three female and three male teachers", () => {
+    assert.equal(TUTORS.length, 6);
+    assert.equal(TUTORS.filter((x) => x.gender === "f").length, 3);
+    assert.equal(TUTORS.filter((x) => x.gender === "m").length, 3);
+    assert.equal(new Set(TUTORS.map((x) => x.voices.en)).size, 6);
+  });
+
+  it("picks each teacher's preferred Neural2 voice", () => {
+    for (const tutor of TUTORS) {
+      const hit = pickGoogleVoice(voices, tutor, "en-US");
+      assert.equal(hit.name, tutor.voices.en);
+    }
   });
 });
