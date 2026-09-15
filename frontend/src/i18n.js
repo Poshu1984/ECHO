@@ -10,6 +10,7 @@ export const UI_LANGS = [
 const dict = {
   zh: {
     tag: "ECHO, THEN SPEAK. · 先聽，再說。",
+    tagShort: "ECHO, THEN SPEAK.",
     login: "登入節點",
     register: "建立代號",
     username: "使用者代號",
@@ -63,6 +64,7 @@ const dict = {
   },
   en: {
     tag: "ECHO, THEN SPEAK.",
+    tagShort: "ECHO, THEN SPEAK.",
     login: "JACK IN",
     register: "NEW HANDLE",
     username: "Handle",

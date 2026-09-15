@@ -133,6 +133,8 @@ input, select, textarea {
   height: auto;
   min-height: 44px;
   text-align: left;
+  flex-direction: column;
+  align-items: flex-start;
   justify-content: flex-start;
   padding: 10px 16px;
   line-height: 1.35;
@@ -286,12 +288,16 @@ input, select, textarea {
   vertical-align: baseline;
   transition: color 0.12s ease, background 0.12s ease, transform 0.12s ease;
 }
-.beat.done { color: var(--ink); }
+.beat.done {
+  color: var(--ink);
+  background: rgba(95, 111, 98, 0.14);
+}
 .beat.on {
   color: #fff;
-  background: var(--cyan);
+  background: #3d6b4f;
   transform: translateY(-4px) scale(1.08);
   animation: beat-bounce 0.38s ease;
+  box-shadow: 0 3px 0 #2a4a36;
 }
 .beat-native {
   margin: 6px 0 0;
@@ -329,6 +335,10 @@ input, select, textarea {
 .read-sent.live {
   border-color: var(--cyan);
   background: rgba(95, 111, 98, 0.06);
+}
+.read-sent.live .beat-native {
+  color: var(--magenta);
+  font-weight: 700;
 }
 .read-sent.looping {
   border-color: var(--magenta);

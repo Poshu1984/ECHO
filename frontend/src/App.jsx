@@ -312,7 +312,7 @@ export default function App() {
         <img src="/logo.png" alt="ECHOO" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="display text-lg leading-none">ECHOO</div>
-          <div className="slogan slogan-inline">{tr("tag")}</div>
+          <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">
             {user.username}{user.role === "admin" ? ` · ${tr("admin")}` : ""} · {tr("xp")} {user.xp}
             {user.quota ? ` · ${user.plan}` : ""}
