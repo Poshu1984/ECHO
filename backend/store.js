@@ -1,12 +1,10 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { planOf, usageOf, periodKey, PLANS } from "./plans.js";
-
-dotenv.config();
+import "./loadEnv.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
