@@ -1,6 +1,7 @@
 {
   "name": "ECHOO",
   "short_name": "ECHOO",
+  "description": "ECHO, THEN SPEAK.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ebe6df",

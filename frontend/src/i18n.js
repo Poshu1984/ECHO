@@ -9,7 +9,8 @@ export const UI_LANGS = [
 
 const dict = {
   zh: {
-    tag: "ECHOO // NET TUTOR",
+    tag: "ECHO, THEN SPEAK. · 先聽，再說。",
+    tagShort: "ECHO, THEN SPEAK.",
     login: "登入節點",
     register: "建立代號",
     username: "使用者代號",
@@ -55,9 +56,15 @@ const dict = {
     install: "加入主畫面",
     installHint: "加入主畫面後可像 App 一樣開啟。iPhone 請用 Safari 分享選單裡的「加入主畫面」。",
     voiceQuota: "雲端語音額度已用完，改用裝置語音。",
+    replay: "重播這句",
+    loop: "循環",
+    playAll: "全文朗讀",
+    fromHere: "從這裡聽",
+    stop: "停止",
   },
   en: {
-    tag: "ECHOO // NET TUTOR",
+    tag: "ECHO, THEN SPEAK.",
+    tagShort: "ECHO, THEN SPEAK.",
     login: "JACK IN",
     register: "NEW HANDLE",
     username: "Handle",
@@ -103,6 +110,11 @@ const dict = {
     install: "Add to Home Screen",
     installHint: "Install ECHOO like an app. On iPhone use Safari Share, then Add to Home Screen.",
     voiceQuota: "Cloud voice quota is used up. Playing on this device.",
+    replay: "Replay sentence",
+    loop: "Loop",
+    playAll: "Play all",
+    fromHere: "Play from here",
+    stop: "Stop",
   },
 };
 
