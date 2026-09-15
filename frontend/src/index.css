@@ -14,7 +14,7 @@
   --mute: #6e6c67;
   --gray: #8c8a84;
   --paper: #f7f3ea;
-  --radius: 10px;
+  --radius: 8px;
 }
 
 * { box-sizing: border-box; }
@@ -37,7 +37,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 h1, h2, h3, .display {
-  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
+  font-family: Anton, Outfit, "Noto Sans TC", sans-serif;
   letter-spacing: -0.04em;
   font-weight: 400;
   color: var(--ink);
@@ -312,9 +312,26 @@ input, select, textarea {
 .slogan-inline {
   margin: 4px 0 2px;
   text-align: left;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.22em;
   font-size: 0.62rem;
 }
+.brand-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+.brand-dots i {
+  width: 14px;
+  height: 14px;
+  display: block;
+  border-radius: 2px;
+}
+.brand-dots .d-olive { background: var(--olive); }
+.brand-dots .d-pink { background: var(--pink); }
+.brand-dots .d-orange { background: var(--orange); }
+.brand-dots .d-beige { background: #e8e2d4; border: 1px solid var(--line); }
+.brand-dots .d-gray { background: var(--gray); }
 
 .beat-block { min-width: 0; }
 .beat-line {
@@ -324,7 +341,7 @@ input, select, textarea {
   overflow-wrap: anywhere;
 }
 .beat-hero .beat-line {
-  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
+  font-family: Anton, Outfit, "Noto Sans TC", sans-serif;
   font-size: 2.1rem;
   line-height: 1.15;
   letter-spacing: -0.04em;
@@ -444,7 +461,7 @@ input, select, textarea {
   right: 56px;
   bottom: 14px;
   margin: 0;
-  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
+  font-family: Anton, Outfit, "Noto Sans TC", sans-serif;
   font-size: 1.35rem;
   font-weight: 400;
   letter-spacing: -0.03em;

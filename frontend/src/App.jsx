@@ -560,6 +560,9 @@ export default function App() {
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
           <img src="/logo.png" alt="ECHOO" className="brand-seal mx-auto" />
           <p className="slogan">{tr("tag")}</p>
+          <div className="brand-dots" aria-hidden="true">
+            <i className="d-olive" /><i className="d-pink" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
+          </div>
           <h1 className="text-2xl mt-3 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="field mt-1" />
