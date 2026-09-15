@@ -29,8 +29,12 @@ async function req(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || res.statusText);
+    const message = typeof data.error === "string"
+      ? data.error
+      : data.error?.message || data.message || res.statusText;
+    const err = new Error(message);
     err.status = res.status;
+    err.code = data.error;
     throw err;
   }
   return data;

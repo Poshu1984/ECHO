@@ -173,19 +173,28 @@ export function adminMiddleware(req, res, next) {
   next();
 }
 
-export function consumeQuota(userId, kind) {
+function quotaError(kind, limit) {
+  const err = new Error("QUOTA_EXCEEDED");
+  err.kind = kind;
+  err.limit = limit;
+  return err;
+}
+
+export function assertQuota(userId, kind) {
   const user = findUserById(userId);
   if (!user) throw new Error("NOT_FOUND");
   if (user.role === "admin") return user;
   const plan = planOf(user);
   const usage = usageOf(user);
   const limit = kind === "llm" ? plan.llm : plan.tts;
-  if (usage[kind] >= limit) {
-    const err = new Error("QUOTA_EXCEEDED");
-    err.kind = kind;
-    err.limit = limit;
-    throw err;
-  }
+  if (usage[kind] >= limit) throw quotaError(kind, limit);
+  return user;
+}
+
+export function consumeQuota(userId, kind) {
+  const user = assertQuota(userId, kind);
+  if (user.role === "admin") return user;
+  const usage = usageOf(user);
   user.usage = { period: usage.period, tts: usage.tts, llm: usage.llm };
   user.usage[kind] += 1;
   return saveUser(user);

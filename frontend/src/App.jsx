@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
+import { armAudio, pickGoogleVoice, speakOnDevice } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, TUTORS, UNLOCKS, canAccess, GREET, VOCAB, SCENES, EXAMS, PASSAGES,
 } from "./content.js";
@@ -83,52 +84,51 @@ export default function App() {
     } catch { /* ignore */ }
   }
 
-  function speakOnDevice(text) {
-    if (!window.speechSynthesis) return false;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang.speech;
-    u.pitch = tutor.pitch;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    return true;
+  function playDevice(text) {
+    return speakOnDevice(text, { lang: lang.speech, pitch: tutor.pitch });
   }
 
   async function speak(text) {
+    if (!text) return;
+    armAudio();
     if (engine === "device") {
-      speakOnDevice(text);
+      playDevice(text);
       return;
     }
     try {
       const voices = (await api.voices(lang.speech)).voices || [];
-      const want = tutor.gender === "f" ? "FEMALE" : "MALE";
-      const voice = voices.find((v) => v.ssmlGender === want && v.name.includes(tutor.preferred.split("-")[0]))
-        || voices.find((v) => v.ssmlGender === want) || voices[0];
+      const voice = pickGoogleVoice(voices, tutor, lang.speech);
       if (!voice) {
-        speakOnDevice(text);
+        playDevice(text);
         return;
       }
       const data = await api.synthesize({
         ssml: `<speak>${escapeXml(text)}</speak>`,
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: 0.95 },
-        enableTimePointing: ["SSML_MARK"],
       });
       if (!data.audioContent) {
-        speakOnDevice(text);
+        playDevice(text);
         return;
       }
       if (audioRef.current) { audioRef.current.pause(); }
       const a = new Audio("data:audio/mp3;base64," + data.audioContent);
       audioRef.current = a;
-      a.play();
-    } catch {
-      speakOnDevice(text);
+      try {
+        await a.play();
+      } catch {
+        playDevice(text);
+      }
+    } catch (e) {
+      playDevice(text);
+      if (e.status === 429) setErr(tr("voiceQuota"));
     }
   }
 
   async function send() {
     const text = input.trim();
     if (!text || busy) return;
+    armAudio();
     setInput(""); setBusy(true); setErr("");
     const next = [...msgs, { role: "me", text }];
     setMsgs(next);
@@ -169,11 +169,12 @@ export default function App() {
 
   const standalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
 
-  function startChat() {
+  async function startChat() {
     setErr("");
+    armAudio();
     const g = GREET[lang.code] || GREET.en;
     setMsgs([{ role: "ai", text: g }]);
-    setTimeout(() => speak(g), 200);
+    await speak(g);
   }
 
   if (!user) {

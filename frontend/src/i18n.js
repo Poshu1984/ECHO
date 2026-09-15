@@ -54,6 +54,7 @@ const dict = {
     reveal: "顯示解答",
     install: "加入主畫面",
     installHint: "加入主畫面後可像 App 一樣開啟。iPhone 請用 Safari 分享選單裡的「加入主畫面」。",
+    voiceQuota: "雲端語音額度已用完，改用裝置語音。",
   },
   en: {
     tag: "ECHOO // NET TUTOR",
@@ -101,6 +102,7 @@ const dict = {
     reveal: "Reveal",
     install: "Add to Home Screen",
     installHint: "Install ECHOO like an app. On iPhone use Safari Share, then Add to Home Screen.",
+    voiceQuota: "Cloud voice quota is used up. Playing on this device.",
   },
 };
 

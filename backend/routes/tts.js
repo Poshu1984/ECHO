@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { consumeQuota } from "../store.js";
+import { assertQuota, consumeQuota } from "../store.js";
 
 const router = Router();
 const TTS_BASE = "https://texttospeech.googleapis.com/v1";
@@ -48,7 +48,7 @@ router.post("/synthesize", async (req, res) => {
     const key = requireApiKey(res);
     if (!key) return;
     try {
-      consumeQuota(req.auth.sub, "tts");
+      assertQuota(req.auth.sub, "tts");
     } catch (error) {
       if (error.message === "QUOTA_EXCEEDED") {
         res.status(429).json({ error: "QUOTA_EXCEEDED", kind: "tts" });
@@ -56,7 +56,6 @@ router.post("/synthesize", async (req, res) => {
       }
       throw error;
     }
-
     const incoming = req.body ?? {};
     const googleBody =
       incoming.ssml && !incoming.input
@@ -64,9 +63,10 @@ router.post("/synthesize", async (req, res) => {
             input: { ssml: incoming.ssml },
             voice: incoming.voice,
             audioConfig: incoming.audioConfig,
-            enableTimePointing: incoming.enableTimePointing,
           }
-        : incoming;
+        : { ...incoming };
+    delete googleBody.enableTimePointing;
+    delete googleBody.ssml;
 
     const url = new URL(`${TTS_BASE}/text:synthesize`);
     url.searchParams.set("key", key);
@@ -76,6 +76,19 @@ router.post("/synthesize", async (req, res) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(googleBody),
     });
+    if (!googleRes.ok) {
+      await forwardGoogleResponse(googleRes, res);
+      return;
+    }
+    try {
+      consumeQuota(req.auth.sub, "tts");
+    } catch (error) {
+      if (error.message === "QUOTA_EXCEEDED") {
+        res.status(429).json({ error: "QUOTA_EXCEEDED", kind: "tts" });
+        return;
+      }
+      throw error;
+    }
     await forwardGoogleResponse(googleRes, res);
   } catch (error) {
     res.status(500).json({ error: error.message });
