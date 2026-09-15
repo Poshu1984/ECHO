@@ -5,18 +5,11 @@ import { armAudio, pickGoogleVoice, speakOnDevice } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, TUTORS, UNLOCKS, canAccess, GREET, VOCAB, SCENES, EXAMS, PASSAGES,
 } from "./content.js";
-
-function tokenize(text, code) {
-  if (code === "ja" || code === "zh") {
-    const out = []; let buf = "";
-    for (const ch of text) { buf += ch; if (/[、。！？!?\n]/.test(ch) || buf.length >= 2) { out.push(buf); buf = ""; } }
-    if (buf) out.push(buf);
-    return out;
-  }
-  return text.split(/(\s+)/).filter((x) => x.trim());
-}
-
-function escapeXml(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+import {
+  beatsOf, isCjk, joinBeats, nativeLangName, sentenceRange, ssmlFromBeats,
+  timesEstimated, timesFromPoints,
+} from "./beats.js";
+import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 
 export default function App() {
   const [user, setUser] = useState(loadUser);
@@ -42,9 +35,14 @@ export default function App() {
   const [nodes, setNodes] = useState([]);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installHint, setInstallHint] = useState(false);
-  const audioRef = useRef(null);
+  const [trackId, setTrackId] = useState("");
+  const beat = useBeatAudio();
+  const trackRef = useRef({ id: "", tokens: [], text: "", mode: "" });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
+  const showNative = ui !== lang.code;
+  const joiner = isCjk(lang.code) ? "" : " ";
+  const highlight = beat.active;
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
   useEffect(() => {
@@ -88,41 +86,84 @@ export default function App() {
     return speakOnDevice(text, { lang: lang.speech, pitch: tutor.pitch });
   }
 
-  async function speak(text) {
-    if (!text) return;
+  function waitMeta(audio) {
+    return new Promise((resolve) => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        resolve(audio.duration);
+        return;
+      }
+      const done = () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0);
+      audio.addEventListener("loadedmetadata", done, { once: true });
+      audio.addEventListener("error", done, { once: true });
+      setTimeout(done, 800);
+    });
+  }
+
+  function estimateTimes(tokens) {
+    return timesEstimated(tokens, Math.max(1.2, tokens.join("").length * 0.12));
+  }
+
+  async function loadTrack(id, text, tokens) {
     armAudio();
-    if (engine === "device") {
-      playDevice(text);
+    const want = engine === "device" ? "clock" : "cloud";
+    if (trackRef.current.id === id && trackRef.current.mode === want && beat.audioRef.current) {
+      setTrackId(id);
+      return;
+    }
+    if (want === "clock") {
+      beat.attachClock(estimateTimes(tokens));
+      trackRef.current = { id, tokens, text, mode: "clock" };
+      setTrackId(id);
       return;
     }
     try {
       const voices = (await api.voices(lang.speech)).voices || [];
       const voice = pickGoogleVoice(voices, tutor, lang.speech);
-      if (!voice) {
-        playDevice(text);
-        return;
-      }
+      if (!voice) throw new Error("NO_VOICE");
       const data = await api.synthesize({
-        ssml: `<speak>${escapeXml(text)}</speak>`,
+        ssml: ssmlFromBeats(tokens, lang.code),
+        marks: true,
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: 0.95 },
       });
-      if (!data.audioContent) {
-        playDevice(text);
-        return;
-      }
-      if (audioRef.current) { audioRef.current.pause(); }
-      const a = new Audio("data:audio/mp3;base64," + data.audioContent);
-      audioRef.current = a;
-      try {
-        await a.play();
-      } catch {
-        playDevice(text);
-      }
+      if (!data.audioContent) throw new Error("NO_AUDIO");
+      const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+      const duration = await waitMeta(audio);
+      const dur = duration > 0 && Number.isFinite(duration)
+        ? duration
+        : Math.max(1.2, tokens.join("").length * 0.11);
+      beat.attach(audio, timesFromPoints(data.timepoints, tokens, dur));
+      trackRef.current = { id, tokens, text, mode: "cloud" };
+      setTrackId(id);
     } catch (e) {
-      playDevice(text);
       if (e.status === 429) setErr(tr("voiceQuota"));
+      beat.attachClock(estimateTimes(tokens));
+      trackRef.current = { id, tokens, text, mode: "clock" };
+      setTrackId(id);
     }
+  }
+
+  async function playTokens(id, text, tokens, startAt = 0, loopRange = null) {
+    if (!text || !tokens?.length) return;
+    await loadTrack(id, text, tokens);
+    const start = Math.max(0, Math.min(startAt, tokens.length - 1));
+    beat.setLoop(loopRange, trackRef.current.mode === "clock" && loopRange
+      ? () => playDevice(joinBeats(tokens.slice(loopRange[0], loopRange[1] + 1), lang.code))
+      : null);
+    if (trackRef.current.mode === "clock") {
+      playDevice(joinBeats(tokens.slice(start), lang.code) || text);
+    }
+    try {
+      await beat.playFrom(start);
+    } catch {
+      playDevice(joinBeats(tokens.slice(start), lang.code) || text);
+    }
+  }
+
+  async function speak(text) {
+    if (!text) return;
+    const tokens = beatsOf(text, lang.code);
+    await playTokens(`plain-${text.slice(0, 24)}`, text, tokens, 0, null);
   }
 
   async function send() {
@@ -137,13 +178,16 @@ export default function App() {
         role: m.role === "me" ? "user" : "assistant",
         content: m.text,
       }));
-      const system = `You are ${tutor.name}, ${tutor.style}. Reply in ${lang.name} at CEFR ${level}, 1-3 sentences, end with a question. JSON only: {"reply":"...","reply_zh":"...","corrections":[],"praise":""}`;
+      const nativeName = nativeLangName(ui);
+      const system = `You are ${tutor.name}, ${tutor.style}. Reply in ${lang.name} at CEFR ${level}, 1-3 sentences, end with a question. Also give a faithful mother-tongue gloss in ${nativeName}. JSON only: {"reply":"...","native":"...","corrections":[],"praise":""}`;
       const data = await api.llm(system, history);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       const p = JSON.parse(raw.replace(/```json|```/g, "").trim());
-      const tm = { role: "ai", text: p.reply, zh: p.reply_zh, corrections: p.corrections || [] };
+      const reply = p.reply || "";
+      const native = showNative ? (p.native || p.reply_zh || "") : "";
+      const tm = { role: "ai", text: reply, native, tokens: beatsOf(reply, lang.code), corrections: p.corrections || [] };
       setMsgs((m) => [...m, tm]);
-      speak(tm.text);
+      await playTokens(`chat-${next.length}`, reply, tm.tokens, 0, null);
       await gain(8, 2);
     } catch {
       setErr("鏈路中斷。可先練朗讀與單字。");
@@ -152,9 +196,38 @@ export default function App() {
 
   function openPassage() {
     const p = PASSAGES[lang.code] || PASSAGES.en;
-    const sentences = p.sentences.map((s) => ({ ...s, tokens: tokenize(s.text, lang.code) }));
-    setPassage({ ...p, sentences });
+    let offset = 0;
+    const sentences = p.sentences.map((s) => {
+      const tokens = beatsOf(s.text, lang.code);
+      const start = offset;
+      offset += tokens.length;
+      return { ...s, tokens, start };
+    });
+    setPassage({ ...p, sentences, allTokens: sentences.flatMap((s) => s.tokens) });
+    trackRef.current = { id: "", tokens: [], text: "" };
+    beat.stop();
+    beat.setLoop(null);
     gain(6, 2);
+  }
+
+  function passageText() {
+    return (passage?.sentences || []).map((s) => s.text).join(isCjk(lang.code) ? "" : " ");
+  }
+
+  async function playPassageFrom(globalIndex, loopRange = beat.loop) {
+    if (!passage) return;
+    await playTokens("read", passageText(), passage.allTokens, globalIndex, loopRange);
+  }
+
+  function toggleLoopSentence(i) {
+    if (!passage) return;
+    const range = sentenceRange(passage.sentences, i);
+    const on = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
+    if (on) {
+      beat.setLoop(null);
+      return;
+    }
+    playPassageFrom(range[0], range);
   }
 
   async function installApp() {
@@ -173,17 +246,22 @@ export default function App() {
     setErr("");
     armAudio();
     const g = GREET[lang.code] || GREET.en;
-    setMsgs([{ role: "ai", text: g }]);
-    await speak(g);
+    const tokens = beatsOf(g.text, lang.code);
+    setMsgs([{ role: "ai", text: g.text, native: showNative ? g.zh : "", tokens }]);
+    await playTokens("chat-0", g.text, tokens, 0, null);
+  }
+
+  function gloss(text) {
+    return showNative ? text : "";
   }
 
   if (!user) {
     return (
       <div className="app-shell is-auth items-center justify-center">
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
-          <img src="/logo.png" alt="ECHOO" className="w-16 h-16 mx-auto rounded-2xl" />
-          <p className="neon text-xs text-center mt-3">{tr("tag")}</p>
-          <h1 className="text-2xl mt-1 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
+          <img src="/logo.png" alt="ECHOO" className="brand-seal mx-auto" />
+          <p className="slogan">{tr("tag")}</p>
+          <h1 className="text-2xl mt-2 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="field mt-1" />
           </label>
@@ -224,13 +302,17 @@ export default function App() {
   const exam = EXAMS[lang.code] || EXAMS.en;
   const item = exam.items[examI % exam.items.length];
   const scene = (SCENES[lang.code] || SCENES.en)[0];
+  const vocabTokens = beatsOf(v.word, lang.code);
+  const vocabSentTokens = beatsOf(v.sentence, lang.code);
+  const sceneTokens = beatsOf(scene.prompt, lang.code);
 
   return (
     <div className="app-shell">
       <header className="panel app-header">
-        <img src="/logo.png" alt="ECHOO" className="w-10 h-10 rounded-lg shrink-0" />
+        <img src="/logo.png" alt="ECHOO" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="display text-lg leading-none">ECHOO</div>
+          <div className="slogan slogan-inline">{tr("tag")}</div>
           <div className="text-xs text-[var(--mute)] truncate">
             {user.username}{user.role === "admin" ? ` · ${tr("admin")}` : ""} · {tr("xp")} {user.xp}
             {user.quota ? ` · ${user.plan}` : ""}
@@ -267,7 +349,14 @@ export default function App() {
               </select>
             </label>
             <label className="block text-sm">{tr("learnLang")}
-              <select value={lang.code} onChange={(e) => setLang(LEARN_LANGS.find((l) => l.code === e.target.value))} className="field mt-1">
+              <select value={lang.code} onChange={(e) => {
+                const next = LEARN_LANGS.find((l) => l.code === e.target.value);
+                setLang(next);
+                setMsgs([]);
+                setPassage(null);
+                trackRef.current = { id: "", tokens: [], text: "" };
+                beat.stop();
+              }} className="field mt-1">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
               </select>
             </label>
@@ -286,12 +375,16 @@ export default function App() {
               ))}
             </div>
             <label className="block text-sm">{tr("voiceEngine")}
-              <select value={engine} onChange={(e) => setEngine(e.target.value)} className="field mt-1">
+              <select value={engine} onChange={(e) => {
+                setEngine(e.target.value);
+                trackRef.current = { id: "", tokens: [], text: "", mode: "" };
+                beat.stop();
+              }} className="field mt-1">
                 <option value="cloud">{tr("cloud")}</option>
                 <option value="device">{tr("device")}</option>
               </select>
             </label>
-            <button onClick={() => speak(GREET[lang.code])} className="btn btn-line">{tr("listen")}</button>
+            <button onClick={() => speak((GREET[lang.code] || GREET.en).text)} className="btn btn-line">{tr("listen")}</button>
             {user.role === "admin" && (
               <div>
                 <h3 className="display text-sm">{tr("users")}</h3>
@@ -328,8 +421,21 @@ export default function App() {
               )}
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "me" ? "text-right" : ""}>
-                  <div className={`bubble ${m.role === "me" ? "me" : ""}`}>{m.text}</div>
-                  {m.zh && <div className="text-xs text-[var(--mute)] mt-1">{m.zh}</div>}
+                  {m.role === "me" ? (
+                    <div className="bubble me">{m.text}</div>
+                  ) : (
+                    <div className="bubble">
+                      <BeatLine
+                        tokens={m.tokens || beatsOf(m.text, lang.code)}
+                        joiner={joiner}
+                        active={trackId === `chat-${i}` ? highlight : -1}
+                        native={m.native}
+                        nativeOn={trackId === `chat-${i}` && highlight >= 0}
+                        fromHere={tr("fromHere")}
+                        onToken={(tok) => playTokens(`chat-${i}`, m.text, m.tokens || beatsOf(m.text, lang.code), tok, null)}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -348,11 +454,33 @@ export default function App() {
             {passage && (
               <div className="scroll-pane mt-3">
                 <h3 className="display">{passage.title}</h3>
-                <p className="text-[var(--mute)] text-sm">{passage.title_zh}</p>
-                {passage.sentences.map((s, i) => (
-                  <p key={i} className="text-lg mt-3 leading-relaxed">{s.tokens.join(lang.code === "ja" || lang.code === "zh" ? "" : " ")}</p>
-                ))}
-                <button className="btn btn-accent mt-4 w-full" onClick={() => speak(passage.sentences.map((s) => s.text).join(" "))}>{tr("listen")}</button>
+                {gloss(passage.title_zh) ? <p className="text-[var(--mute)] text-sm">{passage.title_zh}</p> : null}
+                <div className="read-tools mt-3">
+                  <button className="btn btn-accent" onClick={() => playPassageFrom(0, beat.loop)}>{tr("playAll")}</button>
+                  <button className="btn btn-ghost" onClick={() => beat.stop()}>{tr("stop")}</button>
+                </div>
+                {passage.sentences.map((s, i) => {
+                  const range = sentenceRange(passage.sentences, i);
+                  const local = highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
+                  const looping = beat.loop && beat.loop[0] === range[0] && beat.loop[1] === range[1];
+                  return (
+                    <article key={i} className={`read-sent ${local >= 0 ? "live" : ""} ${looping ? "looping" : ""}`}>
+                      <BeatLine
+                        tokens={s.tokens}
+                        joiner={joiner}
+                        active={trackId === "read" ? local : -1}
+                        native={gloss(s.zh)}
+                        nativeOn={trackId === "read" && local >= 0}
+                        fromHere={tr("fromHere")}
+                        onToken={(tok) => playPassageFrom(s.start + tok, beat.loop)}
+                      />
+                      <div className="sent-tools">
+                        <button className="btn btn-ghost btn-mini" onClick={() => playPassageFrom(s.start, beat.loop)}>{tr("replay")}</button>
+                        <button className={`btn btn-mini ${looping ? "btn-accent" : "btn-line"}`} onClick={() => toggleLoopSentence(i)}>{tr("loop")}</button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -362,13 +490,34 @@ export default function App() {
           <section className="panel">
             <h2>{tr("review")}</h2>
             <div className="scroll-pane flex flex-col justify-center">
-              <div className="display text-4xl mt-2">{v.word}</div>
-              {showAns && <p className="mt-2">{v.hint}<br />{v.sentence}</p>}
+              <BeatLine
+                className="beat-hero"
+                tokens={vocabTokens}
+                joiner={joiner}
+                active={trackId === "vocab-word" ? highlight : -1}
+                native={gloss(v.hint)}
+                nativeOn={trackId === "vocab-word" && highlight >= 0}
+                fromHere={tr("fromHere")}
+                onToken={(tok) => playTokens("vocab-word", v.word, vocabTokens, tok, null)}
+              />
+              {showAns && (
+                <div className="mt-4">
+                  <BeatLine
+                    tokens={vocabSentTokens}
+                    joiner={joiner}
+                    active={trackId === "vocab-sent" ? highlight : -1}
+                    native={gloss(v.sentence_zh)}
+                    nativeOn={trackId === "vocab-sent" && highlight >= 0}
+                    fromHere={tr("fromHere")}
+                    onToken={(tok) => playTokens("vocab-sent", v.sentence, vocabSentTokens, tok, null)}
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
               <button className="btn btn-ghost" onClick={() => setShowAns(true)}>{tr("reveal")}</button>
               <button className="btn btn-line" onClick={() => { setShowAns(false); setVocabI(vocabI + 1); gain(4); }}>{tr("next")}</button>
-              <button className="btn btn-ghost" onClick={() => speak(v.word)}>{tr("listen")}</button>
+              <button className="btn btn-ghost" onClick={() => playTokens("vocab-word", v.word, vocabTokens, 0, null)}>{tr("listen")}</button>
             </div>
           </section>
         )}
@@ -377,9 +526,20 @@ export default function App() {
           <section className="panel">
             <h2>{tr("drill")}</h2>
             <div className="scroll-pane flex items-center">
-              <p className="text-2xl">{v.sentence}</p>
+              <BeatLine
+                tokens={vocabSentTokens}
+                joiner={joiner}
+                active={trackId === "example" ? highlight : -1}
+                native={gloss(v.sentence_zh)}
+                nativeOn={trackId === "example" && highlight >= 0}
+                fromHere={tr("fromHere")}
+                onToken={(tok) => { playTokens("example", v.sentence, vocabSentTokens, tok, null); gain(2); }}
+              />
             </div>
-            <button className="btn btn-line w-full mt-3 shrink-0" onClick={() => { speak(v.sentence); gain(5); }}>{tr("listen")}</button>
+            <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
+              <button className="btn btn-line" onClick={() => { playTokens("example", v.sentence, vocabSentTokens, 0, null); gain(5); }}>{tr("listen")}</button>
+              <button className="btn btn-ghost" onClick={() => playTokens("example", v.sentence, vocabSentTokens, 0, [0, vocabSentTokens.length - 1])}>{tr("loop")}</button>
+            </div>
           </section>
         )}
 
@@ -388,9 +548,20 @@ export default function App() {
             <h2>{tr("scene")}</h2>
             <div className="scroll-pane">
               <p className="display mt-2">{scene.title}</p>
-              <p className="mt-2">{scene.prompt}</p>
+              {gloss(scene.title_zh) ? <p className="text-sm text-[var(--mute)]">{scene.title_zh}</p> : null}
+              <div className="mt-3">
+                <BeatLine
+                  tokens={sceneTokens}
+                  joiner={joiner}
+                  active={trackId === "scene" ? highlight : -1}
+                  native={gloss(scene.prompt_zh)}
+                  nativeOn={trackId === "scene" && highlight >= 0}
+                  fromHere={tr("fromHere")}
+                  onToken={(tok) => playTokens("scene", scene.prompt, sceneTokens, tok, null)}
+                />
+              </div>
             </div>
-            <button className="btn btn-ghost w-full mt-3 shrink-0" onClick={() => { speak(scene.prompt); gain(6); }}>{tr("listen")}</button>
+            <button className="btn btn-ghost w-full mt-3 shrink-0" onClick={() => { playTokens("scene", scene.prompt, sceneTokens, 0, null); gain(6); }}>{tr("listen")}</button>
           </section>
         )}
 
@@ -399,9 +570,13 @@ export default function App() {
             <h2>{tr("exam")} · {exam.board}</h2>
             <div className="scroll-pane mt-2">
               <p>{item.q}</p>
+              {gloss(item.q_zh) ? <p className="beat-native on mt-1">{item.q_zh}</p> : null}
               <div className="grid gap-2 mt-3">
                 {item.options.map((opt, i) => (
-                  <button key={i} onClick={() => setExamPick(i)} className={`btn btn-wrap ${examPick === i ? "btn-line" : "btn-ghost"}`}>{opt}</button>
+                  <button key={i} onClick={() => setExamPick(i)} className={`btn btn-wrap ${examPick === i ? "btn-line" : "btn-ghost"}`}>
+                    <span>{opt}</span>
+                    {gloss(item.options_zh?.[i]) ? <span className="opt-native">{item.options_zh[i]}</span> : null}
+                  </button>
                 ))}
               </div>
             </div>

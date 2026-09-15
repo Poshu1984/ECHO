@@ -2,7 +2,8 @@ import { Router } from "express";
 import { assertQuota, consumeQuota } from "../store.js";
 
 const router = Router();
-const TTS_BASE = "https://texttospeech.googleapis.com/v1";
+const TTS_V1 = "https://texttospeech.googleapis.com/v1";
+const TTS_BETA = "https://texttospeech.googleapis.com/v1beta1";
 
 function requireApiKey(res) {
   const key = (process.env.GOOGLE_TTS_API_KEY || "").trim();
@@ -15,15 +16,23 @@ function requireApiKey(res) {
   return key;
 }
 
-async function forwardGoogleResponse(googleRes, res) {
+async function postGoogle(base, key, googleBody) {
+  const url = new URL(`${base}/text:synthesize`);
+  url.searchParams.set("key", key);
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(googleBody),
+  });
+}
+
+async function readJsonResponse(googleRes) {
   const text = await googleRes.text();
-  let body;
   try {
-    body = JSON.parse(text);
+    return { status: googleRes.status, body: JSON.parse(text) };
   } catch {
-    body = { error: text || "Unknown error from TTS service" };
+    return { status: googleRes.status, body: { error: text || "Unknown error from TTS service" } };
   }
-  res.status(googleRes.status).json(body);
 }
 
 router.get("/voices", async (req, res) => {
@@ -32,12 +41,13 @@ router.get("/voices", async (req, res) => {
     if (!key) return;
 
     const languageCode = req.query.languageCode || "";
-    const url = new URL(`${TTS_BASE}/voices`);
+    const url = new URL(`${TTS_V1}/voices`);
     if (languageCode) url.searchParams.set("languageCode", languageCode);
     url.searchParams.set("key", key);
 
     const googleRes = await fetch(url);
-    await forwardGoogleResponse(googleRes, res);
+    const { status, body } = await readJsonResponse(googleRes);
+    res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -57,6 +67,7 @@ router.post("/synthesize", async (req, res) => {
       throw error;
     }
     const incoming = req.body ?? {};
+    const wantMarks = Boolean(incoming.marks);
     const googleBody =
       incoming.ssml && !incoming.input
         ? {
@@ -67,17 +78,26 @@ router.post("/synthesize", async (req, res) => {
         : { ...incoming };
     delete googleBody.enableTimePointing;
     delete googleBody.ssml;
+    delete googleBody.marks;
 
-    const url = new URL(`${TTS_BASE}/text:synthesize`);
-    url.searchParams.set("key", key);
+    let parsed;
+    if (wantMarks) {
+      const betaRes = await postGoogle(TTS_BETA, key, {
+        ...googleBody,
+        enableTimePointing: ["SSML_MARK"],
+      });
+      parsed = await readJsonResponse(betaRes);
+      if (!betaRes.ok) {
+        const v1Res = await postGoogle(TTS_V1, key, googleBody);
+        parsed = await readJsonResponse(v1Res);
+      }
+    } else {
+      const v1Res = await postGoogle(TTS_V1, key, googleBody);
+      parsed = await readJsonResponse(v1Res);
+    }
 
-    const googleRes = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(googleBody),
-    });
-    if (!googleRes.ok) {
-      await forwardGoogleResponse(googleRes, res);
+    if (parsed.status !== 200) {
+      res.status(parsed.status).json(parsed.body);
       return;
     }
     try {
@@ -89,7 +109,7 @@ router.post("/synthesize", async (req, res) => {
       }
       throw error;
     }
-    await forwardGoogleResponse(googleRes, res);
+    res.status(200).json(parsed.body);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

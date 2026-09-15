@@ -39,88 +39,88 @@ export function canAccess(user, featureId) {
 }
 
 export const GREET = {
-  en: "Signal locked. What did you do this morning?",
-  ja: "回線接続。今朝は何をしましたか？",
-  fr: "Signal verrouille. Qu'as-tu fait ce matin ?",
-  ko: "신호 접속. 오늘 아침에 뭐 했어요?",
-  es: "Senal fija. Que hiciste esta manana?",
-  zh: "訊號鎖定。你今天早上做了什麼？",
+  en: { text: "Signal locked. What did you do this morning?", zh: "訊號鎖定。你今天早上做了什麼？" },
+  ja: { text: "回線接続。今朝は何をしましたか？", zh: "訊號鎖定。你今天早上做了什麼？" },
+  fr: { text: "Signal verrouille. Qu'as-tu fait ce matin ?", zh: "訊號鎖定。你今天早上做了什麼？" },
+  ko: { text: "신호 접속. 오늘 아침에 뭐 했어요?", zh: "訊號鎖定。你今天早上做了什麼？" },
+  es: { text: "Senal fija. Que hiciste esta manana?", zh: "訊號鎖定。你今天早上做了什麼？" },
+  zh: { text: "訊號鎖定。你今天早上做了什麼？", zh: "Signal locked. What did you do this morning?" },
 };
 
 export const VOCAB = {
   en: [
-    { word: "deadline", hint: "最後期限", sentence: "The deadline is tonight." },
-    { word: "negotiate", hint: "談判", sentence: "We need to negotiate the terms." },
-    { word: "reliable", hint: "可靠的", sentence: "She is a reliable operator." },
+    { word: "deadline", hint: "最後期限", sentence: "The deadline is tonight.", sentence_zh: "期限是今晚。" },
+    { word: "negotiate", hint: "談判", sentence: "We need to negotiate the terms.", sentence_zh: "我們必須談判條件。" },
+    { word: "reliable", hint: "可靠的", sentence: "She is a reliable operator.", sentence_zh: "她是可靠的操作員。" },
   ],
   zh: [
-    { word: "期限", hint: "deadline", sentence: "這份報告的期限是今晚。" },
-    { word: "交涉", hint: "negotiate", sentence: "我們必須交涉條件。" },
-    { word: "可靠", hint: "reliable", sentence: "她是可靠的操作員。" },
+    { word: "期限", hint: "deadline", sentence: "這份報告的期限是今晚。", sentence_zh: "The deadline for this report is tonight." },
+    { word: "交涉", hint: "negotiate", sentence: "我們必須交涉條件。", sentence_zh: "We must negotiate the terms." },
+    { word: "可靠", hint: "reliable", sentence: "她是可靠的操作員。", sentence_zh: "She is a reliable operator." },
   ],
   ja: [
-    { word: "締切", hint: "deadline", sentence: "締切は今夜です。" },
-    { word: "交渉", hint: "negotiate", sentence: "条件を交渉する必要がある。" },
-    { word: "信頼", hint: "reliable", sentence: "彼女は信頼できる。" },
+    { word: "締切", hint: "最後期限", sentence: "締切は今夜です。", sentence_zh: "期限是今晚。" },
+    { word: "交渉", hint: "談判", sentence: "条件を交渉する必要がある。", sentence_zh: "必須談判條件。" },
+    { word: "信頼", hint: "可靠", sentence: "彼女は信頼できる。", sentence_zh: "她值得信賴。" },
   ],
   fr: [
-    { word: "delai", hint: "期限", sentence: "Le delai est ce soir." },
-    { word: "negocier", hint: "談判", sentence: "Il faut negocier les termes." },
-    { word: "fiable", hint: "可靠", sentence: "Elle est fiable." },
+    { word: "delai", hint: "期限", sentence: "Le delai est ce soir.", sentence_zh: "期限是今晚。" },
+    { word: "negocier", hint: "談判", sentence: "Il faut negocier les termes.", sentence_zh: "必須談判條件。" },
+    { word: "fiable", hint: "可靠", sentence: "Elle est fiable.", sentence_zh: "她很可靠。" },
   ],
   ko: [
-    { word: "마감", hint: "deadline", sentence: "마감은 오늘 밤입니다." },
-    { word: "협상", hint: "negotiate", sentence: "조건을 협상해야 합니다." },
-    { word: "신뢰", hint: "reliable", sentence: "그녀는 신뢰할 수 있습니다." },
+    { word: "마감", hint: "最後期限", sentence: "마감은 오늘 밤입니다.", sentence_zh: "期限是今晚。" },
+    { word: "협상", hint: "談判", sentence: "조건을 협상해야 합니다.", sentence_zh: "必須談判條件。" },
+    { word: "신뢰", hint: "可靠", sentence: "그녀는 신뢰할 수 있습니다.", sentence_zh: "她值得信賴。" },
   ],
   es: [
-    { word: "plazo", hint: "期限", sentence: "El plazo es esta noche." },
-    { word: "negociar", hint: "談判", sentence: "Hay que negociar los terminos." },
-    { word: "fiable", hint: "可靠", sentence: "Ella es fiable." },
+    { word: "plazo", hint: "期限", sentence: "El plazo es esta noche.", sentence_zh: "期限是今晚。" },
+    { word: "negociar", hint: "談判", sentence: "Hay que negociar los terminos.", sentence_zh: "必須談判條件。" },
+    { word: "fiable", hint: "可靠", sentence: "Ella es fiable.", sentence_zh: "她很可靠。" },
   ],
 };
 
 export const SCENES = {
-  en: [{ title: "Airport gate", prompt: "You missed a connection. Ask for the next flight." }],
-  zh: [{ title: "海關", prompt: "你被要求說明旅行目的。清楚回答。" }],
-  ja: [{ title: "駅の窓口", prompt: "乗り過ごした。次の案内を頼む。" }],
-  fr: [{ title: "Hotel", prompt: "La reservation a disparu. Recupere la chambre." }],
-  ko: [{ title: "카페 주문", prompt: "알레르기가 있다. 메뉴를 확인하라." }],
-  es: [{ title: "Oficina", prompt: "Llegas tarde. Explica sin excusas baratas." }],
+  en: [{ title: "Airport gate", title_zh: "登機門", prompt: "You missed a connection. Ask for the next flight.", prompt_zh: "你沒趕上轉機。詢問下一班飛機。" }],
+  zh: [{ title: "海關", title_zh: "Customs", prompt: "你被要求說明旅行目的。清楚回答。", prompt_zh: "You are asked to state the purpose of travel. Answer clearly." }],
+  ja: [{ title: "駅の窓口", title_zh: "車站窗口", prompt: "乗り過ごした。次の案内を頼む。", prompt_zh: "你坐過站了。請對方告訴你下一班。" }],
+  fr: [{ title: "Hotel", title_zh: "飯店", prompt: "La reservation a disparu. Recupere la chambre.", prompt_zh: "訂單不見了。把房間要回來。" }],
+  ko: [{ title: "카페 주문", title_zh: "咖啡廳點餐", prompt: "알레르기가 있다. 메뉴를 확인하라.", prompt_zh: "你有過敏。確認菜單。" }],
+  es: [{ title: "Oficina", title_zh: "辦公室", prompt: "Llegas tarde. Explica sin excusas baratas.", prompt_zh: "你遲到了。解釋，但不要廉價藉口。" }],
 };
 
 export const EXAMS = {
   en: {
     board: "IELTS / TOEIC style",
     items: [
-      { q: "The report must be filed _____ Friday.", options: ["until", "by", "since", "at"], a: 1 },
-      { q: "She has been in the sector _____ 2019.", options: ["for", "since", "during", "by"], a: 1 },
+      { q: "The report must be filed _____ Friday.", q_zh: "這份報告最晚要在週五前_____。", options: ["until", "by", "since", "at"], options_zh: ["直到", "在…之前", "自從", "在（時刻）"], a: 1 },
+      { q: "She has been in the sector _____ 2019.", q_zh: "她從 2019 年起就在這個領域。", options: ["for", "since", "during", "by"], options_zh: ["為期", "自從", "在…期間", "在…之前"], a: 1 },
     ],
   },
   zh: {
     board: "TOCFL 風格",
     items: [
-      { q: "這份合約最晚要在週五前_____。", options: ["簽署", "散步", "遲到", "關閉燈光"], a: 0 },
-      { q: "他對流程非常_____。", options: ["陌生", "熟悉", "遙遠", "空白"], a: 1 },
+      { q: "這份合約最晚要在週五前_____。", q_zh: "This contract must be _____ by Friday.", options: ["簽署", "散步", "遲到", "關閉燈光"], options_zh: ["signed", "take a walk", "be late", "turn off the lights"], a: 0 },
+      { q: "他對流程非常_____。", q_zh: "He is very _____ with the process.", options: ["陌生", "熟悉", "遙遠", "空白"], options_zh: ["unfamiliar", "familiar", "distant", "blank"], a: 1 },
     ],
   },
   ja: {
     board: "JLPT 風格",
     items: [
-      { q: "この書類は金曜日までに（　）。", options: ["出します", "出してください", "出しましょうか", "出ています"], a: 1 },
+      { q: "この書類は金曜日までに（　）。", q_zh: "這份文件請在週五前（　）。", options: ["出します", "出してください", "出しましょうか", "出ています"], options_zh: ["我會交", "請交", "要交嗎", "已經交了"], a: 1 },
     ],
   },
   fr: {
     board: "DELF 風格",
-    items: [{ q: "Je dois envoyer le dossier _____ lundi.", options: ["avant", "depuis", "pendant", "sans"], a: 0 }],
+    items: [{ q: "Je dois envoyer le dossier _____ lundi.", q_zh: "我必須在週一_____把檔案寄出。", options: ["avant", "depuis", "pendant", "sans"], options_zh: ["在…之前", "自從", "在…期間", "沒有"], a: 0 }],
   },
   ko: {
     board: "TOPIK 風格",
-    items: [{ q: "보고서를 금요일까지 ( ).", options: ["제출하세요", "제출입니다", "제출하고", "제출의"], a: 0 }],
+    items: [{ q: "보고서를 금요일까지 ( ).", q_zh: "報告請在週五前（ ）。", options: ["제출하세요", "제출입니다", "제출하고", "제출의"], options_zh: ["請提交", "是提交", "提交然後", "提交的"], a: 0 }],
   },
   es: {
     board: "DELE 風格",
-    items: [{ q: "El informe debe estar listo _____ el viernes.", options: ["para", "desde", "sin", "entre"], a: 0 }],
+    items: [{ q: "El informe debe estar listo _____ el viernes.", q_zh: "報告必須在週五_____準備好。", options: ["para", "desde", "sin", "entre"], options_zh: ["在…之前", "自從", "沒有", "在…之間"], a: 0 }],
   },
 };
 
@@ -128,6 +128,7 @@ export const PASSAGES = {
   en: { title: "Night Shift", title_zh: "夜班", sentences: [
     { text: "The corridor lights flickered once, then held.", zh: "走廊的燈閃了一下，然後穩定下來。" },
     { text: "I checked the log and found a missing line.", zh: "我核對紀錄，發現少了一行。" },
+    { text: "Repeat the last phrase until the rhythm sits in your mouth.", zh: "重複最後一句，直到節奏留在嘴裡。" },
   ]},
   zh: { title: "夜班", title_zh: "Night Shift", sentences: [
     { text: "走廊的燈閃了一下，然後又亮著。", zh: "The lights flickered, then held." },
@@ -146,3 +147,4 @@ export const PASSAGES = {
     { text: "Las luces del pasillo parpadearon y se quedaron.", zh: "走廊燈閃了一下然後穩住。" },
   ]},
 };
+
