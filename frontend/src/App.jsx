@@ -615,8 +615,7 @@ export default function App() {
         <img src="/mark.png" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="brand-lockup">
-            <span className="echo">ECHO</span>
-            <span className="studio">STUDIO</span>
+            <span className="studio">Studio</span>
           </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">

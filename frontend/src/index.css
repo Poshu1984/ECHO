@@ -284,43 +284,35 @@ input, select, textarea {
 
 .brand-seal {
   display: block;
-  width: min(18rem, 100%);
+  width: min(22rem, 100%);
   height: auto;
-  aspect-ratio: 1;
+  aspect-ratio: auto;
   border-radius: 0;
   object-fit: contain;
   box-shadow: none;
   background: transparent;
 }
 .brand-seal-sm {
-  width: 3rem;
-  height: 3rem;
+  width: 2.85rem;
+  height: 2.85rem;
   aspect-ratio: 1;
   border-radius: 8px;
   background: #e8e2d4;
 }
 .brand-lockup {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 0;
   min-width: 0;
-}
-.brand-lockup .echo {
-  font-family: Anton, Outfit, sans-serif;
-  font-size: 1.45rem;
-  letter-spacing: -0.04em;
-  line-height: 0.82;
-  text-transform: uppercase;
-  color: var(--ink);
 }
 .brand-lockup .studio {
   font-family: Outfit, sans-serif;
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.34em;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
   line-height: 1;
-  color: var(--olive);
-  text-transform: uppercase;
+  text-transform: none;
+  color: var(--ink);
 }
 .slogan {
   margin-top: 0.35rem;
