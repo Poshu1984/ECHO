@@ -19,6 +19,7 @@ html, body, #root {
   height: 100dvh;
   max-width: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 body {
   margin: 0;
@@ -67,8 +68,12 @@ input, select, textarea {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 10px;
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   gap: 8px;
+}
+.app-shell.is-auth {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .app-header {
@@ -123,6 +128,15 @@ input, select, textarea {
   white-space: nowrap;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-wrap {
+  white-space: normal;
+  height: auto;
+  min-height: 44px;
+  text-align: left;
+  justify-content: flex-start;
+  padding: 10px 16px;
+  line-height: 1.35;
+}
 .btn-primary {
   background: var(--cyan);
   color: #fff;
@@ -168,15 +182,87 @@ input, select, textarea {
   border-radius: 10px;
 }
 
+.bubble {
+  display: inline-block;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bubble.me { border-color: var(--cyan); }
+
+.notice {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #7a403c;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tutor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 12px;
+  flex: 0 0 auto;
+}
+.composer .field {
+  flex: 1 1 auto;
+  min-width: 0;
+  resize: none;
+}
+.composer .btn { flex: 0 0 auto; }
+
+.empty-pane {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--mute);
+}
+
 @media (min-width: 768px) {
   body { font-size: 17px; }
-  .app-shell { padding: 14px 18px; max-width: 960px; margin: 0 auto; }
+  .app-shell {
+    padding: max(14px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    max-width: 960px;
+    margin: 0 auto;
+  }
   .app-nav { grid-template-columns: repeat(8, minmax(0, 1fr)); }
   .nav-btn { font-size: 14px; }
+  .tutor-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-height: 700px) {
   .app-header { padding: 6px 10px; }
   h1 { font-size: 1.4rem; }
   h2 { font-size: 1.15rem; }
+}
+
+@media (max-height: 520px) {
+  .app-nav {
+    display: flex;
+    overflow-x: auto;
+    grid-template-columns: none;
+    scrollbar-width: none;
+  }
+  .app-nav::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+    min-height: 34px;
+    font-size: 12px;
+  }
+  .app-shell { gap: 6px; }
 }

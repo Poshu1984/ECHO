@@ -83,13 +83,19 @@ export default function App() {
     } catch { /* ignore */ }
   }
 
+  function speakOnDevice(text) {
+    if (!window.speechSynthesis) return false;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang.speech;
+    u.pitch = tutor.pitch;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    return true;
+  }
+
   async function speak(text) {
-    if (engine === "device" && window.speechSynthesis) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang.speech;
-      u.pitch = tutor.pitch;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
+    if (engine === "device") {
+      speakOnDevice(text);
       return;
     }
     try {
@@ -97,19 +103,27 @@ export default function App() {
       const want = tutor.gender === "f" ? "FEMALE" : "MALE";
       const voice = voices.find((v) => v.ssmlGender === want && v.name.includes(tutor.preferred.split("-")[0]))
         || voices.find((v) => v.ssmlGender === want) || voices[0];
-      if (!voice) return;
+      if (!voice) {
+        speakOnDevice(text);
+        return;
+      }
       const data = await api.synthesize({
         ssml: `<speak>${escapeXml(text)}</speak>`,
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: 0.95 },
         enableTimePointing: ["SSML_MARK"],
       });
-      if (!data.audioContent) return;
+      if (!data.audioContent) {
+        speakOnDevice(text);
+        return;
+      }
       if (audioRef.current) { audioRef.current.pause(); }
       const a = new Audio("data:audio/mp3;base64," + data.audioContent);
       audioRef.current = a;
       a.play();
-    } catch (e) { setErr(e.message); }
+    } catch {
+      speakOnDevice(text);
+    }
   }
 
   async function send() {
@@ -156,6 +170,7 @@ export default function App() {
   const standalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
 
   function startChat() {
+    setErr("");
     const g = GREET[lang.code] || GREET.en;
     setMsgs([{ role: "ai", text: g }]);
     setTimeout(() => speak(g), 200);
@@ -163,8 +178,8 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="app-shell items-center justify-center">
-        <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0">
+      <div className="app-shell is-auth items-center justify-center">
+        <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
           <img src="/logo.png" alt="ECHOO" className="w-16 h-16 mx-auto rounded-2xl" />
           <p className="neon text-xs text-center mt-3">{tr("tag")}</p>
           <h1 className="text-2xl mt-1 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
@@ -228,7 +243,7 @@ export default function App() {
         {nav.map((n) => {
           const closed = ["vocab", "examples", "scenes", "exams"].includes(n.id) && !canAccess(user, n.id);
           return (
-            <button key={n.id} onClick={() => !closed && setTab(n.id)}
+            <button key={n.id} onClick={() => { if (!closed) { setErr(""); setTab(n.id); } }}
               className={`nav-btn ${tab === n.id ? "active" : ""} ${closed ? "lock" : ""}`}>
               {n.label}
             </button>
@@ -261,7 +276,7 @@ export default function App() {
               </select>
             </label>
             <p className="text-sm text-[var(--mute)]">{tr("tutor")}</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="tutor-grid">
               {TUTORS.map((x) => (
                 <button key={x.id} onClick={() => setTutorId(x.id)} className={`p-3 text-left rounded-xl border ${tutorId === x.id ? "border-[var(--magenta)] bg-[var(--paper)]" : "border-[var(--line)]"}`}>
                   <div className="display text-sm">{x.name}</div>
@@ -304,19 +319,23 @@ export default function App() {
         {tab === "chat" && (
           <section className="panel">
             <h2>{tr("chat")} · {tutor.name}</h2>
-            {msgs.length === 0 && <button className="btn btn-accent mt-3 w-full" onClick={startChat}>{tr("startChat")}</button>}
             <div className="scroll-pane space-y-3 mt-3">
+              {msgs.length === 0 && (
+                <div className="empty-pane">
+                  <button className="btn btn-accent w-full max-w-sm" onClick={startChat}>{tr("startChat")}</button>
+                </div>
+              )}
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "me" ? "text-right" : ""}>
-                  <div className={`inline-block max-w-full px-3 py-2 rounded-xl border ${m.role === "me" ? "border-[var(--cyan)]" : "border-[var(--line)]"}`}>{m.text}</div>
+                  <div className={`bubble ${m.role === "me" ? "me" : ""}`}>{m.text}</div>
                   {m.zh && <div className="text-xs text-[var(--mute)] mt-1">{m.zh}</div>}
                 </div>
               ))}
             </div>
-            {err && <p className="mag text-sm mt-1">{err}</p>}
-            <div className="flex gap-2 mt-3 shrink-0">
-              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="field flex-1" rows={2} />
-              <button disabled={busy} onClick={send} className="btn btn-primary shrink-0">{tr("send")}</button>
+            {err && <p className="notice mt-1">{err}</p>}
+            <div className="composer">
+              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="field" rows={2} />
+              <button disabled={busy} onClick={send} className="btn btn-primary">{tr("send")}</button>
             </div>
           </section>
         )}
@@ -381,7 +400,7 @@ export default function App() {
               <p>{item.q}</p>
               <div className="grid gap-2 mt-3">
                 {item.options.map((opt, i) => (
-                  <button key={i} onClick={() => setExamPick(i)} className={`btn text-left justify-start ${examPick === i ? "btn-line" : "btn-ghost"}`}>{opt}</button>
+                  <button key={i} onClick={() => setExamPick(i)} className={`btn btn-wrap ${examPick === i ? "btn-line" : "btn-ghost"}`}>{opt}</button>
                 ))}
               </div>
             </div>
