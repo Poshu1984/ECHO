@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#f3efe8"/>
-  <circle cx="256" cy="256" r="198" fill="none" stroke="#8a735a" stroke-width="6"/>
-  <text x="256" y="268" text-anchor="middle" font-family="Times New Roman, serif" font-size="72" fill="#2a2826">ECHOO</text>
+  <rect width="512" height="512" fill="#e8e2d4"/>
+  <g fill="#141413">
+    <path d="M96 118h148v42H148v38h84v38H148v42h96v42H96z"/>
+    <path d="M360 118c-62 0-104 44-104 100s42 100 104 100c28 0 52-8 70-24l-32-34c-10 8-22 12-38 12-34 0-54-24-54-54s20-54 54-54c16 0 28 4 38 12l32-34c-18-16-42-24-70-24z"/>
+    <path d="M96 292h50v102H96zm50 36h70v30H146z"/>
+    <circle cx="292" cy="343" r="58"/>
+    <circle cx="404" cy="343" r="58"/>
+  </g>
+  <circle cx="292" cy="343" r="22" fill="#e8e2d4"/>
+  <circle cx="404" cy="343" r="22" fill="#e8e2d4"/>
+  <rect x="428" y="118" width="28" height="28" fill="#ff2d9b"/>
 </svg>

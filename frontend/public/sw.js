@@ -1,9 +1,9 @@
-const CACHE = "echoo-v5";
+const CACHE = "echoo-v6";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll(["/logo.png", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"]),
+      cache.addAll(["/logo.png", "/mark.png", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"]),
     ).then(() => self.skipWaiting()),
   );
 });

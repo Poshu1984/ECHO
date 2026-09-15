@@ -1,16 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #ebe6df;
-  --panel: #f7f4ef;
-  --line: #c9c2b8;
-  --cyan: #5f6f62;
-  --magenta: #8e6f68;
-  --amber: #8a735a;
-  --ink: #2a2826;
-  --mute: #5a554e;
-  --paper: #f3efe8;
-  --radius: 14px;
+  --bg: #e8e2d4;
+  --panel: #f4eee4;
+  --line: #b4b0a6;
+  --olive: #556b2f;
+  --pink: #ff2d9b;
+  --orange: #ff6a1a;
+  --cyan: #556b2f;
+  --magenta: #ff2d9b;
+  --amber: #ff6a1a;
+  --ink: #141413;
+  --mute: #6e6c67;
+  --gray: #8c8a84;
+  --paper: #f7f3ea;
+  --radius: 10px;
 }
 
 * { box-sizing: border-box; }
@@ -24,20 +28,21 @@ html, body, #root {
 body {
   margin: 0;
   background:
-    linear-gradient(180deg, #f3efe8 0%, #ebe6df 40%, #e4ddd4 100%);
+    linear-gradient(180deg, #f4eee4 0%, #e8e2d4 42%, #d9d3c6 100%);
   color: var(--ink);
-  font-family: "Source Sans 3", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", sans-serif;
+  font-family: Outfit, "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 500;
   -webkit-font-smoothing: antialiased;
 }
 h1, h2, h3, .display {
-  font-family: "Source Serif 4", "Noto Serif TC", "Noto Sans TC", serif;
-  letter-spacing: 0.01em;
-  font-weight: 650;
+  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
+  letter-spacing: -0.04em;
+  font-weight: 400;
   color: var(--ink);
-  line-height: 1.25;
+  line-height: 0.95;
+  text-transform: uppercase;
 }
 button, input, select, textarea {
   font: inherit;
@@ -51,7 +56,7 @@ input, select, textarea {
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: 0 8px 22px rgba(70, 62, 54, 0.07);
+  box-shadow: 0 8px 0 rgba(20, 20, 19, 0.04);
   border-radius: var(--radius);
 }
 .neon {
@@ -59,7 +64,7 @@ input, select, textarea {
   text-shadow: none;
   font-weight: 700;
 }
-.mag { color: #7a403c; font-weight: 700; }
+.mag { color: var(--orange); font-weight: 700; }
 .lock { opacity: 0.45; }
 
 .app-shell {
@@ -120,12 +125,14 @@ input, select, textarea {
   justify-content: center;
   min-height: 44px;
   padding: 0 16px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid transparent;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   cursor: pointer;
   white-space: nowrap;
+  text-transform: uppercase;
+  font-size: 0.82rem;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-wrap {
@@ -144,7 +151,7 @@ input, select, textarea {
   color: #fff;
 }
 .btn-accent {
-  background: var(--magenta);
+  background: var(--pink);
   color: #fff;
 }
 .btn-ghost {
@@ -154,8 +161,8 @@ input, select, textarea {
 }
 .btn-line {
   background: transparent;
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--orange);
+  color: var(--orange);
 }
 .nav-btn {
   min-height: 40px;
@@ -163,8 +170,10 @@ input, select, textarea {
   border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--paper);
-  font-size: 13px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -198,7 +207,7 @@ input, select, textarea {
 .notice {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #7a403c;
+  color: var(--orange);
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -258,8 +267,8 @@ input, select, textarea {
   animation: micpulse 1.2s ease-in-out infinite;
 }
 @keyframes micpulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 111, 104, 0.45); }
-  50% { box-shadow: 0 0 0 6px rgba(142, 111, 104, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 155, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 45, 155, 0); }
 }
 
 .empty-pane {
@@ -275,24 +284,29 @@ input, select, textarea {
 
 .brand-seal {
   display: block;
-  width: 9rem;
-  height: 9rem;
-  border-radius: 50%;
+  width: min(18rem, 100%);
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 0;
   object-fit: contain;
-  box-shadow: 0 10px 24px rgba(70, 62, 54, 0.12);
+  box-shadow: none;
+  background: transparent;
 }
 .brand-seal-sm {
-  width: 2.75rem;
-  height: 2.75rem;
-  box-shadow: none;
+  width: 3rem;
+  height: 3rem;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #e8e2d4;
 }
 .slogan {
-  margin-top: 0.7rem;
+  margin-top: 0.35rem;
   text-align: center;
-  font-size: 0.72rem;
+  font-family: Outfit, "Noto Sans TC", sans-serif;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
-  color: var(--amber);
+  letter-spacing: 0.22em;
+  color: var(--orange);
   text-transform: uppercase;
 }
 .slogan-inline {
@@ -310,9 +324,11 @@ input, select, textarea {
   overflow-wrap: anywhere;
 }
 .beat-hero .beat-line {
-  font-family: "Source Serif 4", "Noto Serif TC", serif;
+  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
   font-size: 2.1rem;
-  line-height: 1.45;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
 }
 .beat {
   display: inline-block;
@@ -321,7 +337,7 @@ input, select, textarea {
   border: none;
   border-radius: 0;
   background: transparent;
-  color: #9a948c;
+  color: var(--gray);
   cursor: pointer;
   font: inherit;
   line-height: 1.35;
@@ -333,12 +349,12 @@ input, select, textarea {
   background: transparent;
 }
 .beat.on {
-  color: #7a403c;
+  color: var(--pink);
   background: transparent;
   transform: translateY(-3px);
   text-decoration: underline;
-  text-decoration-color: #c45c55;
-  text-decoration-thickness: 2px;
+  text-decoration-color: var(--pink);
+  text-decoration-thickness: 3px;
   text-underline-offset: 3px;
   animation: beat-bounce 0.38s ease;
   box-shadow: none;
@@ -349,8 +365,8 @@ input, select, textarea {
   font-size: 0.92rem;
   line-height: 1.55;
 }
-.zh-lit { color: #7a403c; font-weight: 750; }
-.zh-rest { color: #c9c2b8; font-weight: 500; }
+.zh-lit { color: var(--olive); font-weight: 750; }
+.zh-rest { color: var(--line); font-weight: 500; }
 @keyframes beat-bounce {
   0% { transform: translateY(2px) scale(1); }
   45% { transform: translateY(-6px) scale(1.12); }
@@ -428,9 +444,11 @@ input, select, textarea {
   right: 56px;
   bottom: 14px;
   margin: 0;
-  font-family: "Source Serif 4", "Noto Serif TC", serif;
+  font-family: "Archivo Black", Outfit, "Noto Sans TC", sans-serif;
   font-size: 1.35rem;
-  font-weight: 700;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
   letter-spacing: 0.04em;
   text-align: left;
   text-shadow: 0 2px 12px rgba(0,0,0,0.55);
@@ -669,7 +687,7 @@ input, select, textarea {
 }
 .story-title {
   margin: 0 0 2px;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
 }
 .story-title-zh {
   margin: 0 0 12px;
@@ -689,18 +707,20 @@ input, select, textarea {
   background: transparent;
 }
 .beat-block.is-story .beat-line {
-  font-family: "Source Serif 4", "Noto Serif TC", serif;
+  font-family: Outfit, "Noto Sans TC", sans-serif;
   font-size: 1.12rem;
   line-height: 1.75;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .beat-block.is-story .beat {
   color: #4a4640;
 }
 .beat-block.is-story .beat.done { color: #2a2826; }
 .beat-block.is-story .beat.on {
-  background: #f3e07a;
-  color: #1c1a18;
-  border-radius: 4px;
+  background: var(--orange);
+  color: #141413;
+  border-radius: 2px;
   padding: 0 3px;
   margin: 0 -3px;
   transform: none;
@@ -741,7 +761,7 @@ input, select, textarea {
   background: var(--paper);
 }
 .fix-orig { text-decoration: line-through; color: var(--mute); }
-.fix-new { color: #7a403c; font-weight: 700; }
+.fix-new { color: var(--olive); font-weight: 700; }
 .fix-why { margin: 4px 0 0; font-size: 0.85rem; color: var(--mute); }
 .praise { text-align: left; font-size: 0.9rem; color: var(--cyan); margin-bottom: 8px; font-weight: 700; }
 .rate-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
