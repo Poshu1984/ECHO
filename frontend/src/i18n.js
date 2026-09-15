@@ -152,7 +152,7 @@ const dict = {
     wrong: "Try again",
     reveal: "Show meaning",
     install: "Add to Home Screen",
-    installHint: "Install ECHOO like an app. On iPhone use Safari Share, then Add to Home Screen.",
+    installHint: "Install Echo Studio like an app. On iPhone use Safari Share, then Add to Home Screen.",
     voiceQuota: "Cloud voice quota is used up. Playing on this device.",
     replay: "Replay sentence",
     loop: "Loop",

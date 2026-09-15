@@ -1,6 +1,6 @@
 {
-  "name": "ECHOO",
-  "short_name": "ECHOO",
+  "name": "Echo Studio",
+  "short_name": "Echo Studio",
   "description": "ECHO, THEN SPEAK.",
   "start_url": "/",
   "display": "standalone",

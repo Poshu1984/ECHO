@@ -558,7 +558,7 @@ export default function App() {
     return (
       <div className="app-shell is-auth items-center justify-center">
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
-          <img src="/logo.png" alt="ECHOO" className="brand-seal mx-auto" />
+          <img src="/logo.png" alt="Echo Studio" className="brand-seal mx-auto" />
           <p className="slogan">{tr("tag")}</p>
           <div className="brand-dots" aria-hidden="true">
             <i className="d-olive" /><i className="d-pink" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
@@ -614,7 +614,10 @@ export default function App() {
       <header className="panel app-header">
         <img src="/mark.png" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
-          <div className="display text-lg leading-none">ECHOO</div>
+          <div className="brand-lockup">
+            <span className="echo">ECHO</span>
+            <span className="studio">STUDIO</span>
+          </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">
             {user.username}{user.role === "admin" ? ` · ${tr("admin")}` : ""} · {tr("xp")} {user.xp}

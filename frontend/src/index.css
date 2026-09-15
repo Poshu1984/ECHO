@@ -299,6 +299,29 @@ input, select, textarea {
   border-radius: 8px;
   background: #e8e2d4;
 }
+.brand-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.brand-lockup .echo {
+  font-family: Anton, Outfit, sans-serif;
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.brand-lockup .studio {
+  font-family: Outfit, sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  line-height: 1;
+  color: var(--olive);
+  text-transform: uppercase;
+}
 .slogan {
   margin-top: 0.35rem;
   text-align: center;
