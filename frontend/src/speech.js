@@ -14,7 +14,7 @@ export function micErrorKey(error) {
   if (/not-supported|unsupported/i.test(code)) return "micOff";
   if (/aborted/i.test(code)) return "";
   if (/no-speech/i.test(code)) return "micError";
-  if (/network/i.test(code)) return "chatFail";
+  if (/network/i.test(code)) return "micError";
   if (/busy|in-use|NotReadable|TrackStart/i.test(code)) return "micBusy";
   return "micError";
 }

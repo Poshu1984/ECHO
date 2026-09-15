@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import ttsRouter from "./routes/tts.js";
@@ -6,10 +6,6 @@ import llmRouter from "./routes/llm.js";
 import authRouter from "./routes/auth.js";
 import progressRouter from "./routes/progress.js";
 import { seedAdmin, authMiddleware } from "./store.js";
-
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
-}
 
 const app = express();
 const port = process.env.PORT || 3000;

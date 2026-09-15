@@ -1,18 +1,28 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { planOf, usageOf, periodKey, PLANS } from "./plans.js";
+
+dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
 const usersPath = path.join(dataDir, "users.json");
 
-import { planOf, usageOf, periodKey, PLANS } from "./plans.js";
+function jwtSecret() {
+  return process.env.JWT_SECRET || "echoo-dev-secret-change-me";
+}
 
-const JWT_SECRET = process.env.JWT_SECRET || "echoo-dev-secret-change-me";
-const ADMIN_USER = process.env.ECHOO_ADMIN_USER || "poshu";
-const ADMIN_PASS = process.env.ECHOO_ADMIN_PASSWORD || "";
+function adminUser() {
+  return process.env.ECHOO_ADMIN_USER || "poshu";
+}
+
+function adminPass() {
+  return process.env.ECHOO_ADMIN_PASSWORD || "";
+}
 
 export function ensureStore() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -34,6 +44,8 @@ function writeUsers(users) {
 }
 
 export async function seedAdmin() {
+  const ADMIN_USER = adminUser();
+  const ADMIN_PASS = adminPass();
   if (!ADMIN_PASS) {
     console.warn("ECHOO_ADMIN_PASSWORD is not set; skip admin seed");
     return;
@@ -70,13 +82,13 @@ export async function seedAdmin() {
 }
 
 export function signToken(user) {
-  return jwt.sign({ sub: user.id, role: user.role, username: user.username }, JWT_SECRET, {
+  return jwt.sign({ sub: user.id, role: user.role, username: user.username }, jwtSecret(), {
     expiresIn: "14d",
   });
 }
 
 export function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, jwtSecret());
 }
 
 export function publicUser(user) {

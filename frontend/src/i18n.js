@@ -107,6 +107,7 @@ const dict = {
     newScene: "換一個情境",
     newExample: "換一句",
     speakReply: "用麥克風說出你的回覆",
+    chatFail: "對話連不上。先從朗讀或單字練習。",
   },
   en: {
     tag: "LANGUAGE × YOUR FUTURE",
@@ -207,6 +208,7 @@ const dict = {
     newScene: "New scene",
     newExample: "New sentence",
     speakReply: "Speak your reply with the microphone",
+    chatFail: "Chat is unavailable. Try reading or words first.",
   },
 };
 

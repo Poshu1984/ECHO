@@ -102,6 +102,8 @@ export function pickDeviceVoice(speechLang, tutor, chosenName) {
   return { voice: null, substituted: true };
 }
 
+let currentUtterance = null;
+
 export function speakOnDevice(text, { lang, pitch, rate, voiceName, tutor }) {
   if (typeof window === "undefined" || !window.speechSynthesis || !text) return { ok: false, substituted: false };
   const speakNow = () => {
@@ -111,6 +113,7 @@ export function speakOnDevice(text, { lang, pitch, rate, voiceName, tutor }) {
     u.pitch = pitch ?? 1;
     u.rate = rate ?? 1;
     if (picked.voice) u.voice = picked.voice;
+    currentUtterance = u;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
     return picked;

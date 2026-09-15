@@ -7,6 +7,7 @@ import { t } from "./i18n.js";
 import { inferScene, formatClock } from "./story.js";
 import { pickGoogleVoice } from "./tts.js";
 import { TUTORS } from "./content.js";
+import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -32,6 +33,7 @@ describe("micErrorKey", () => {
   it("maps permission and missing mic", () => {
     assert.equal(micErrorKey({ error: "not-allowed" }), "micDenied");
     assert.equal(micErrorKey({ name: "NotFoundError" }), "micError");
+    assert.equal(micErrorKey({ error: "network" }), "micError");
     assert.equal(micErrorKey({ error: "aborted" }), "");
   });
 });
@@ -44,6 +46,8 @@ describe("labels", () => {
     assert.equal(t("zh", "login"), "登入");
     assert.equal(t("en", "logout"), "Log out");
     assert.equal(t("zh", "mic"), "語音回覆");
+    assert.equal(t("zh", "chatFail"), "對話連不上。先從朗讀或單字練習。");
+    assert.equal(t("en", "chatFail"), "Chat is unavailable. Try reading or words first.");
     assert.equal(t("zh", "ttsOk"), "雲端語音已連上 Google Cloud。");
     assert.match(t("zh", "ttsOff"), /雲端語音/);
   });
@@ -69,6 +73,28 @@ describe("story scene", () => {
     assert.equal(inferScene({ title: "Office notes", sentences: [{ text: "The meeting ran long." }] }), "office");
     assert.equal(formatClock(29), "0:29");
     assert.equal(formatClock(75.4), "1:15");
+  });
+});
+
+describe("beats", () => {
+  it("splits english words and joins them back", () => {
+    const tokens = beatsOf("I missed the first bus.", "en");
+    assert.deepEqual(tokens, ["I", "missed", "the", "first", "bus."]);
+    assert.equal(joinBeats(tokens, "en"), "I missed the first bus.");
+  });
+
+  it("estimates increasing time ranges", () => {
+    const times = timesEstimated(["a", "bb", "ccc"], 6);
+    assert.equal(times.length, 3);
+    assert.equal(times[0].start, 0);
+    assert.ok(times[0].end < times[1].end);
+    assert.equal(times[2].end, 6);
+  });
+
+  it("maps sentence token ranges", () => {
+    const sentences = [{ tokens: ["a", "b"] }, { tokens: ["c"] }];
+    assert.deepEqual(sentenceRange(sentences, 0), [0, 1]);
+    assert.deepEqual(sentenceRange(sentences, 1), [2, 2]);
   });
 });
 

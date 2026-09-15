@@ -204,7 +204,7 @@ export default function App() {
 
   async function loadTrack(id, text, tokens) {
     armAudio();
-    const want = engine === "device" ? "clock" : "cloud";
+    const want = engine === "device" || ttsLive === false ? "clock" : "cloud";
     if (trackRef.current.id === id && trackRef.current.mode === want && trackRef.current.key === trackKey && beat.audioRef.current) {
       setTrackId(id);
       return;
@@ -337,6 +337,7 @@ export default function App() {
   }
 
   async function generatePassage() {
+    armAudio();
     setBusy(true);
     setErr("");
     try {
@@ -418,6 +419,7 @@ export default function App() {
       const g = greetOf(lang.code);
       const tokens = beatsOf(g.text, lang.code);
       setMsgs([{ role: "ai", text: g.text, native: g.zh, tokens }]);
+      setErr(tr("genFallback"));
       await playTokens("chat-0", g.text, tokens, 0, null);
     }
   }
@@ -687,7 +689,7 @@ export default function App() {
                 setLang(next);
                 setMsgs([]);
                 setPassage(null);
-                trackRef.current = { id: "", tokens: [], text: "" };
+                trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
                 beat.stop();
               }} className="field mt-1">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
@@ -855,6 +857,7 @@ export default function App() {
                 <div className="story-empty-copy">
                   <p>{tr("storyHint")}</p>
                   <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={generatePassage}>{busy ? "…" : tr("playStory")}</button>
+                  {err && <p className="notice">{err}</p>}
                 </div>
               </div>
             )}
@@ -903,6 +906,7 @@ export default function App() {
                   {["slow", "normal", "fast"].map((id) => (
                     <button key={id} className={`btn btn-mini ${rate === id ? "btn-accent" : "btn-ghost"}`} onClick={() => { setRate(id); trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" }; }}>{tr(id)}</button>
                   ))}
+                  {err && <p className="notice w-full">{err}</p>}
                 </div>
               </>
             )}
