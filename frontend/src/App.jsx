@@ -163,26 +163,25 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="scan" />
-        <form onSubmit={submitAuth} className="panel w-full max-w-md p-6 md:p-8">
-          <img src="/logo.png" alt="ECHOO" className="w-24 h-24 mx-auto rounded-2xl" />
-          <p className="neon text-xs text-center mt-4">{tr("tag")}</p>
-          <h1 className="text-3xl mt-2 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
-          <label className="block mt-6 text-sm text-[var(--mute)]">{tr("username")}
-            <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2" />
+      <div className="app-shell items-center justify-center">
+        <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0">
+          <img src="/logo.png" alt="ECHOO" className="w-16 h-16 mx-auto rounded-2xl" />
+          <p className="neon text-xs text-center mt-3">{tr("tag")}</p>
+          <h1 className="text-2xl mt-1 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
+          <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
+            <input value={handle} onChange={(e) => setHandle(e.target.value)} className="field mt-1" />
           </label>
-          <label className="block mt-4 text-sm text-[var(--mute)]">{tr("password")}
-            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2" />
+          <label className="block mt-3 text-sm text-[var(--mute)]">{tr("password")}
+            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} className="field mt-1" />
           </label>
-          {authErr && <p className="mag text-sm mt-3">{authErr}</p>}
-          <button className="mt-6 w-full py-3 bg-[var(--cyan)] text-white font-bold">{authMode === "login" ? tr("enter") : tr("create")}</button>
-          <button type="button" className="mt-3 w-full text-sm text-[var(--mute)]" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>
+          {authErr && <p className="mag text-sm mt-2">{authErr}</p>}
+          <button className="btn btn-primary w-full mt-4">{authMode === "login" ? tr("enter") : tr("create")}</button>
+          <button type="button" className="btn btn-ghost w-full mt-2 text-sm" onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}>
             {authMode === "login" ? tr("needAccount") : tr("haveAccount")}
           </button>
           {!standalone && (
             <>
-              <button type="button" onClick={installApp} className="mt-5 w-full py-3 border-2 border-[var(--cyan)] font-bold">
+              <button type="button" onClick={installApp} className="btn btn-line w-full mt-2">
                 {tr("install")}
               </button>
               {installHint && <p className="text-sm mt-2 text-[var(--mute)]">{tr("installHint")}</p>}
@@ -211,41 +210,38 @@ export default function App() {
   const scene = (SCENES[lang.code] || SCENES.en)[0];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <div className="scan" />
-      <aside className="panel m-3 md:m-4 md:w-64 p-4 flex md:flex-col gap-3 overflow-x-auto">
-        <div>
-          <img src="/logo.png" alt="ECHOO" className="w-12 h-12 rounded-lg mb-2" />
-          <div className="neon text-xs">{tr("tag")}</div>
-          <div className="display text-xl">ECHOO</div>
-          <div className="text-sm mt-1">{user.username} {user.role === "admin" ? tr("admin") : ""}</div>
-            <div className="text-[var(--amber)] text-sm">{tr("xp")} {user.xp}</div>
-            {user.quota && (
-              <div className="text-xs text-[var(--mute)] mt-1">
-                PLAN {user.plan} // TTS {user.quota.ttsUsed}/{user.quota.ttsLimit === null || user.quota.ttsLimit === Infinity ? "INF" : user.quota.ttsLimit} // AI {user.quota.llmUsed}/{user.quota.llmLimit === null || user.quota.llmLimit === Infinity ? "INF" : user.quota.llmLimit}
-              </div>
-            )}
+    <div className="app-shell">
+      <header className="panel app-header">
+        <img src="/logo.png" alt="ECHOO" className="w-10 h-10 rounded-lg shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="display text-lg leading-none">ECHOO</div>
+          <div className="text-xs text-[var(--mute)] truncate">
+            {user.username}{user.role === "admin" ? ` · ${tr("admin")}` : ""} · {tr("xp")} {user.xp}
+            {user.quota ? ` · ${user.plan}` : ""}
+          </div>
         </div>
-        <nav className="flex md:flex-col gap-1 min-w-max">
-          {nav.map((n) => {
-            const closed = ["vocab", "examples", "scenes", "exams"].includes(n.id) && !canAccess(user, n.id);
-            return (
-              <button key={n.id} onClick={() => !closed && setTab(n.id)}
-                className={`text-left px-3 py-2 border ${tab === n.id ? "border-[var(--cyan)] neon" : "border-transparent"} ${closed ? "lock" : ""}`}>
-                {n.label}{closed ? ` / ${tr("locked")}` : ""}
-              </button>
-            );
-          })}
-        </nav>
-        <button className="mt-auto text-sm text-[var(--mute)]" onClick={() => { clearSession(); setUser(null); }}>{tr("logout")}</button>
-      </aside>
-
-      <main className="flex-1 p-4 md:p-8 max-w-3xl w-full mx-auto">
+        <button className="btn btn-ghost shrink-0" style={{ minHeight: 40, padding: "0 12px" }} onClick={() => { clearSession(); setUser(null); }}>
+          {tr("logout")}
+        </button>
+      </header>
+      <nav className="app-nav">
+        {nav.map((n) => {
+          const closed = ["vocab", "examples", "scenes", "exams"].includes(n.id) && !canAccess(user, n.id);
+          return (
+            <button key={n.id} onClick={() => !closed && setTab(n.id)}
+              className={`nav-btn ${tab === n.id ? "active" : ""} ${closed ? "lock" : ""}`}>
+              {n.label}
+            </button>
+          );
+        })}
+      </nav>
+      <main className="app-main">
         {tab === "settings" && (
-          <section className="panel p-5 space-y-4">
+          <section className="panel">
             <h2>{tr("settings")}</h2>
+            <div className="scroll-pane mt-3 space-y-3">
             <label className="block text-sm">{tr("uiLang")}
-              <select value={ui} onChange={(e) => setUi(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
+              <select value={ui} onChange={(e) => setUi(e.target.value)} className="field mt-1">
                 <option value="zh">繁體中文</option>
                 <option value="en">English</option>
                 <option value="ja">日本語</option>
@@ -255,44 +251,42 @@ export default function App() {
               </select>
             </label>
             <label className="block text-sm">{tr("learnLang")}
-              <select value={lang.code} onChange={(e) => setLang(LEARN_LANGS.find((l) => l.code === e.target.value))} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
+              <select value={lang.code} onChange={(e) => setLang(LEARN_LANGS.find((l) => l.code === e.target.value))} className="field mt-1">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
               </select>
             </label>
             <label className="block text-sm">{tr("level")}
-              <select value={level} onChange={(e) => setLevel(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
+              <select value={level} onChange={(e) => setLevel(e.target.value)} className="field mt-1">
                 {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.id} {l.zh}</option>)}
               </select>
             </label>
             <p className="text-sm text-[var(--mute)]">{tr("tutor")}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {TUTORS.map((x) => (
-                <button key={x.id} onClick={() => setTutorId(x.id)} className={`p-3 text-left border ${tutorId === x.id ? "border-[var(--magenta)]" : "border-[var(--line)]"}`}>
+                <button key={x.id} onClick={() => setTutorId(x.id)} className={`p-3 text-left rounded-xl border ${tutorId === x.id ? "border-[var(--magenta)] bg-[var(--paper)]" : "border-[var(--line)]"}`}>
                   <div className="display text-sm">{x.name}</div>
-                  <div className="text-xs text-[var(--mute)]">{x.gender === "f" ? "FEM" : "MASC"} // {x.style}</div>
-                  <div className="text-xs mt-1">{x.blurb}</div>
+                  <div className="text-xs text-[var(--mute)]">{x.gender === "f" ? "FEM" : "MASC"} · {x.style}</div>
                 </button>
               ))}
             </div>
             <label className="block text-sm">{tr("voiceEngine")}
-              <select value={engine} onChange={(e) => setEngine(e.target.value)} className="mt-1 w-full bg-[var(--paper)] border border-[var(--line)] px-3 py-2">
+              <select value={engine} onChange={(e) => setEngine(e.target.value)} className="field mt-1">
                 <option value="cloud">{tr("cloud")}</option>
                 <option value="device">{tr("device")}</option>
               </select>
             </label>
-            <button onClick={() => speak(GREET[lang.code])} className="px-4 py-2 border border-[var(--cyan)] neon">{tr("listen")}</button>
-            <p className="text-xs text-[var(--mute)]">{tr("unlockHint")}: {UNLOCKS.map((u) => `${u.id} ${u.xp}`).join(" / ")}</p>
+            <button onClick={() => speak(GREET[lang.code])} className="btn btn-line">{tr("listen")}</button>
             {user.role === "admin" && (
               <div>
-                <h3 className="display text-sm mt-4">{tr("users")}</h3>
+                <h3 className="display text-sm">{tr("users")}</h3>
                 {nodes.map((n) => (
-                  <div key={n.id} className="text-sm border-b border-[var(--line)] py-1 flex gap-2 items-center">
-                    <span className="flex-1">{n.username} // {n.role} // XP {n.xp} // {n.plan}</span>
+                  <div key={n.id} className="text-sm border-b border-[var(--line)] py-2 flex gap-2 items-center">
+                    <span className="flex-1 min-w-0 truncate">{n.username} · XP {n.xp} · {n.plan}</span>
                     {n.role !== "admin" && (
                       <select value={n.plan || "free"} onChange={async (e) => {
                         const d = await api.setPlan(n.id, e.target.value);
                         setNodes((list) => list.map((x) => x.id === n.id ? d.user : x));
-                      }} className="bg-[var(--paper)] border border-[var(--line)]">
+                      }} className="field" style={{ width: "auto", padding: "6px 8px" }}>
                         <option value="free">free $0</option>
                         <option value="starter">starter $9</option>
                         <option value="plus">plus $19</option>
@@ -303,109 +297,123 @@ export default function App() {
                 ))}
               </div>
             )}
+            </div>
           </section>
         )}
 
         {tab === "chat" && (
-          <section className="panel p-5 min-h-[60vh] flex flex-col">
-            <h2>{tr("chat")} // {tutor.name}</h2>
-            {msgs.length === 0 && <button className="mt-4 py-3 bg-[var(--magenta)] text-white font-bold" onClick={startChat}>{tr("startChat")}</button>}
-            <div className="flex-1 space-y-3 mt-4">
+          <section className="panel">
+            <h2>{tr("chat")} · {tutor.name}</h2>
+            {msgs.length === 0 && <button className="btn btn-accent mt-3 w-full" onClick={startChat}>{tr("startChat")}</button>}
+            <div className="scroll-pane space-y-3 mt-3">
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "me" ? "text-right" : ""}>
-                  <div className={`inline-block px-3 py-2 border ${m.role === "me" ? "border-[var(--cyan)]" : "border-[var(--line)]"}`}>{m.text}</div>
+                  <div className={`inline-block max-w-full px-3 py-2 rounded-xl border ${m.role === "me" ? "border-[var(--cyan)]" : "border-[var(--line)]"}`}>{m.text}</div>
                   {m.zh && <div className="text-xs text-[var(--mute)] mt-1">{m.zh}</div>}
                 </div>
               ))}
             </div>
-            {err && <p className="mag text-sm">{err}</p>}
-            <div className="flex gap-2 mt-4">
-              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 bg-[var(--paper)] border border-[var(--line)] px-3 py-2" rows={2} />
-              <button disabled={busy} onClick={send} className="px-4 bg-[var(--cyan)] text-white font-bold">{tr("send")}</button>
+            {err && <p className="mag text-sm mt-1">{err}</p>}
+            <div className="flex gap-2 mt-3 shrink-0">
+              <textarea value={input} onChange={(e) => setInput(e.target.value)} className="field flex-1" rows={2} />
+              <button disabled={busy} onClick={send} className="btn btn-primary shrink-0">{tr("send")}</button>
             </div>
           </section>
         )}
 
         {tab === "read" && (
-          <section className="panel p-5">
+          <section className="panel">
             <h2>{tr("reading")}</h2>
-            {!passage && <button className="mt-4 py-3 px-4 border border-[var(--cyan)]" onClick={openPassage}>{tr("reading")}</button>}
+            {!passage && <button className="btn btn-line mt-3 w-full" onClick={openPassage}>{tr("reading")}</button>}
             {passage && (
-              <div className="mt-4">
+              <div className="scroll-pane mt-3">
                 <h3 className="display">{passage.title}</h3>
-                <p className="text-[var(--mute)]">{passage.title_zh}</p>
+                <p className="text-[var(--mute)] text-sm">{passage.title_zh}</p>
                 {passage.sentences.map((s, i) => (
-                  <p key={i} className="text-xl mt-3 leading-relaxed">{s.tokens.join(lang.code === "ja" || lang.code === "zh" ? "" : " ")}</p>
+                  <p key={i} className="text-lg mt-3 leading-relaxed">{s.tokens.join(lang.code === "ja" || lang.code === "zh" ? "" : " ")}</p>
                 ))}
-                <button className="mt-4 px-4 py-2 bg-[var(--magenta)] text-white" onClick={() => speak(passage.sentences.map((s) => s.text).join(" "))}>{tr("listen")}</button>
+                <button className="btn btn-accent mt-4 w-full" onClick={() => speak(passage.sentences.map((s) => s.text).join(" "))}>{tr("listen")}</button>
               </div>
             )}
           </section>
         )}
 
         {tab === "vocab" && canAccess(user, "vocab") && (
-          <section className="panel p-5">
+          <section className="panel">
             <h2>{tr("review")}</h2>
-            <div className="display text-4xl mt-6">{v.word}</div>
-            {showAns && <p className="mt-2">{v.hint}<br />{v.sentence}</p>}
-            <div className="flex gap-2 mt-6">
-              <button className="px-4 py-2 border" onClick={() => setShowAns(true)}>{tr("reveal")}</button>
-              <button className="px-4 py-2 border border-[var(--cyan)]" onClick={() => { setShowAns(false); setVocabI(vocabI + 1); gain(4); }}>{tr("next")}</button>
-              <button className="px-4 py-2 border" onClick={() => speak(v.word)}>{tr("listen")}</button>
+            <div className="scroll-pane flex flex-col justify-center">
+              <div className="display text-4xl mt-2">{v.word}</div>
+              {showAns && <p className="mt-2">{v.hint}<br />{v.sentence}</p>}
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
+              <button className="btn btn-ghost" onClick={() => setShowAns(true)}>{tr("reveal")}</button>
+              <button className="btn btn-line" onClick={() => { setShowAns(false); setVocabI(vocabI + 1); gain(4); }}>{tr("next")}</button>
+              <button className="btn btn-ghost" onClick={() => speak(v.word)}>{tr("listen")}</button>
             </div>
           </section>
         )}
 
         {tab === "examples" && canAccess(user, "examples") && (
-          <section className="panel p-5">
+          <section className="panel">
             <h2>{tr("drill")}</h2>
-            <p className="text-2xl mt-4">{v.sentence}</p>
-            <button className="mt-4 px-4 py-2 border border-[var(--cyan)]" onClick={() => { speak(v.sentence); gain(5); }}>{tr("listen")}</button>
+            <div className="scroll-pane flex items-center">
+              <p className="text-2xl">{v.sentence}</p>
+            </div>
+            <button className="btn btn-line w-full mt-3 shrink-0" onClick={() => { speak(v.sentence); gain(5); }}>{tr("listen")}</button>
           </section>
         )}
 
         {tab === "scenes" && canAccess(user, "scenes") && (
-          <section className="panel p-5">
+          <section className="panel">
             <h2>{tr("scene")}</h2>
-            <p className="display mt-4">{scene.title}</p>
-            <p className="mt-2">{scene.prompt}</p>
-            <button className="mt-4 px-4 py-2 border" onClick={() => { speak(scene.prompt); gain(6); }}>{tr("listen")}</button>
+            <div className="scroll-pane">
+              <p className="display mt-2">{scene.title}</p>
+              <p className="mt-2">{scene.prompt}</p>
+            </div>
+            <button className="btn btn-ghost w-full mt-3 shrink-0" onClick={() => { speak(scene.prompt); gain(6); }}>{tr("listen")}</button>
           </section>
         )}
 
         {tab === "exams" && canAccess(user, "exams") && (
-          <section className="panel p-5">
-            <h2>{tr("exam")} // {exam.board}</h2>
-            <p className="mt-4">{item.q}</p>
-            <div className="grid gap-2 mt-3">
-              {item.options.map((opt, i) => (
-                <button key={i} onClick={() => setExamPick(i)} className={`text-left px-3 py-2 border ${examPick === i ? "border-[var(--cyan)]" : "border-[var(--line)]"}`}>{opt}</button>
-              ))}
+          <section className="panel">
+            <h2>{tr("exam")} · {exam.board}</h2>
+            <div className="scroll-pane mt-2">
+              <p>{item.q}</p>
+              <div className="grid gap-2 mt-3">
+                {item.options.map((opt, i) => (
+                  <button key={i} onClick={() => setExamPick(i)} className={`btn text-left justify-start ${examPick === i ? "btn-line" : "btn-ghost"}`}>{opt}</button>
+                ))}
+              </div>
             </div>
-            <button className="mt-4 px-4 py-2 bg-[var(--cyan)] text-white" onClick={() => {
+            <button className="btn btn-primary w-full mt-3 shrink-0" onClick={() => {
               if (examPick === item.a) { gain(12); setErr(tr("correct")); }
               else setErr(tr("wrong"));
               setExamPick(-1); setExamI(examI + 1);
             }}>{tr("check")}</button>
-            {err && <p className="mt-2">{err}</p>}
+            {err && <p className="mt-2 shrink-0">{err}</p>}
           </section>
         )}
 
         {tab === "board" && (
-          <section className="panel p-5">
+          <section className="panel">
             <h2>{tr("board")}</h2>
-            <p className="mt-2">{user.username} // XP {user.xp} // min {user.minutes}</p>
-            <p className="text-sm text-[var(--mute)] mt-4">{tr("unlockHint")}</p>
-            <ul className="mt-2 space-y-1 text-sm">
-              {UNLOCKS.map((u) => (
-                <li key={u.id}>{u.id} // {u.xp} XP // {canAccess(user, u.id) ? "OPEN" : "LOCK"}</li>
-              ))}
-            </ul>
+            <div className="scroll-pane mt-2">
+              <p>{user.username} · XP {user.xp} · min {user.minutes}</p>
+              <p className="text-sm text-[var(--mute)] mt-3">{tr("unlockHint")}</p>
+              <ul className="mt-2 space-y-2 text-sm">
+                {UNLOCKS.map((u) => (
+                  <li key={u.id} className="flex justify-between border-b border-[var(--line)] py-1">
+                    <span>{u.id}</span>
+                    <span>{u.xp} XP · {canAccess(user, u.id) ? "OPEN" : "LOCK"}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
 
         {["vocab", "examples", "scenes", "exams"].includes(tab) && !canAccess(user, tab) && (
-          <section className="panel p-5"><h2>{tr("locked")}</h2><p>{tr("xp")} {UNLOCKS.find((u) => u.id === tab)?.xp}</p></section>
+          <section className="panel"><h2>{tr("locked")}</h2><p className="mt-2">{tr("xp")} {UNLOCKS.find((u) => u.id === tab)?.xp}</p></section>
         )}
       </main>
     </div>
