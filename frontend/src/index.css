@@ -235,10 +235,11 @@ input, select, textarea {
 }
 
 .brand-seal {
-  width: 7.5rem;
-  height: 7.5rem;
+  display: block;
+  width: 9rem;
+  height: 9rem;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   box-shadow: 0 10px 24px rgba(70, 62, 54, 0.12);
 }
 .brand-seal-sm {
