@@ -49,5 +49,8 @@ export const api = {
   addXp: (xp, minutes) => req("/api/progress/xp", { method: "POST", body: JSON.stringify({ xp, minutes }) }),
   voices: (languageCode) => req(`/api/tts/voices?languageCode=${encodeURIComponent(languageCode)}`),
   synthesize: (body) => req("/api/tts/synthesize", { method: "POST", body: JSON.stringify(body) }),
-  llm: (system, messages, max_tokens = 1200) => req("/api/llm/messages", { method: "POST", body: JSON.stringify({ system, messages, max_tokens }) }),
+  llm: (system, messages, max_tokens = 1200, temperature) => req("/api/llm/messages", {
+    method: "POST",
+    body: JSON.stringify({ system, messages, max_tokens, temperature }),
+  }),
 };

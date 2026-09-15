@@ -221,7 +221,42 @@ input, select, textarea {
   min-width: 0;
   resize: none;
 }
+.composer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
+}
 .composer .btn { flex: 0 0 auto; }
+.btn-mic {
+  min-width: 72px;
+  min-height: 44px;
+  padding: 6px 8px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+.btn-mic-label {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-mic.live {
+  background: var(--magenta);
+  color: #fff;
+  border-color: var(--magenta);
+  animation: micpulse 1.2s ease-in-out infinite;
+}
+@keyframes micpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(142, 111, 104, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(142, 111, 104, 0); }
+}
 
 .empty-pane {
   min-height: 100%;

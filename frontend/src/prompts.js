@@ -24,8 +24,48 @@ Respond ONLY with JSON, no markdown fences:
 
 export function readingPrompt(lang, levelRow, topic = "") {
   const topicBit = topic ? ` about ${topic}` : "";
-  return `Write a short ${lang.name} passage for read-aloud practice, CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}), 4-6 sentences total, everyday topic${topicBit}. Natural spoken rhythm, no lists.
+  return `Write a short ${lang.name} passage for read-aloud practice, CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}), 4-6 sentences total, everyday topic${topicBit}. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
 Break it into individual sentences. For EACH sentence provide the ${lang.name} text and its Traditional Chinese translation, sentence-for-sentence (same meaning, same order).
 Respond ONLY with JSON, no markdown fences:
 {"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<對應的繁體中文翻譯>"}]}`;
+}
+
+function avoidLine(items) {
+  const list = (items || []).filter(Boolean).slice(-16);
+  if (!list.length) return "No previous items.";
+  return `Do NOT repeat any of these: ${list.join(" | ")}`;
+}
+
+export function vocabPrompt(lang, levelRow, avoid = []) {
+  return `Create ONE new ${lang.name} vocabulary item for an adult Taiwanese learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Everyday life, work, travel, food, or health. Not slang-heavy. Not the same word twice.
+${avoidLine(avoid)}
+Respond ONLY with JSON, no markdown fences:
+{"word":"<the ${lang.name} word or short phrase>","hint":"<繁體中文意思>","sentence":"<one natural ${lang.name} example sentence using the word>","sentence_zh":"<該句的繁體中文翻譯>"}`;
+}
+
+export function examplePrompt(lang, levelRow, avoid = []) {
+  return `Write ONE new natural ${lang.name} example sentence for an adult learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Spoken, useful, 8-18 words if the language uses spaces. Vary topic: cafe, office, commute, clinic, shopping, weekend.
+${avoidLine(avoid)}
+Respond ONLY with JSON, no markdown fences:
+{"sentence":"<${lang.name} sentence>","sentence_zh":"<繁體中文翻譯>"}`;
+}
+
+export function scenePrompt(lang, levelRow, avoid = []) {
+  return `Invent ONE new role-play scene for speaking practice in ${lang.name}, CEFR ${levelRow.id}. Adult daily life. Give a short title and a 1-2 sentence prompt that tells the learner what to say.
+${avoidLine(avoid)}
+Respond ONLY with JSON, no markdown fences:
+{"title":"<${lang.name} title>","title_zh":"<繁體中文標題>","prompt":"<what the learner should say, in ${lang.name}>","prompt_zh":"<繁體中文說明>"}`;
+}
+
+export function examPrompt(lang, levelRow, avoid = []) {
+  return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${levelRow.id} (TOEIC/IELTS-style if English). Exactly 4 options, one correct. Keep it classroom-clean.
+${avoidLine(avoid)}
+Respond ONLY with JSON, no markdown fences:
+{"q":"<question with a blank or short stem in ${lang.name}>","q_zh":"<題幹繁體中文>","options":["<a>","<b>","<c>","<d>"],"options_zh":["<a 中文>","<b 中文>","<c 中文>","<d 中文>"],"a":0}`;
+}
+
+export function chatStartPrompt(tutor, lang, levelRow, avoid = []) {
+  return `${chatPrompt(tutor, lang, levelRow)}
+Open with a fresh greeting and a new everyday question. Do not reuse "Signal locked" or the same morning question every time.
+${avoidLine(avoid)}`;
 }

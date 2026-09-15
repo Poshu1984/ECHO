@@ -22,7 +22,7 @@ function toAnthropicShape(text) {
   return { content: [{ type: "text", text }], provider: "gemini" };
 }
 
-async function callClaude(system, messages, maxTokens) {
+async function callClaude(system, messages, maxTokens, temperature) {
   const key = anthropicKey();
   if (!key) return { ok: false, skip: true };
   const res = await fetch(ANTHROPIC_URL, {
@@ -35,6 +35,7 @@ async function callClaude(system, messages, maxTokens) {
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
       max_tokens: maxTokens || 1200,
+      temperature: Number.isFinite(temperature) ? temperature : 0.7,
       system: system || "",
       messages: Array.isArray(messages) ? messages : [],
     }),
@@ -51,7 +52,7 @@ async function callClaude(system, messages, maxTokens) {
   return { ok: true, body };
 }
 
-async function callGemini(system, messages, maxTokens) {
+async function callGemini(system, messages, maxTokens, temperature) {
   const key = geminiKey();
   if (!key) return { ok: false, skip: true };
   const model = process.env.GOOGLE_GEMINI_MODEL || "gemini-2.0-flash";
@@ -66,7 +67,10 @@ async function callGemini(system, messages, maxTokens) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system || "" }] },
       contents,
-      generationConfig: { maxOutputTokens: maxTokens || 1200, temperature: 0.7 },
+      generationConfig: {
+        maxOutputTokens: maxTokens || 1200,
+        temperature: Number.isFinite(temperature) ? temperature : 0.7,
+      },
     }),
   });
   const raw = await res.text();
@@ -101,13 +105,14 @@ router.post("/messages", async (req, res) => {
       throw error;
     }
 
-    const { system, messages, max_tokens } = req.body ?? {};
-    const claude = await callClaude(system, messages, max_tokens);
+    const { system, messages, max_tokens, temperature } = req.body ?? {};
+    const temp = Number(temperature);
+    const claude = await callClaude(system, messages, max_tokens, temp);
     if (claude.ok) {
       res.json(claude.body);
       return;
     }
-    const gemini = await callGemini(system, messages, max_tokens);
+    const gemini = await callGemini(system, messages, max_tokens, temp);
     if (gemini.ok) {
       res.json(gemini.body);
       return;
