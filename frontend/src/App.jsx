@@ -561,7 +561,7 @@ export default function App() {
           <img src="/logo.png" alt="Echo Studio" className="brand-seal mx-auto" />
           <p className="slogan">{tr("tag")}</p>
           <div className="brand-dots" aria-hidden="true">
-            <i className="d-olive" /><i className="d-pink" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
+            <i className="d-olive" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
           </div>
           <h1 className="text-2xl mt-3 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
@@ -615,7 +615,8 @@ export default function App() {
         <img src="/mark.png" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="brand-lockup">
-            <span className="studio">Studio</span>
+            <span className="echo">Echo</span>
+            <span className="studio">studio</span>
           </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">

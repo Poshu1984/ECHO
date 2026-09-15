@@ -1,11 +1,11 @@
 {
   "name": "Echo Studio",
   "short_name": "Echo Studio",
-  "description": "ECHO, THEN SPEAK.",
+  "description": "LANGUAGE × YOUR FUTURE",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#e8e2d4",
-  "theme_color": "#556b2f",
+  "background_color": "#F2EFE6",
+  "theme_color": "#556B3D",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
