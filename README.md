@@ -6,8 +6,8 @@ GitHub 倉庫名稱是 `ECHO`（https://github.com/Poshu1984/ECHO）。產品名
 
 最高權限帳號由環境變數設定（不要把真實密碼提交到 git）：
 
-- `ECHOO_ADMIN_USER`
-- `ECHOO_ADMIN_PASSWORD`
+- `ECHO_ADMIN_USER`
+- `ECHO_ADMIN_PASSWORD`
 - `JWT_SECRET`
 
 ## 資料夾
@@ -33,7 +33,7 @@ npm run dev
 | GET | `/api/tts/voices?languageCode=en-US` | 語音列表 |
 | POST | `/api/tts/synthesize` | 合成語音（SSML + timepoints） |
 
-正式環境（Railway）請設定：`GOOGLE_TTS_API_KEY`、`ANTHROPIC_API_KEY`、`JWT_SECRET`、`ECHOO_ADMIN_USER`、`ECHOO_ADMIN_PASSWORD`、`FRONTEND_URL`。
+正式環境（Railway）請設定：`GOOGLE_TTS_API_KEY`、`ANTHROPIC_API_KEY`、`JWT_SECRET`、`ECHO_ADMIN_USER`、`ECHO_ADMIN_PASSWORD`、`FRONTEND_URL`。
 
 ## 前端
 
@@ -62,8 +62,8 @@ npm run dev
      - `ANTHROPIC_API_KEY` = Claude Sonnet（主）
      - `GOOGLE_GEMINI_API_KEY` = Gemini（輔；可先省略，系統會嘗試同一把 Google key）
      - `JWT_SECRET` = 隨機長字串
-     - `ECHOO_ADMIN_USER` = `poshu`
-     - `ECHOO_ADMIN_PASSWORD` = 你的管理員密碼
+     - `ECHO_ADMIN_USER` = `poshu`
+     - `ECHO_ADMIN_PASSWORD` = 你的管理員密碼
      - `FRONTEND_URL` = `https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}`
    - **frontend**
      - `VITE_API_URL` = `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}`

@@ -10,16 +10,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
 const usersPath = path.join(dataDir, "users.json");
 
+function envFirst(...names) {
+  for (const name of names) {
+    const value = (process.env[name] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
 function jwtSecret() {
-  return process.env.JWT_SECRET || "echoo-dev-secret-change-me";
+  return envFirst("JWT_SECRET") || "echoo-dev-secret-change-me";
 }
 
 function adminUser() {
-  return process.env.ECHOO_ADMIN_USER || "poshu";
+  return envFirst("ECHO_ADMIN_USER", "ECHOO_ADMIN_USER") || "poshu";
 }
 
 function adminPass() {
-  return process.env.ECHOO_ADMIN_PASSWORD || "";
+  return envFirst("ECHO_ADMIN_PASSWORD", "ECHOO_ADMIN_PASSWORD");
 }
 
 export function ensureStore() {
@@ -45,7 +53,7 @@ export async function seedAdmin() {
   const ADMIN_USER = adminUser();
   const ADMIN_PASS = adminPass();
   if (!ADMIN_PASS) {
-    console.warn("ECHOO_ADMIN_PASSWORD is not set; skip admin seed");
+    console.warn("ECHO_ADMIN_PASSWORD is not set; skip admin seed");
     return;
   }
   const users = readUsers();
