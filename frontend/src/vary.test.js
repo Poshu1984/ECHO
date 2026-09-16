@@ -44,6 +44,7 @@ describe("labels", () => {
     assert.equal(t("zh", "send"), "送出");
     assert.equal(t("zh", "startChat"), "開始對話");
     assert.equal(t("zh", "login"), "登入");
+    assert.match(t("zh", "authOffline"), /登入服務/);
     assert.equal(t("en", "logout"), "Log out");
     assert.equal(t("zh", "mic"), "語音回覆");
     assert.equal(t("zh", "chatFail"), "對話連不上。先從朗讀或單字練習。");

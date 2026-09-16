@@ -103,6 +103,7 @@ const dict = {
     ttsOff: "雲端語音還沒設定或連不上。朗讀會改用這台裝置的語音，字仍會跟著跳。",
     ttsChecking: "正在檢查雲端語音…",
     authFail: "登入失敗。請檢查帳號與密碼。",
+    authOffline: "登入服務暫時連不上。請稍後再試，或確認後端已啟動。",
     composerPh: "打字，或按麥克風說話",
     newScene: "換一個情境",
     newExample: "換一句",
@@ -204,6 +205,7 @@ const dict = {
     ttsOff: "Cloud voice is not configured or unreachable. Reading uses this device, and words still bounce.",
     ttsChecking: "Checking cloud voice…",
     authFail: "Login failed. Check your account and password.",
+    authOffline: "The login service is unreachable. Try again in a moment, or check that the backend is running.",
     composerPh: "Type, or tap the mic to speak",
     newScene: "New scene",
     newExample: "New sentence",
@@ -254,6 +256,7 @@ Object.assign(dict.ja, {
   newExample: "別の例文",
   chatFail: "会話に接続できません。音読や単語からどうぞ。",
   authFail: "ログインに失敗しました。アカウントとパスワードを確認してください。",
+  authOffline: "ログインサービスに接続できません。しばらくしてから再試行してください。",
 });
 
 Object.assign(dict.ko, {
@@ -293,6 +296,7 @@ Object.assign(dict.ko, {
   newExample: "다른 예문",
   chatFail: "대화에 연결할 수 없습니다. 낭독이나 단어부터 연습하세요.",
   authFail: "로그인에 실패했습니다. 계정과 비밀번호를 확인하세요.",
+  authOffline: "로그인 서비스에 연결할 수 없습니다. 잠시 후 다시 시도하세요.",
 });
 
 Object.assign(dict.fr, {
@@ -332,6 +336,7 @@ Object.assign(dict.fr, {
   newExample: "Autre phrase",
   chatFail: "Le dialogue est indisponible. Essayez la lecture ou les mots.",
   authFail: "Connexion refusée. Vérifiez le compte et le mot de passe.",
+  authOffline: "Le service de connexion est indisponible. Réessayez dans un instant.",
 });
 
 Object.assign(dict.es, {
@@ -371,6 +376,7 @@ Object.assign(dict.es, {
   newExample: "Otra frase",
   chatFail: "El chat no está disponible. Prueba lectura o palabras.",
   authFail: "No se pudo entrar. Revisa la cuenta y la contraseña.",
+  authOffline: "El servicio de inicio de sesión no responde. Inténtalo de nuevo en un momento.",
 });
 
 export function t(ui, key) {
