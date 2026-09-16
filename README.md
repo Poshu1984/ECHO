@@ -10,6 +10,8 @@ GitHub 倉庫名稱是 `ECHO`（https://github.com/Poshu1984/ECHO）。產品名
 - `ECHO_ADMIN_PASSWORD`
 - `JWT_SECRET`
 
+尚未改 Railway／Cloud Secrets 時，後端仍會讀舊名 `ECHOO_ADMIN_USER` / `ECHOO_ADMIN_PASSWORD`。
+
 ## 資料夾
 
 - `frontend/` — Vite + React
