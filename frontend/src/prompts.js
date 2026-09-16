@@ -9,7 +9,37 @@ export function parseModelJson(raw) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start < 0 || end < start) throw new Error("NO_JSON");
-  return JSON.parse(text.slice(start, end + 1));
+  const slice = text.slice(start, end + 1);
+  try {
+    return JSON.parse(slice);
+  } catch {
+    const repaired = slice
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/,\s*([}\]])/g, "$1");
+    return JSON.parse(repaired);
+  }
+}
+
+export function toLlmMessages(msgs) {
+  const history = (msgs || [])
+    .map((m) => ({
+      role: m.role === "me" || m.role === "user" ? "user" : "assistant",
+      content: String(m.text || m.content || "").trim(),
+    }))
+    .filter((m) => m.content);
+  const out = [];
+  for (const m of history) {
+    if (out.length && out[out.length - 1].role === m.role) {
+      out[out.length - 1].content += `\n${m.content}`;
+    } else {
+      out.push({ ...m });
+    }
+  }
+  if (out[0]?.role === "assistant") {
+    out.unshift({ role: "user", content: "Hello. Let's start." });
+  }
+  return out;
 }
 
 export function chatPrompt(tutor, lang, levelRow) {

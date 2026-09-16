@@ -1,3 +1,5 @@
+import { beatsOf } from "./beats.js";
+
 export const STORY_SCENES = ["rain", "cafe", "commute", "market", "office", "night"];
 
 const RULES = [
@@ -29,4 +31,24 @@ export function formatClock(seconds) {
   const m = Math.floor(n / 60);
   const s = n % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export function liveSentence(passage, highlight = -1, langCode = "en") {
+  const sentences = passage?.sentences || [];
+  if (!sentences.length) return null;
+  let index = 0;
+  if (highlight >= 0) {
+    let offset = 0;
+    const found = sentences.findIndex((s) => {
+      const tokens = s.tokens?.length ? s.tokens : beatsOf(s.text || "", langCode);
+      const start = offset;
+      const end = offset + Math.max(0, tokens.length - 1);
+      offset += tokens.length;
+      return highlight >= start && highlight <= end;
+    });
+    if (found >= 0) index = found;
+  }
+  const sentence = sentences[index];
+  const tokens = sentence.tokens?.length ? sentence.tokens : beatsOf(sentence.text || "", langCode);
+  return { sentence, index, tokens };
 }

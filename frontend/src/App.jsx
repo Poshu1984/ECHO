@@ -16,7 +16,7 @@ import { StoryStage } from "./storyStage.jsx";
 import { inferScene } from "./story.js";
 import {
   chatPrompt, chatStartPrompt, parseModelJson, readingPrompt, SPEAK_RATES,
-  vocabPrompt, examplePrompt, scenePrompt, examPrompt,
+  toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt,
 } from "./prompts.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
@@ -74,8 +74,9 @@ export default function App() {
   const [installHint, setInstallHint] = useState(false);
   const [trackId, setTrackId] = useState("");
   const beat = useBeatAudio();
-  const trackRef = useRef({ id: "", tokens: [], text: "", mode: "" });
+  const trackRef = useRef({ id: "", tokens: [], text: "", mode: "", key: "" });
   const recRef = useRef(null);
+  const busyRef = useRef(false);
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
@@ -206,7 +207,13 @@ export default function App() {
   async function loadTrack(id, text, tokens) {
     armAudio();
     const want = engine === "device" || ttsLive === false ? "clock" : "cloud";
-    if (trackRef.current.id === id && trackRef.current.mode === want && trackRef.current.key === trackKey && beat.audioRef.current) {
+    if (
+      trackRef.current.id === id
+      && trackRef.current.text === text
+      && trackRef.current.mode === want
+      && trackRef.current.key === trackKey
+      && beat.audioRef.current
+    ) {
       setTrackId(id);
       return;
     }
@@ -269,24 +276,31 @@ export default function App() {
     await playTokens(`plain-${text.slice(0, 24)}`, text, tokens, 0, null);
   }
 
-  async function send() {
-    const text = input.trim();
-    if (!text || busy) return;
+  function resetTrack() {
+    beat.stop();
+    beat.setLoop(null);
+    trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
+    setTrackId("");
+  }
+
+  async function sendText(raw) {
+    const text = String(raw || "").trim();
+    if (!text || busyRef.current) return;
+    busyRef.current = true;
     stopMic();
     armAudio();
-    setInput(""); setBusy(true); setErr("");
+    setInput("");
+    setBusy(true);
+    setErr("");
     const next = [...msgs, { role: "me", text }];
     setMsgs(next);
     try {
-      const history = next.map((m) => ({
-        role: m.role === "me" ? "user" : "assistant",
-        content: m.text,
-      }));
       const system = chatPrompt(tutor, lang, levelRow);
-      const data = await api.llm(system, history);
-      const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
-      const p = parseModelJson(raw);
-      const reply = p.reply || "";
+      const data = await api.llm(system, toLlmMessages(next));
+      const rawReply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+      const p = parseModelJson(rawReply);
+      const reply = String(p.reply || "").trim();
+      if (!reply) throw new Error("EMPTY_REPLY");
       const native = p.reply_zh || p.native || "";
       const tm = {
         role: "ai",
@@ -302,7 +316,14 @@ export default function App() {
       notePractice("chat", 2);
     } catch {
       setErr(tr("chatFail"));
-    } finally { setBusy(false); }
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+
+  function send() {
+    sendText(input);
   }
 
   function hydratePassage(raw, meta = {}) {
@@ -329,9 +350,7 @@ export default function App() {
   function openPassage(raw) {
     const packed = hydratePassage(raw || fallbackPassage(lang.code));
     setPassage(packed);
-    trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
-    beat.stop();
-    beat.setLoop(null);
+    resetTrack();
     gain(6, 2);
     notePractice("read", 2);
     return packed;
@@ -402,6 +421,9 @@ export default function App() {
   const standalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
 
   async function startChat() {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
     setErr("");
     armAudio();
     try {
@@ -410,9 +432,10 @@ export default function App() {
       ], 900, 0.95);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       const p = parseModelJson(raw);
-      const reply = p.reply || "";
+      const reply = String(p.reply || "").trim();
+      if (!reply) throw new Error("EMPTY_REPLY");
       const tokens = beatsOf(reply, lang.code);
-      if (reply) seenRef.current.greet = rememberKey(seenRef.current.greet, reply);
+      seenRef.current.greet = rememberKey(seenRef.current.greet, reply);
       setMsgs([{ role: "ai", text: reply, native: p.reply_zh || "", tokens, corrections: [], praise: "" }]);
       await playTokens("chat-0", reply, tokens, 0, null);
       notePractice("chat", 1);
@@ -422,6 +445,9 @@ export default function App() {
       setMsgs([{ role: "ai", text: g.text, native: g.zh, tokens }]);
       setErr(tr("genFallback"));
       await playTokens("chat-0", g.text, tokens, 0, null);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
   }
 
@@ -442,7 +468,10 @@ export default function App() {
     beat.stop();
     const rec = createRecognizer(lang.speech, {
       onPartial: (text) => setInput(text),
-      onFinal: (text) => setInput(text),
+      onFinal: (text) => {
+        setInput(text);
+        sendText(text);
+      },
       onError: (event) => {
         const key = micErrorKey(event);
         if (key) setErr(tr(key));
@@ -482,6 +511,7 @@ export default function App() {
   }
 
   async function nextVocab(manual = true) {
+    resetTrack();
     setShowAns(false);
     setBusy(true);
     if (manual) setErr("");
@@ -502,25 +532,35 @@ export default function App() {
   }
 
   async function nextExample(manual = true) {
+    const keepLoop = Boolean(beat.loop);
+    resetTrack();
     setBusy(true);
     if (manual) setErr("");
     const bank = EXAMPLES[lang.code] || EXAMPLES.en;
+    let item = null;
     try {
       const p = await askJson(examplePrompt(lang, levelRow, seenRef.current.examples), "Give one new example sentence now.");
       if (!p?.sentence) throw new Error("BAD_EXAMPLE");
       seenRef.current.examples = rememberKey(seenRef.current.examples, p.sentence);
+      item = p;
       setExampleItem(p);
     } catch {
       const fb = pickFresh(bank, seenRef.current.examples, (x) => x.sentence) || bank[0];
       seenRef.current.examples = rememberKey(seenRef.current.examples, fb.sentence);
+      item = fb;
       setExampleItem(fb);
       if (manual) setErr(tr("genFallback"));
     } finally {
       setBusy(false);
     }
+    if (keepLoop && item?.sentence) {
+      const tokens = beatsOf(item.sentence, lang.code);
+      await playTokens("example", item.sentence, tokens, 0, [0, Math.max(0, tokens.length - 1)]);
+    }
   }
 
   async function nextScene(manual = true) {
+    resetTrack();
     setBusy(true);
     if (manual) setErr("");
     const bank = SCENES[lang.code] || SCENES.en;
@@ -773,7 +813,7 @@ export default function App() {
             <div className="scroll-pane space-y-3 mt-3">
               {msgs.length === 0 && (
                 <div className="empty-pane">
-                  <button className="btn btn-accent w-full max-w-sm" onClick={startChat}>{tr("startChat")}</button>
+                  <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={startChat}>{busy ? "…" : tr("startChat")}</button>
                 </div>
               )}
               {msgs.map((m, i) => (
@@ -851,6 +891,9 @@ export default function App() {
                   playing={false}
                   preview
                   duration={29}
+                  joiner={joiner}
+                  langCode={lang.code}
+                  showNative={showZh}
                   onToggle={generatePassage}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
@@ -867,9 +910,18 @@ export default function App() {
                 <StoryStage
                   passage={passage}
                   playing={beat.playing && trackId === "read"}
+                  highlight={trackId === "read" ? highlight : -1}
                   current={trackId === "read" && highlight >= 0 ? (beat.timesRef.current[highlight]?.start || 0) : 0}
                   duration={trackId === "read" ? (beat.timesRef.current[beat.timesRef.current.length - 1]?.end || 0) : 0}
+                  joiner={joiner}
+                  langCode={lang.code}
+                  showNative={showZh}
                   onToggle={toggleStoryPlay}
+                  onToken={(i, tok) => {
+                    const s = passage.sentences[i];
+                    if (!s) return;
+                    playPassageFrom(s.start + tok, beat.loop, passage);
+                  }}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
                 />
@@ -967,7 +1019,7 @@ export default function App() {
             </div>
             <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
               <button className="btn btn-line" onClick={() => { playTokens("example", ex.sentence, exampleTokens, 0, null); gain(5); }}>{tr("listen")}</button>
-              <button className="btn btn-ghost" onClick={() => playTokens("example", ex.sentence, exampleTokens, 0, [0, exampleTokens.length - 1])}>{tr("loop")}</button>
+              <button className={`btn ${beat.loop && trackId === "example" ? "btn-line" : "btn-ghost"}`} onClick={() => playTokens("example", ex.sentence, exampleTokens, 0, [0, exampleTokens.length - 1])}>{tr("loop")}</button>
               <button className="btn btn-ghost" disabled={busy} onClick={() => { notePractice("examples", 1); nextExample(true); }}>{tr("newExample")}</button>
             </div>
             {err && <p className="notice mt-2 shrink-0">{err}</p>}

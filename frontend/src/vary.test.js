@@ -2,9 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, toLlmMessages } from "./prompts.js";
 import { t } from "./i18n.js";
-import { inferScene, formatClock } from "./story.js";
+import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice } from "./tts.js";
 import { TUTORS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
@@ -65,6 +65,19 @@ describe("prompts", () => {
     assert.match(readingPrompt(lang, level), /hook_zh/);
     assert.match(readingPrompt(lang, level), /scene/);
   });
+
+  it("repairs messy model json and prefixes assistant-first chat", () => {
+    const parsed = parseModelJson('note { "reply": "Hi", "reply_zh": "嗨", }');
+    assert.equal(parsed.reply, "Hi");
+    const history = toLlmMessages([
+      { role: "ai", text: "How are you?" },
+      { role: "me", text: "I am fine." },
+    ]);
+    assert.equal(history[0].role, "user");
+    assert.equal(history[1].role, "assistant");
+    assert.equal(history[2].role, "user");
+    assert.equal(history[2].content, "I am fine.");
+  });
 });
 
 describe("story scene", () => {
@@ -74,6 +87,14 @@ describe("story scene", () => {
     assert.equal(inferScene({ title: "Office notes", sentences: [{ text: "The meeting ran long." }] }), "office");
     assert.equal(formatClock(29), "0:29");
     assert.equal(formatClock(75.4), "1:15");
+    const live = liveSentence({
+      sentences: [
+        { text: "One two.", tokens: ["One", "two."] },
+        { text: "Three.", tokens: ["Three."] },
+      ],
+    }, 2);
+    assert.equal(live.index, 1);
+    assert.equal(live.sentence.text, "Three.");
   });
 });
 
