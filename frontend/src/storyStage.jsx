@@ -1,4 +1,6 @@
-import { inferScene, formatClock } from "./story.js";
+import { inferScene, formatClock, liveSentence } from "./story.js";
+import { beatsOf } from "./beats.js";
+import { BeatLine } from "./karaoke.jsx";
 
 function RainDrop({ i }) {
   const left = `${(i * 17) % 100}%`;
@@ -7,12 +9,39 @@ function RainDrop({ i }) {
   return <i className="drop" style={{ left, animationDelay: delay, animationDuration: dur }} />;
 }
 
-export function StoryStage({ passage, playing, preview = false, current = 0, duration = 0, onToggle, playLabel, pauseLabel }) {
+export function StoryStage({
+  passage,
+  playing,
+  preview = false,
+  current = 0,
+  duration = 0,
+  highlight = -1,
+  joiner = " ",
+  langCode = "en",
+  showNative = true,
+  onToggle,
+  onToken,
+  playLabel,
+  pauseLabel,
+}) {
   const scene = inferScene(passage);
   const hook = passage?.hook_zh || passage?.title_zh || passage?.title || "";
   const clock = playing ? formatClock(current) : formatClock(duration);
+  const live = liveSentence(passage, highlight, langCode);
+  const sentence = live?.sentence;
+  const tokens = live?.tokens || [];
+  let local = -1;
+  if (playing && highlight >= 0 && live) {
+    let offset = 0;
+    for (let i = 0; i < live.index; i += 1) {
+      const s = passage.sentences[i];
+      offset += (s.tokens?.length ? s.tokens : beatsOf(s.text || "", langCode)).length;
+    }
+    local = highlight - offset;
+  }
   return (
-    <button type="button" className={`story-stage is-${scene} ${playing ? "is-live" : ""} ${preview ? "is-preview" : ""}`} onClick={onToggle} aria-label={playing ? pauseLabel : playLabel}>
+    <div className={`story-stage is-${scene} ${playing ? "is-live" : ""} ${preview ? "is-preview" : ""}`}>
+      <button type="button" className="story-hit" onClick={onToggle} aria-label={playing ? pauseLabel : playLabel} />
       <div className="story-fx" aria-hidden="true">
         {scene === "rain" && (
           <>
@@ -72,8 +101,21 @@ export function StoryStage({ passage, playing, preview = false, current = 0, dur
       </div>
       <div className="story-scrim" />
       {hook ? <p className="story-hook">{hook}</p> : null}
+      {tokens.length ? (
+        <div className="story-caption" onClick={(e) => e.stopPropagation()}>
+          <BeatLine
+            variant="story"
+            tokens={tokens}
+            joiner={joiner}
+            active={local}
+            native={showNative ? (sentence?.zh || "") : ""}
+            nativeRatio={local >= 0 ? Math.min(1, (local + 1) / tokens.length) : (playing ? 0 : 0)}
+            onToken={onToken ? (tok) => onToken(live?.index || 0, tok) : undefined}
+          />
+        </div>
+      ) : null}
       <span className="story-clock">{clock}</span>
       <span className={`story-play ${playing ? "is-pause" : ""}`} />
-    </button>
+    </div>
   );
 }

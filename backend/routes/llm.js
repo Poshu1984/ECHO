@@ -70,6 +70,7 @@ async function callGemini(system, messages, maxTokens, temperature) {
       generationConfig: {
         maxOutputTokens: maxTokens || 1200,
         temperature: Number.isFinite(temperature) ? temperature : 0.7,
+        responseMimeType: "application/json",
       },
     }),
   });
