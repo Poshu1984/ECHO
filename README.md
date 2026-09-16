@@ -1,6 +1,8 @@
-# ECHOO
+# Echo Studio
 
-賽博龐克 Noir 語言教練。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
+LANGUAGE × YOUR FUTURE · 學習，讓世界聽見你。
+
+GitHub 倉庫名稱仍是 `ECHOO`（https://github.com/Poshu1984/ECHOO）。產品名稱是 **Echo Studio**。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
 
 最高權限帳號由環境變數設定（不要把真實密碼提交到 git）：
 
@@ -48,7 +50,7 @@ npm run dev
 
 同一個 GitHub repo（`Poshu1984/ECHOO`）建兩個服務：
 
-1. 到 [Railway](https://railway.app) 用 GitHub 登入 → **New Project** → **Empty project**，專案名稱可設為 `ECHOO`。
+1. 到 [Railway](https://railway.app) 用 GitHub 登入 → **New Project** → **Empty project**，專案名稱可設為 `Echo Studio`。
 2. 新增兩個 Empty service，改名為 `backend` 與 `frontend`。
 3. 兩個服務都連到 GitHub repo `ECHOO`：
    - `backend` → Root Directory：`/backend`
