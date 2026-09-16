@@ -156,8 +156,9 @@ export default function App() {
       const d = await fn(handle.trim(), pass);
       setSession(d.token, d.user);
       setUser(d.user);
-    } catch {
-      setAuthErr(tr("authFail"));
+    } catch (error) {
+      const down = !error.status || error.status >= 500;
+      setAuthErr(tr(down ? "authOffline" : "authFail"));
     }
   }
 

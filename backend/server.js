@@ -57,12 +57,11 @@ app.use("/api/tts", authMiddleware, ttsRouter);
 app.use("/api/llm", authMiddleware, llmRouter);
 
 seedAdmin()
+  .catch((error) => {
+    console.error("seedAdmin failed; API will still start", error);
+  })
   .then(() => {
     app.listen(port, "0.0.0.0", () => {
       console.log(`ECHOO API on ${port} tts=${ttsConfigured} llm=${llmConfigured}`);
     });
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
   });
