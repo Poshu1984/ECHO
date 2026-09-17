@@ -6,15 +6,13 @@ import llmRouter from "./routes/llm.js";
 import authRouter from "./routes/auth.js";
 import progressRouter from "./routes/progress.js";
 import { seedAdmin, authMiddleware } from "./store.js";
+import { configuredKey } from "./llmModels.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
-const ttsConfigured = Boolean(process.env.GOOGLE_TTS_API_KEY?.trim())
-  && process.env.GOOGLE_TTS_API_KEY.trim() !== "your_key_here";
-const claudeConfigured = Boolean((process.env.ANTHROPIC_API_KEY || "").trim())
-  && process.env.ANTHROPIC_API_KEY.trim() !== "your_key_here";
-const geminiConfigured = Boolean((process.env.GOOGLE_GEMINI_API_KEY || process.env.GOOGLE_TTS_API_KEY || "").trim())
-  && (process.env.GOOGLE_GEMINI_API_KEY || process.env.GOOGLE_TTS_API_KEY).trim() !== "your_key_here";
+const ttsConfigured = Boolean(configuredKey("GOOGLE_TTS_API_KEY"));
+const claudeConfigured = Boolean(configuredKey("ANTHROPIC_API_KEY"));
+const geminiConfigured = Boolean(configuredKey("GOOGLE_GEMINI_API_KEY", "GOOGLE_TTS_API_KEY"));
 const llmConfigured = claudeConfigured || geminiConfigured;
 
 function normalizeOrigin(url) {

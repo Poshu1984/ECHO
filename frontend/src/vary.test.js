@@ -9,7 +9,7 @@ import { pickGoogleVoice } from "./tts.js";
 import { EXAMS, TUTORS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
-import { attachExamMeta, attachVocabQuiz, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
+import { attachExamMeta, attachVocabQuiz, examAnswerIndex, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -237,5 +237,17 @@ describe("quiz stay and similar items", () => {
     assert.equal(quizOptions(quiz)[quizAnswer(quiz)], "最後期限");
     assert.match(quiz.why, /deadline/);
     assert.equal(MASTERY_MIN, 8);
+  });
+
+  it("accepts a letter or option text as the exam answer", () => {
+    const byText = attachExamMeta({
+      q: "I look forward _____ you.",
+      options: ["to see", "to seeing", "seeing", "see"],
+      a: "to seeing",
+      tag: "look-forward-to",
+    });
+    assert.equal(examAnswerIndex(byText), 1);
+    assert.equal(byText.a, 1);
+    assert.equal(examAnswerIndex({ options: ["off", "on", "up"], a: "B" }), 1);
   });
 });

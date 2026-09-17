@@ -107,7 +107,8 @@ export function useBeatAudio() {
 
   function stop() {
     stopRaf();
-    audioRef.current?.pause();
+    try { audioRef.current?.pause(); } catch { /* ignore */ }
+    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     setPlaying(false);
     setActive(-1);
   }

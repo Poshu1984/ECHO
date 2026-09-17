@@ -2,7 +2,7 @@ FROM node:20-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY server.js store.js plans.js loadEnv.js ./
+COPY server.js store.js plans.js loadEnv.js llmModels.js ./
 COPY routes ./routes
 ENV NODE_ENV=production
 EXPOSE 3000

@@ -91,12 +91,28 @@ export function attachSceneQuiz(item, bank = []) {
   }, item.why || `這個情境要做的是：${item.prompt_zh}`);
 }
 
+export function examAnswerIndex(item) {
+  const options = Array.isArray(item?.options) ? item.options : [];
+  if (Number.isInteger(item?.a) && item.a >= 0 && item.a < options.length) return item.a;
+  const asNumber = Number(item?.a);
+  if (Number.isInteger(asNumber) && asNumber >= 0 && asNumber < options.length) return asNumber;
+  const asText = String(item?.a ?? "").trim();
+  const byText = options.findIndex((opt) => String(opt).trim() === asText);
+  if (byText >= 0) return byText;
+  if (/^[a-d]$/i.test(asText)) {
+    const letter = asText.toLowerCase().charCodeAt(0) - 97;
+    if (letter >= 0 && letter < options.length) return letter;
+  }
+  return -1;
+}
+
 export function attachExamMeta(item) {
   if (!item) return item;
-  const a = Number(item.a);
-  const correct = Array.isArray(item.options) ? item.options[a] : "";
+  const a = examAnswerIndex(item);
+  const correct = Array.isArray(item.options) && a >= 0 ? item.options[a] : "";
   return {
     ...item,
+    a: a >= 0 ? a : 0,
     tag: itemTag(item, "exam"),
     why: item.why || (correct ? `正確答案是「${correct}」。` : ""),
   };
