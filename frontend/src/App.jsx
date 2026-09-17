@@ -22,6 +22,11 @@ import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js"
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 import { createRecognizer, micErrorKey, speechSupported } from "./speech.js";
 import { pickFresh, rememberKey } from "./vary.js";
+import { loadMastery, recordAttempt, statsFor } from "./mastery.js";
+import {
+  attachExamMeta, attachExampleQuiz, attachSceneQuiz, attachVocabQuiz,
+  itemTag, itemWhy, pickSimilar, quizAnswer, quizGlosses, quizOptions,
+} from "./quiz.js";
 
 function MicIcon() {
   return (
@@ -68,7 +73,9 @@ export default function App() {
   const [sceneItem, setSceneItem] = useState(null);
   const [examItem, setExamItem] = useState(null);
   const [showAns, setShowAns] = useState(false);
-  const [examPick, setExamPick] = useState(-1);
+  const [drillPick, setDrillPick] = useState(-1);
+  const [drillChecked, setDrillChecked] = useState(false);
+  const [mastery, setMastery] = useState(loadMastery);
   const [nodes, setNodes] = useState([]);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installHint, setInstallHint] = useState(false);
@@ -145,7 +152,8 @@ export default function App() {
     setSceneItem(null);
     setExamItem(null);
     setShowAns(false);
-    setExamPick(-1);
+    setDrillPick(-1);
+    setDrillChecked(false);
     seenRef.current = { vocab: [], examples: [], scenes: [], exams: [], greet: seenRef.current.greet };
   }, [lang.code, level]);
 
@@ -510,21 +518,52 @@ export default function App() {
     return parseModelJson(raw);
   }
 
+  function resetDrill() {
+    setDrillPick(-1);
+    setDrillChecked(false);
+  }
+
+  function checkDrill(mode, item) {
+    if (drillChecked) return;
+    if (drillPick < 0) {
+      setErr(tr("pickFirst"));
+      return;
+    }
+    const ok = drillPick === quizAnswer(item);
+    setDrillChecked(true);
+    setErr("");
+    setMastery(recordAttempt(lang.code, mode, itemTag(item, mode), ok));
+    if (ok) gain(mode === "exams" ? 12 : 4);
+    notePractice(mode, 1);
+  }
+
+  function choiceClass(i, item) {
+    const answer = quizAnswer(item);
+    if (drillChecked) {
+      if (i === answer) return "btn btn-wrap btn-ok";
+      if (i === drillPick) return "btn btn-wrap btn-bad";
+      return "btn btn-wrap btn-ghost";
+    }
+    return `btn btn-wrap ${drillPick === i ? "btn-line" : "btn-ghost"}`;
+  }
+
   async function nextVocab(manual = true) {
     resetTrack();
+    resetDrill();
     setShowAns(false);
     setBusy(true);
     if (manual) setErr("");
     const bank = VOCAB[lang.code] || VOCAB.en;
+    const focus = statsFor(lang.code, "vocab").weakTag;
     try {
-      const p = await askJson(vocabPrompt(lang, levelRow, seenRef.current.vocab), "Give one new vocabulary item now.");
+      const p = await askJson(vocabPrompt(lang, levelRow, seenRef.current.vocab, focus), "Give one new vocabulary item now.");
       if (!p?.word || !p?.sentence) throw new Error("BAD_VOCAB");
       seenRef.current.vocab = rememberKey(seenRef.current.vocab, p.word);
-      setVocabItem(p);
+      setVocabItem(attachVocabQuiz(p, bank));
     } catch {
-      const fb = pickFresh(bank, seenRef.current.vocab, (x) => x.word) || bank[0];
+      const fb = pickSimilar(bank, seenRef.current.vocab, (x) => x.word, focus) || bank[0];
       seenRef.current.vocab = rememberKey(seenRef.current.vocab, fb.word);
-      setVocabItem(fb);
+      setVocabItem(attachVocabQuiz(fb, bank));
       if (manual) setErr(tr("genFallback"));
     } finally {
       setBusy(false);
@@ -534,21 +573,23 @@ export default function App() {
   async function nextExample(manual = true) {
     const keepLoop = Boolean(beat.loop);
     resetTrack();
+    resetDrill();
     setBusy(true);
     if (manual) setErr("");
     const bank = EXAMPLES[lang.code] || EXAMPLES.en;
+    const focus = statsFor(lang.code, "examples").weakTag;
     let item = null;
     try {
-      const p = await askJson(examplePrompt(lang, levelRow, seenRef.current.examples), "Give one new example sentence now.");
+      const p = await askJson(examplePrompt(lang, levelRow, seenRef.current.examples, focus), "Give one new example sentence now.");
       if (!p?.sentence) throw new Error("BAD_EXAMPLE");
       seenRef.current.examples = rememberKey(seenRef.current.examples, p.sentence);
-      item = p;
-      setExampleItem(p);
+      item = attachExampleQuiz(p, bank);
+      setExampleItem(item);
     } catch {
-      const fb = pickFresh(bank, seenRef.current.examples, (x) => x.sentence) || bank[0];
+      const fb = pickSimilar(bank, seenRef.current.examples, (x) => x.sentence, focus) || bank[0];
       seenRef.current.examples = rememberKey(seenRef.current.examples, fb.sentence);
-      item = fb;
-      setExampleItem(fb);
+      item = attachExampleQuiz(fb, bank);
+      setExampleItem(item);
       if (manual) setErr(tr("genFallback"));
     } finally {
       setBusy(false);
@@ -561,18 +602,20 @@ export default function App() {
 
   async function nextScene(manual = true) {
     resetTrack();
+    resetDrill();
     setBusy(true);
     if (manual) setErr("");
     const bank = SCENES[lang.code] || SCENES.en;
+    const focus = statsFor(lang.code, "scenes").weakTag;
     try {
-      const p = await askJson(scenePrompt(lang, levelRow, seenRef.current.scenes), "Give one new scene now.");
+      const p = await askJson(scenePrompt(lang, levelRow, seenRef.current.scenes, focus), "Give one new scene now.");
       if (!p?.title || !p?.prompt) throw new Error("BAD_SCENE");
       seenRef.current.scenes = rememberKey(seenRef.current.scenes, p.title);
-      setSceneItem(p);
+      setSceneItem(attachSceneQuiz(p, bank));
     } catch {
-      const fb = pickFresh(bank, seenRef.current.scenes, (x) => x.title) || bank[0];
+      const fb = pickSimilar(bank, seenRef.current.scenes, (x) => x.title, focus) || bank[0];
       seenRef.current.scenes = rememberKey(seenRef.current.scenes, fb.title);
-      setSceneItem(fb);
+      setSceneItem(attachSceneQuiz(fb, bank));
       if (manual) setErr(tr("genFallback"));
     } finally {
       setBusy(false);
@@ -580,26 +623,41 @@ export default function App() {
   }
 
   async function nextExam(manual = true) {
-    setExamPick(-1);
+    resetDrill();
     setBusy(true);
     if (manual) setErr("");
     const bank = (EXAMS[lang.code] || EXAMS.en).items;
+    const focus = statsFor(lang.code, "exams").weakTag;
     try {
-      const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams), "Give one new quiz item now.");
+      const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams, focus), "Give one new quiz item now.");
       if (!p?.q || !Array.isArray(p.options) || p.options.length < 2) throw new Error("BAD_EXAM");
       const a = Number(p.a);
       if (!Number.isInteger(a) || a < 0 || a >= p.options.length) throw new Error("BAD_EXAM_A");
       seenRef.current.exams = rememberKey(seenRef.current.exams, p.q);
-      setExamItem({ ...p, a });
+      setExamItem(attachExamMeta({ ...p, a }));
     } catch {
-      const fb = pickFresh(bank, seenRef.current.exams, (x) => x.q) || bank[0];
+      const fb = pickSimilar(bank, seenRef.current.exams, (x) => x.q, focus) || bank[0];
       seenRef.current.exams = rememberKey(seenRef.current.exams, fb.q);
-      setExamItem(fb);
+      setExamItem(attachExamMeta(fb));
       if (manual) setErr(tr("genFallback"));
     } finally {
       setBusy(false);
     }
   }
+
+  useEffect(() => {
+    setVocabItem(null);
+    setExampleItem(null);
+    setSceneItem(null);
+    setExamItem(null);
+    resetDrill();
+    setShowAns(false);
+  }, [lang.code, level]);
+
+  useEffect(() => {
+    resetDrill();
+    setShowAns(false);
+  }, [tab]);
 
   useEffect(() => {
     if (!user) return;
@@ -670,14 +728,61 @@ export default function App() {
     { id: "settings", label: tr("settings") },
   ];
 
-  const v = vocabItem || (VOCAB[lang.code] || VOCAB.en)[0];
-  const ex = exampleItem || (EXAMPLES[lang.code] || EXAMPLES.en)[0];
-  const scene = sceneItem || (SCENES[lang.code] || SCENES.en)[0];
-  const item = examItem || (EXAMS[lang.code] || EXAMS.en).items[0];
-  const vocabTokens = beatsOf(v.word, lang.code);
-  const vocabSentTokens = beatsOf(v.sentence, lang.code);
-  const exampleTokens = beatsOf(ex.sentence, lang.code);
-  const sceneTokens = beatsOf(scene.prompt, lang.code);
+  const v = vocabItem;
+  const ex = exampleItem;
+  const scene = sceneItem;
+  const item = examItem;
+  const vocabTokens = v ? beatsOf(v.word, lang.code) : [];
+  const vocabSentTokens = v ? beatsOf(v.sentence, lang.code) : [];
+  const exampleTokens = ex ? beatsOf(ex.sentence, lang.code) : [];
+  const sceneTokens = scene ? beatsOf(scene.prompt, lang.code) : [];
+  const examStats = statsFor(lang.code, "exams", mastery);
+  const vocabStats = statsFor(lang.code, "vocab", mastery);
+  const exampleStats = statsFor(lang.code, "examples", mastery);
+  const sceneStats = statsFor(lang.code, "scenes", mastery);
+
+  function meter(stats) {
+    if (!stats.total) return null;
+    return (
+      <p className="drill-meter">
+        {tr("accuracy")} {stats.hits}/{stats.total}（{Math.round(stats.rate * 100)}%）
+        {stats.met ? ` · ${tr("mastered")}` : stats.weakTag ? ` · ${tr("drillTag")} ${stats.weakTag}` : ""}
+      </p>
+    );
+  }
+
+  function review(current) {
+    if (!drillChecked) return null;
+    const ok = drillPick === quizAnswer(current);
+    const correct = quizOptions(current)[quizAnswer(current)] || "";
+    return (
+      <div className="drill-review">
+        <p className={ok ? "ok-msg" : "mag"}>{ok ? tr("correct") : tr("wrong")}</p>
+        {!ok && correct ? <p>{tr("answerIs")} {correct}</p> : null}
+        {itemWhy(current) ? <p className="fix-why">{tr("reason")}{itemWhy(current)}</p> : null}
+      </div>
+    );
+  }
+
+  function choices(current) {
+    const options = quizOptions(current);
+    const glosses = quizGlosses(current);
+    return (
+      <div className="grid gap-2 mt-3">
+        {options.map((opt, i) => (
+          <button
+            key={`${opt}-${i}`}
+            disabled={drillChecked}
+            onClick={() => setDrillPick(i)}
+            className={choiceClass(i, current)}
+          >
+            <span>{opt}</span>
+            {drillChecked && gloss(glosses[i]) ? <span className="opt-native">{glosses[i]}</span> : null}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -969,36 +1074,46 @@ export default function App() {
         {tab === "vocab" && canAccess(user, "vocab") && (
           <section className="panel">
             <h2>{tr("review")}</h2>
-            <div className="scroll-pane flex flex-col justify-center">
-              <BeatLine
-                className="beat-hero"
-                tokens={vocabTokens}
-                joiner={joiner}
-                active={trackId === "vocab-word" ? highlight : -1}
-                native={gloss(v.hint)}
-                nativeRatio={trackId === "vocab-word" ? zhRatio(highlight, vocabTokens.length) : 0}
-                fromHere={tr("fromHere")}
-                onToken={(tok) => playTokens("vocab-word", v.word, vocabTokens, tok, null)}
-              />
-              {showAns && (
-                <div className="mt-4">
+            {meter(vocabStats)}
+            {v && (
+              <>
+                <div className="scroll-pane flex flex-col justify-center">
                   <BeatLine
-                    tokens={vocabSentTokens}
+                    className="beat-hero"
+                    tokens={vocabTokens}
                     joiner={joiner}
-                    active={trackId === "vocab-sent" ? highlight : -1}
-                    native={gloss(v.sentence_zh)}
-                    nativeRatio={trackId === "vocab-sent" ? zhRatio(highlight, vocabSentTokens.length) : 0}
+                    active={trackId === "vocab-word" ? highlight : -1}
+                    native={drillChecked ? gloss(v.hint) : ""}
+                    nativeRatio={drillChecked && trackId === "vocab-word" ? zhRatio(highlight, vocabTokens.length) : 0}
                     fromHere={tr("fromHere")}
-                    onToken={(tok) => playTokens("vocab-sent", v.sentence, vocabSentTokens, tok, null)}
+                    onToken={(tok) => playTokens("vocab-word", v.word, vocabTokens, tok, null)}
                   />
+                  {choices(v)}
+                  {review(v)}
+                  {drillChecked && showAns && (
+                    <div className="mt-4">
+                      <BeatLine
+                        tokens={vocabSentTokens}
+                        joiner={joiner}
+                        active={trackId === "vocab-sent" ? highlight : -1}
+                        native={gloss(v.sentence_zh)}
+                        nativeRatio={trackId === "vocab-sent" ? zhRatio(highlight, vocabSentTokens.length) : 0}
+                        fromHere={tr("fromHere")}
+                        onToken={(tok) => playTokens("vocab-sent", v.sentence, vocabSentTokens, tok, null)}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
-              <button className="btn btn-ghost" onClick={() => setShowAns(true)}>{tr("reveal")}</button>
-              <button className="btn btn-line" disabled={busy} onClick={() => { gain(4); notePractice("vocab", 1); nextVocab(true); }}>{tr("next")}</button>
-              <button className="btn btn-ghost" onClick={() => playTokens("vocab-word", v.word, vocabTokens, 0, null)}>{tr("listen")}</button>
-            </div>
+                <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
+                  <button className="btn btn-primary" disabled={drillChecked} onClick={() => checkDrill("vocab", v)}>{tr("check")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={() => nextVocab(true)}>{tr("next")}</button>
+                  <button className="btn btn-ghost" onClick={() => playTokens("vocab-word", v.word, vocabTokens, 0, null)}>{tr("listen")}</button>
+                </div>
+                {drillChecked && (
+                  <button className="btn btn-ghost w-full mt-2 shrink-0" onClick={() => setShowAns(true)}>{tr("reveal")}</button>
+                )}
+              </>
+            )}
             {err && <p className="notice mt-2 shrink-0">{err}</p>}
           </section>
         )}
@@ -1006,22 +1121,32 @@ export default function App() {
         {tab === "examples" && canAccess(user, "examples") && (
           <section className="panel">
             <h2>{tr("drill")}</h2>
-            <div className="scroll-pane flex items-center">
-              <BeatLine
-                tokens={exampleTokens}
-                joiner={joiner}
-                active={trackId === "example" ? highlight : -1}
-                native={gloss(ex.sentence_zh)}
-                nativeRatio={trackId === "example" ? zhRatio(highlight, exampleTokens.length) : 0}
-                fromHere={tr("fromHere")}
-                onToken={(tok) => { playTokens("example", ex.sentence, exampleTokens, tok, null); gain(2); }}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-3 shrink-0">
-              <button className="btn btn-line" onClick={() => { playTokens("example", ex.sentence, exampleTokens, 0, null); gain(5); }}>{tr("listen")}</button>
-              <button className={`btn ${beat.loop && trackId === "example" ? "btn-line" : "btn-ghost"}`} onClick={() => playTokens("example", ex.sentence, exampleTokens, 0, [0, exampleTokens.length - 1])}>{tr("loop")}</button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => { notePractice("examples", 1); nextExample(true); }}>{tr("newExample")}</button>
-            </div>
+            {meter(exampleStats)}
+            {ex && (
+              <>
+                <div className="scroll-pane">
+                  <BeatLine
+                    tokens={exampleTokens}
+                    joiner={joiner}
+                    active={trackId === "example" ? highlight : -1}
+                    native={drillChecked ? gloss(ex.sentence_zh) : ""}
+                    nativeRatio={drillChecked && trackId === "example" ? zhRatio(highlight, exampleTokens.length) : 0}
+                    fromHere={tr("fromHere")}
+                    onToken={(tok) => playTokens("example", ex.sentence, exampleTokens, tok, null)}
+                  />
+                  {choices(ex)}
+                  {review(ex)}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
+                  <button className="btn btn-primary" disabled={drillChecked} onClick={() => checkDrill("examples", ex)}>{tr("check")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={() => nextExample(true)}>{tr("next")}</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2 shrink-0">
+                  <button className="btn btn-line" onClick={() => playTokens("example", ex.sentence, exampleTokens, 0, null)}>{tr("listen")}</button>
+                  <button className={`btn ${beat.loop && trackId === "example" ? "btn-line" : "btn-ghost"}`} onClick={() => playTokens("example", ex.sentence, exampleTokens, 0, [0, exampleTokens.length - 1])}>{tr("loop")}</button>
+                </div>
+              </>
+            )}
             {err && <p className="notice mt-2 shrink-0">{err}</p>}
           </section>
         )}
@@ -1029,23 +1154,38 @@ export default function App() {
         {tab === "scenes" && canAccess(user, "scenes") && (
           <section className="panel">
             <h2>{tr("scene")}</h2>
-            <div className="scroll-pane">
-              <p className="display mt-2">{scene.title}</p>
-              {gloss(scene.title_zh) ? <p className="text-sm text-[var(--mute)]">{scene.title_zh}</p> : null}
-              <div className="mt-3">
-                <BeatLine
-                  tokens={sceneTokens}
-                  joiner={joiner}
-                  active={trackId === "scene" ? highlight : -1}
-                  native={gloss(scene.prompt_zh)}
-                  nativeRatio={trackId === "scene" ? zhRatio(highlight, sceneTokens.length) : 0}
-                  fromHere={tr("fromHere")}
-                  onToken={(tok) => playTokens("scene", scene.prompt, sceneTokens, tok, null)}
-                />
-              </div>
-            </div>
-            <button className="btn btn-ghost w-full mt-3 shrink-0" onClick={() => { playTokens("scene", scene.prompt, sceneTokens, 0, null); gain(6); }}>{tr("listen")}</button>
-            <button className="btn btn-line w-full mt-2 shrink-0" disabled={busy} onClick={() => { notePractice("scenes", 1); nextScene(true); }}>{tr("newScene")}</button>
+            {meter(sceneStats)}
+            {scene && (
+              <>
+                <div className="scroll-pane">
+                  <p className="display mt-2">{scene.title}</p>
+                  {gloss(scene.title_zh) ? <p className="text-sm text-[var(--mute)]">{scene.title_zh}</p> : null}
+                  <p className="text-sm text-[var(--mute)] mt-2">{tr("sceneAsk")}</p>
+                  {choices(scene)}
+                  {review(scene)}
+                  {drillChecked && (
+                    <div className="mt-3">
+                      <BeatLine
+                        tokens={sceneTokens}
+                        joiner={joiner}
+                        active={trackId === "scene" ? highlight : -1}
+                        native={gloss(scene.prompt_zh)}
+                        nativeRatio={trackId === "scene" ? zhRatio(highlight, sceneTokens.length) : 0}
+                        fromHere={tr("fromHere")}
+                        onToken={(tok) => playTokens("scene", scene.prompt, sceneTokens, tok, null)}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
+                  <button className="btn btn-primary" disabled={drillChecked} onClick={() => checkDrill("scenes", scene)}>{tr("check")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={() => nextScene(true)}>{tr("next")}</button>
+                </div>
+                {drillChecked && (
+                  <button className="btn btn-ghost w-full mt-2 shrink-0" onClick={() => playTokens("scene", scene.prompt, sceneTokens, 0, null)}>{tr("listen")}</button>
+                )}
+              </>
+            )}
             {err && <p className="notice mt-2 shrink-0">{err}</p>}
           </section>
         )}
@@ -1053,29 +1193,22 @@ export default function App() {
         {tab === "exams" && canAccess(user, "exams") && (
           <section className="panel">
             <h2>{tr("exam")} · {examBoard(lang.code)}</h2>
-            <div className="scroll-pane mt-2">
-              <p>{item.q}</p>
-              {gloss(item.q_zh) ? <p className="beat-native on mt-1">{item.q_zh}</p> : null}
-              <div className="grid gap-2 mt-3">
-                {item.options.map((opt, i) => (
-                  <button key={i} onClick={() => setExamPick(i)} className={`btn btn-wrap ${examPick === i ? "btn-line" : "btn-ghost"}`}>
-                    <span>{opt}</span>
-                    {gloss(item.options_zh?.[i]) ? <span className="opt-native">{item.options_zh[i]}</span> : null}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
-              <button className="btn btn-primary" onClick={() => {
-                if (examPick === item.a) { gain(12); setErr(tr("correct")); }
-                else setErr(tr("wrong"));
-                setExamPick(-1);
-                notePractice("exams", 1);
-                nextExam(false);
-              }}>{tr("check")}</button>
-              <button className="btn btn-ghost" disabled={busy} onClick={() => nextExam(true)}>{tr("next")}</button>
-            </div>
-            {err && <p className="mt-2 shrink-0">{err}</p>}
+            {meter(examStats)}
+            {item && (
+              <>
+                <div className="scroll-pane mt-2">
+                  <p>{item.q}</p>
+                  {gloss(item.q_zh) ? <p className="beat-native on mt-1">{item.q_zh}</p> : null}
+                  {choices(item)}
+                  {review(item)}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
+                  <button className="btn btn-primary" disabled={drillChecked} onClick={() => checkDrill("exams", item)}>{tr("check")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={() => nextExam(true)}>{tr("next")}</button>
+                </div>
+              </>
+            )}
+            {err && <p className="notice mt-2 shrink-0">{err}</p>}
           </section>
         )}
 

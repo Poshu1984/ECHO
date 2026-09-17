@@ -6,8 +6,10 @@ import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, par
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice } from "./tts.js";
-import { TUTORS } from "./content.js";
+import { EXAMS, TUTORS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
+import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
+import { attachExamMeta, attachVocabQuiz, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -51,6 +53,13 @@ describe("labels", () => {
     assert.equal(t("en", "chatFail"), "Chat is unavailable. Try reading or words first.");
     assert.equal(t("zh", "ttsOk"), "雲端語音已連上 Google Cloud。");
     assert.match(t("zh", "ttsOff"), /雲端語音/);
+    assert.equal(t("zh", "pickFirst"), "請先選一個答案");
+    assert.equal(t("zh", "answerIs"), "正確：");
+    assert.equal(t("zh", "reason"), "原因：");
+    assert.equal(t("zh", "accuracy"), "正確率");
+    assert.equal(t("zh", "drillTag"), "再練");
+    assert.equal(t("zh", "mastered"), "已達標");
+    assert.equal(t("en", "pickFirst"), "Pick an option first");
   });
 });
 
@@ -62,6 +71,12 @@ describe("prompts", () => {
     assert.match(examplePrompt(lang, level, ["Hello"]), /Hello/);
     assert.match(scenePrompt(lang, level, ["Airport"]), /Airport/);
     assert.match(examPrompt(lang, level, ["until"]), /until/);
+    assert.match(examPrompt(lang, level, [], "look-forward-to"), /look-forward-to/);
+    assert.match(examPrompt(lang, level), /"why"/);
+    assert.match(examPrompt(lang, level), /"tag"/);
+    assert.match(vocabPrompt(lang, level), /"why"/);
+    assert.match(examplePrompt(lang, level), /"tag"/);
+    assert.match(scenePrompt(lang, level), /"why"/);
     assert.match(readingPrompt(lang, level), /hook_zh/);
     assert.match(readingPrompt(lang, level), /scene/);
   });
@@ -143,5 +158,81 @@ describe("google tutors", () => {
       const hit = pickGoogleVoice(voices, tutor, "en-US");
       assert.equal(hit.name, tutor.voices.en);
     }
+  });
+});
+
+const memory = {};
+globalThis.localStorage = {
+  getItem: (key) => (Object.hasOwn(memory, key) ? memory[key] : null),
+  setItem: (key, value) => { memory[key] = String(value); },
+  removeItem: (key) => { delete memory[key]; },
+};
+
+describe("mastery", () => {
+  it("tracks weak tags and waits for eight attempts before 95%", () => {
+    let store = {};
+    for (let i = 0; i < 7; i += 1) store = recordAttempt("en", "exams", "look-forward-to", true, store);
+    let stats = statsFor("en", "exams", store);
+    assert.equal(stats.total, 7);
+    assert.equal(stats.met, false);
+
+    store = recordAttempt("en", "exams", "look-forward-to", false, store);
+    stats = statsFor("en", "exams", store);
+    assert.equal(stats.hits, 7);
+    assert.equal(stats.total, 8);
+    assert.equal(stats.weakTag, "look-forward-to");
+    assert.equal(stats.met, false);
+  });
+
+  it("marks 19/20 as mastered and keeps only 40 rows", () => {
+    let store = {};
+    for (let i = 0; i < 19; i += 1) store = recordAttempt("en", "vocab", "work", true, store);
+    store = recordAttempt("en", "vocab", "work", false, store);
+    assert.equal(statsFor("en", "vocab", store).hits, 19);
+    assert.equal(statsFor("en", "vocab", store).total, 20);
+    assert.equal(statsFor("en", "vocab", store).met, true);
+    assert.equal(statsFor("en", "vocab", store).weakTag, "");
+
+    store = {};
+    for (let i = 0; i < 18; i += 1) store = recordAttempt("en", "examples", "cafe", true, store);
+    store = recordAttempt("en", "examples", "cafe", false, store);
+    store = recordAttempt("en", "examples", "cafe", false, store);
+    assert.equal(statsFor("en", "examples", store).met, false);
+    assert.equal(statsFor("en", "examples", store).weakTag, "cafe");
+
+    store = {};
+    for (let i = 0; i < 41; i += 1) store = recordAttempt("en", "scenes", "cafe", i !== 20, store);
+    assert.equal(store["en:scenes"].length, MASTERY_CAP);
+    assert.equal(store["en:scenes"][0].correct, true);
+  });
+});
+
+describe("quiz stay and similar items", () => {
+  it("keeps the same exam item after a miss and picks a similar tag next", () => {
+    const first = attachExamMeta(EXAMS.en.items.find((row) => row.tag === "look-forward-to"));
+    const q = first.q;
+    const store = recordAttempt("en", "exams", first.tag, false, {});
+    assert.equal(first.q, q);
+    assert.equal(quizAnswer(first), first.a);
+    assert.ok(quizOptions(first).includes("to hearing") || quizOptions(first).includes("to seeing") || quizOptions(first).includes("to receiving"));
+    assert.equal(statsFor("en", "exams", store).weakTag, "look-forward-to");
+
+    const next = pickSimilar(EXAMS.en.items, [first.q], (row) => row.q, "look-forward-to");
+    assert.equal(next.tag, "look-forward-to");
+    assert.notEqual(next.q, first.q);
+  });
+
+  it("hides the vocab meaning until a quiz is attached", () => {
+    const bank = [
+      { word: "deadline", hint: "最後期限", tag: "work" },
+      { word: "refund", hint: "退款", tag: "money" },
+      { word: "commute", hint: "通勤", tag: "travel" },
+      { word: "allergy", hint: "過敏", tag: "health" },
+    ];
+    const quiz = attachVocabQuiz(bank[0], bank);
+    assert.equal(quizOptions(quiz).length, 4);
+    assert.equal(quizOptions(quiz)[quizAnswer(quiz)], "最後期限");
+    assert.match(quiz.why, /deadline/);
+    assert.equal(MASTERY_MIN, 8);
   });
 });

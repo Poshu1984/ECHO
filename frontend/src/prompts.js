@@ -67,32 +67,41 @@ function avoidLine(items) {
   return `Do NOT repeat any of these: ${list.join(" | ")}`;
 }
 
-export function vocabPrompt(lang, levelRow, avoid = []) {
+function focusLine(tag) {
+  if (!tag) return "Pick a fresh everyday skill. Do not reuse the same wording.";
+  return `This item MUST practice the same skill/topic as "${tag}", but use a NEW sentence. Do not copy previous wording.`;
+}
+
+export function vocabPrompt(lang, levelRow, avoid = [], focusTag = "") {
   return `Create ONE new ${lang.name} vocabulary item for an adult Taiwanese learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Everyday life, work, travel, food, or health. Not slang-heavy. Not the same word twice.
 ${avoidLine(avoid)}
+${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
-{"word":"<the ${lang.name} word or short phrase>","hint":"<繁體中文意思>","sentence":"<one natural ${lang.name} example sentence using the word>","sentence_zh":"<該句的繁體中文翻譯>"}`;
+{"word":"<the ${lang.name} word or short phrase>","hint":"<繁體中文意思>","sentence":"<one natural ${lang.name} example sentence using the word>","sentence_zh":"<該句的繁體中文翻譯>","tag":"<short topic id like work|money|health|travel>","why":"<一句繁體中文，說明這個字何時用>"}`;
 }
 
-export function examplePrompt(lang, levelRow, avoid = []) {
+export function examplePrompt(lang, levelRow, avoid = [], focusTag = "") {
   return `Write ONE new natural ${lang.name} example sentence for an adult learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Spoken, useful, 8-18 words if the language uses spaces. Vary topic: cafe, office, commute, clinic, shopping, weekend.
 ${avoidLine(avoid)}
+${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
-{"sentence":"<${lang.name} sentence>","sentence_zh":"<繁體中文翻譯>"}`;
+{"sentence":"<${lang.name} sentence>","sentence_zh":"<繁體中文翻譯>","tag":"<short topic id>","why":"<一句繁體中文，說明這句何時用>"}`;
 }
 
-export function scenePrompt(lang, levelRow, avoid = []) {
+export function scenePrompt(lang, levelRow, avoid = [], focusTag = "") {
   return `Invent ONE new role-play scene for speaking practice in ${lang.name}, CEFR ${levelRow.id}. Adult daily life. Give a short title and a 1-2 sentence prompt that tells the learner what to say.
 ${avoidLine(avoid)}
+${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
-{"title":"<${lang.name} title>","title_zh":"<繁體中文標題>","prompt":"<what the learner should say, in ${lang.name}>","prompt_zh":"<繁體中文說明>"}`;
+{"title":"<${lang.name} title>","title_zh":"<繁體中文標題>","prompt":"<what the learner should say, in ${lang.name}>","prompt_zh":"<繁體中文說明>","tag":"<short topic id>","why":"<一句繁體中文，說明這個情境要完成什麼>"}`;
 }
 
-export function examPrompt(lang, levelRow, avoid = []) {
+export function examPrompt(lang, levelRow, avoid = [], focusTag = "") {
   return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${levelRow.id} (TOEIC/IELTS-style if English). Exactly 4 options, one correct. Keep it classroom-clean.
 ${avoidLine(avoid)}
+${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
-{"q":"<question with a blank or short stem in ${lang.name}>","q_zh":"<題幹繁體中文>","options":["<a>","<b>","<c>","<d>"],"options_zh":["<a 中文>","<b 中文>","<c 中文>","<d 中文>"],"a":0}`;
+{"q":"<question with a blank or short stem in ${lang.name}>","q_zh":"<題幹繁體中文>","options":["<a>","<b>","<c>","<d>"],"options_zh":["<a 中文>","<b 中文>","<c 中文>","<d 中文>"],"a":0,"tag":"<short skill id like look-forward-to>","why":"<一句繁體中文，說明為什麼這個選項正確、其他為什麼不行>"}`;
 }
 
 export function chatStartPrompt(tutor, lang, levelRow, avoid = []) {

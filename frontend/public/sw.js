@@ -1,4 +1,4 @@
-const CACHE = "echoo-v12";
+const CACHE = "echoo-v13";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

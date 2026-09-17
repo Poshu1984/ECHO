@@ -1,0 +1,94 @@
+import { pickFresh } from "./vary.js";
+
+export function makeChoices(correct, others, count = 4) {
+  const answer = String(correct || "").trim();
+  const unique = [];
+  for (const raw of others || []) {
+    const text = String(raw || "").trim();
+    if (!text || text === answer || unique.includes(text)) continue;
+    unique.push(text);
+    if (unique.length >= count - 1) break;
+  }
+  const options = [answer, ...unique];
+  for (let i = options.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return { options, a: Math.max(0, options.indexOf(answer)) };
+}
+
+export function itemTag(item, fallback = "drill") {
+  return String(item?.tag || fallback);
+}
+
+export function itemWhy(item) {
+  return String(item?.why || item?.quiz?.why || "");
+}
+
+export function quizAnswer(item) {
+  if (Number.isInteger(item?.a)) return item.a;
+  if (Number.isInteger(item?.quiz?.a)) return item.quiz.a;
+  return 0;
+}
+
+export function quizOptions(item) {
+  if (Array.isArray(item?.options) && item.options.length) return item.options;
+  return item?.quiz?.options || [];
+}
+
+export function quizGlosses(item) {
+  if (Array.isArray(item?.options_zh) && item.options_zh.length) return item.options_zh;
+  return item?.quiz?.options_zh || [];
+}
+
+export function pickSimilar(items, seenKeys, keyFn, tag) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) return null;
+  const tagged = tag ? list.filter((item) => itemTag(item) === tag) : [];
+  return pickFresh(tagged.length ? tagged : list, seenKeys, keyFn);
+}
+
+function fillWhy(item, why) {
+  return item.why ? item : { ...item, why };
+}
+
+export function attachVocabQuiz(item, bank = []) {
+  if (!item) return item;
+  const quiz = makeChoices(item.hint, (bank || []).map((row) => row.hint));
+  return fillWhy({
+    ...item,
+    tag: itemTag(item, item.word || "vocab"),
+    quiz,
+  }, item.why || `${item.word} 的意思是「${item.hint}」。`);
+}
+
+export function attachExampleQuiz(item, bank = []) {
+  if (!item) return item;
+  const quiz = makeChoices(item.sentence_zh, (bank || []).map((row) => row.sentence_zh));
+  return fillWhy({
+    ...item,
+    tag: itemTag(item, "example"),
+    quiz,
+  }, item.why || `這句的意思是「${item.sentence_zh}」。`);
+}
+
+export function attachSceneQuiz(item, bank = []) {
+  if (!item) return item;
+  const quiz = makeChoices(item.prompt_zh, (bank || []).map((row) => row.prompt_zh));
+  return fillWhy({
+    ...item,
+    tag: itemTag(item, item.title || "scene"),
+    quiz,
+  }, item.why || `這個情境要做的是：${item.prompt_zh}`);
+}
+
+export function attachExamMeta(item) {
+  if (!item) return item;
+  const a = Number(item.a);
+  const correct = Array.isArray(item.options) ? item.options[a] : "";
+  return {
+    ...item,
+    tag: itemTag(item, "exam"),
+    why: item.why || (correct ? `正確答案是「${correct}」。` : ""),
+  };
+}
