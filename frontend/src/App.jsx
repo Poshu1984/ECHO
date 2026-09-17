@@ -523,15 +523,19 @@ export default function App() {
   }
 
   async function beginHoldMic(event) {
-    if (busyRef.current || listeningRef.current) return;
+    if (busyRef.current || holdRef.current || listeningRef.current) return;
     event.preventDefault();
     try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
     holdRef.current = true;
     heldTextRef.current = "";
     setInput("");
     setErr("");
+    listeningRef.current = true;
+    setListening(true);
     if (!speechSupported()) {
       holdRef.current = false;
+      listeningRef.current = false;
+      setListening(false);
       setErr(tr("micOff"));
       return;
     }
@@ -542,12 +546,16 @@ export default function App() {
       await openMicStream();
     } catch (error) {
       holdRef.current = false;
+      listeningRef.current = false;
+      setListening(false);
       closeMicStream();
       setErr(tr(micErrorKey(error) || "micError"));
       return;
     }
     if (!holdRef.current) {
       closeMicStream();
+      listeningRef.current = false;
+      setListening(false);
       return;
     }
     const rec = createRecognizer(lang.speech, {
@@ -566,12 +574,16 @@ export default function App() {
       },
       onEnd: () => {
         recRef.current = null;
-        listeningRef.current = false;
-        setListening(false);
+        if (!holdRef.current) {
+          listeningRef.current = false;
+          setListening(false);
+        }
       },
     });
     if (!rec) {
       holdRef.current = false;
+      listeningRef.current = false;
+      setListening(false);
       closeMicStream();
       setErr(tr("micOff"));
       return;
@@ -1085,6 +1097,11 @@ export default function App() {
                   onPointerUp={endHoldMic}
                   onPointerCancel={endHoldMic}
                   onLostPointerCapture={endHoldMic}
+                  onMouseDown={beginHoldMic}
+                  onMouseUp={endHoldMic}
+                  onMouseLeave={(e) => { if (e.buttons) endHoldMic(); }}
+                  onTouchStart={beginHoldMic}
+                  onTouchEnd={endHoldMic}
                   onContextMenu={(e) => e.preventDefault()}
                 >
                   <MicIcon />
