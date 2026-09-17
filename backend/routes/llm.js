@@ -1,25 +1,28 @@
 import { Router } from "express";
 import { consumeQuota } from "../store.js";
+import { configuredKey, geminiModelList, shouldTryNextGeminiModel } from "../llmModels.js";
 
 const router = Router();
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
-function envKey(name) {
-  const v = (process.env[name] || "").trim();
-  if (!v || v === "your_key_here") return "";
-  return v;
-}
-
 function anthropicKey() {
-  return envKey("ANTHROPIC_API_KEY");
+  return configuredKey("ANTHROPIC_API_KEY");
 }
 
 function geminiKey() {
-  return envKey("GOOGLE_GEMINI_API_KEY") || envKey("GOOGLE_TTS_API_KEY");
+  return configuredKey("GOOGLE_GEMINI_API_KEY", "GOOGLE_TTS_API_KEY");
 }
 
 function toAnthropicShape(text) {
   return { content: [{ type: "text", text }], provider: "gemini" };
+}
+
+function geminiText(body) {
+  return (body?.candidates || [])
+    .flatMap((candidate) => candidate.content?.parts || [])
+    .map((part) => part.text || "")
+    .join("\n")
+    .trim();
 }
 
 async function callClaude(system, messages, maxTokens, temperature) {
@@ -52,26 +55,25 @@ async function callClaude(system, messages, maxTokens, temperature) {
   return { ok: true, body };
 }
 
-async function callGemini(system, messages, maxTokens, temperature) {
-  const key = geminiKey();
-  if (!key) return { ok: false, skip: true };
-  const model = process.env.GOOGLE_GEMINI_MODEL || "gemini-2.0-flash";
+async function callGeminiModel(key, model, system, messages, maxTokens, temperature, withThinkingOff) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const contents = (Array.isArray(messages) ? messages : []).map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: typeof m.content === "string" ? m.content : JSON.stringify(m.content) }],
   }));
+  const generationConfig = {
+    maxOutputTokens: Math.max(maxTokens || 1200, 1024),
+    temperature: Number.isFinite(temperature) ? temperature : 0.7,
+    responseMimeType: "application/json",
+  };
+  if (withThinkingOff) generationConfig.thinkingConfig = { thinkingBudget: 0 };
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system || "" }] },
       contents,
-      generationConfig: {
-        maxOutputTokens: maxTokens || 1200,
-        temperature: Number.isFinite(temperature) ? temperature : 0.7,
-        responseMimeType: "application/json",
-      },
+      generationConfig,
     }),
   });
   const raw = await res.text();
@@ -81,13 +83,26 @@ async function callGemini(system, messages, maxTokens, temperature) {
   } catch {
     body = { error: raw || "Gemini parse error" };
   }
-  if (!res.ok) return { ok: false, status: res.status, body };
-  const text = (body.candidates || [])
-    .flatMap((c) => c.content?.parts || [])
-    .map((p) => p.text || "")
-    .join("\n");
-  if (!text.trim()) return { ok: false, status: 502, body: { error: "Empty Gemini response" } };
-  return { ok: true, body: toAnthropicShape(text) };
+  if (!res.ok) return { ok: false, status: res.status, body, model };
+  const text = geminiText(body);
+  if (!text) return { ok: false, status: 502, body: { error: "Empty Gemini response", model }, model };
+  return { ok: true, body: toAnthropicShape(text), model };
+}
+
+async function callGemini(system, messages, maxTokens, temperature) {
+  const key = geminiKey();
+  if (!key) return { ok: false, skip: true };
+  let last = { ok: false, skip: false };
+  for (const model of geminiModelList()) {
+    let result = await callGeminiModel(key, model, system, messages, maxTokens, temperature, true);
+    if (!result.ok && result.status === 400) {
+      result = await callGeminiModel(key, model, system, messages, maxTokens, temperature, false);
+    }
+    if (result.ok) return result;
+    last = result;
+    if (!shouldTryNextGeminiModel(result.status)) return result;
+  }
+  return last;
 }
 
 router.post("/messages", async (req, res) => {

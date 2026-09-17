@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
-import { armAudio, listDeviceVoices, pickGoogleVoice, speakOnDevice } from "./tts.js";
+import { armAudio, listDeviceVoices, pickGoogleVoice, speakOnDevice, stopDeviceSpeech } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess,
   GREET, VOCAB, EXAMPLES, SCENES, EXAMS,
@@ -25,7 +25,7 @@ import { pickFresh, rememberKey } from "./vary.js";
 import { loadMastery, recordAttempt, statsFor } from "./mastery.js";
 import {
   attachExamMeta, attachExampleQuiz, attachSceneQuiz, attachVocabQuiz,
-  itemTag, itemWhy, pickSimilar, quizAnswer, quizGlosses, quizOptions,
+  examAnswerIndex, itemTag, itemWhy, pickSimilar, quizAnswer, quizGlosses, quizOptions,
 } from "./quiz.js";
 
 function MicIcon() {
@@ -84,6 +84,7 @@ export default function App() {
   const trackRef = useRef({ id: "", tokens: [], text: "", mode: "", key: "" });
   const recRef = useRef(null);
   const busyRef = useRef(false);
+  const playSeq = useRef(0);
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
@@ -213,6 +214,7 @@ export default function App() {
   }
 
   async function loadTrack(id, text, tokens) {
+    const seq = playSeq.current;
     armAudio();
     const want = engine === "device" || ttsLive === false ? "clock" : "cloud";
     if (
@@ -222,17 +224,20 @@ export default function App() {
       && trackRef.current.key === trackKey
       && beat.audioRef.current
     ) {
+      if (playSeq.current !== seq) return false;
       setTrackId(id);
-      return;
+      return true;
     }
     if (want === "clock") {
+      if (playSeq.current !== seq) return false;
       beat.attachClock(estimateTimes(tokens));
       trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
       setTrackId(id);
-      return;
+      return true;
     }
     try {
       const voices = (await api.voices(lang.speech)).voices || [];
+      if (playSeq.current !== seq) return false;
       const voice = pickGoogleVoice(voices, tutor, lang.speech);
       if (!voice) throw new Error("NO_VOICE");
       const data = await api.synthesize({
@@ -241,26 +246,36 @@ export default function App() {
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
       });
+      if (playSeq.current !== seq) return false;
       if (!data.audioContent) throw new Error("NO_AUDIO");
       const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
       const duration = await waitMeta(audio);
+      if (playSeq.current !== seq) {
+        try { audio.pause(); } catch { /* ignore */ }
+        return false;
+      }
       const dur = duration > 0 && Number.isFinite(duration)
         ? duration
         : Math.max(1.2, tokens.join("").length * 0.11);
       beat.attach(audio, timesFromPoints(data.timepoints, tokens, dur));
       trackRef.current = { id, tokens, text, mode: "cloud", key: trackKey };
       setTrackId(id);
+      return true;
     } catch (e) {
+      if (playSeq.current !== seq) return false;
       if (e.status === 429) setErr(tr("voiceQuota"));
       beat.attachClock(estimateTimes(tokens));
       trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
       setTrackId(id);
+      return true;
     }
   }
 
   async function playTokens(id, text, tokens, startAt = 0, loopRange = null) {
     if (!text || !tokens?.length) return;
-    await loadTrack(id, text, tokens);
+    const seq = playSeq.current;
+    const ready = await loadTrack(id, text, tokens);
+    if (!ready || playSeq.current !== seq) return;
     const start = Math.max(0, Math.min(startAt, tokens.length - 1));
     beat.setLoop(loopRange, trackRef.current.mode === "clock" && loopRange
       ? () => playDevice(joinBeats(tokens.slice(loopRange[0], loopRange[1] + 1), lang.code))
@@ -271,6 +286,7 @@ export default function App() {
     try {
       await beat.playFrom(start);
     } catch {
+      if (playSeq.current !== seq) return;
       beat.attachClock(estimateTimes(tokens));
       trackRef.current = { ...trackRef.current, mode: "clock" };
       playDevice(joinBeats(tokens.slice(start), lang.code) || text);
@@ -285,10 +301,29 @@ export default function App() {
   }
 
   function resetTrack() {
+    playSeq.current += 1;
     beat.stop();
+    stopDeviceSpeech();
     beat.setLoop(null);
     trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
     setTrackId("");
+  }
+
+  function goTab(id) {
+    if (id === tab) return;
+    resetTrack();
+    stopMic();
+    setErr("");
+    setTab(id);
+  }
+
+  function canCallLlm() {
+    if (user?.role === "admin") return true;
+    const quota = user?.quota;
+    if (!quota) return true;
+    if (quota.llmLimit === 0) return false;
+    if (Number.isFinite(quota.llmLimit) && quota.llmUsed >= quota.llmLimit) return false;
+    return true;
   }
 
   async function sendText(raw) {
@@ -409,7 +444,7 @@ export default function App() {
   function toggleStoryPlay() {
     if (!passage) return;
     if (beat.playing && trackId === "read") {
-      beat.stop();
+      resetTrack();
       return;
     }
     const start = trackId === "read" && highlight >= 0 ? highlight : 0;
@@ -474,6 +509,7 @@ export default function App() {
     armAudio();
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     beat.stop();
+    stopDeviceSpeech();
     const rec = createRecognizer(lang.speech, {
       onPartial: (text) => setInput(text),
       onFinal: (text) => {
@@ -513,9 +549,20 @@ export default function App() {
   }
 
   async function askJson(system, userMsg, maxTokens = 800, temperature = 0.95) {
+    if (!canCallLlm()) {
+      const err = new Error("LLM_SKIP");
+      err.code = "LLM_SKIP";
+      throw err;
+    }
     const data = await api.llm(system, [{ role: "user", content: userMsg }], maxTokens, temperature);
     const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
     return parseModelJson(raw);
+  }
+
+  function noteLlmFallback(err, manual) {
+    if (!manual) return;
+    if (err?.code === "LLM_SKIP" || err?.status === 429) return;
+    setErr(tr("genFallback"));
   }
 
   function resetDrill() {
@@ -560,11 +607,11 @@ export default function App() {
       if (!p?.word || !p?.sentence) throw new Error("BAD_VOCAB");
       seenRef.current.vocab = rememberKey(seenRef.current.vocab, p.word);
       setVocabItem(attachVocabQuiz(p, bank));
-    } catch {
+    } catch (err) {
       const fb = pickSimilar(bank, seenRef.current.vocab, (x) => x.word, focus) || bank[0];
       seenRef.current.vocab = rememberKey(seenRef.current.vocab, fb.word);
       setVocabItem(attachVocabQuiz(fb, bank));
-      if (manual) setErr(tr("genFallback"));
+      noteLlmFallback(err, manual);
     } finally {
       setBusy(false);
     }
@@ -585,12 +632,12 @@ export default function App() {
       seenRef.current.examples = rememberKey(seenRef.current.examples, p.sentence);
       item = attachExampleQuiz(p, bank);
       setExampleItem(item);
-    } catch {
+    } catch (err) {
       const fb = pickSimilar(bank, seenRef.current.examples, (x) => x.sentence, focus) || bank[0];
       seenRef.current.examples = rememberKey(seenRef.current.examples, fb.sentence);
       item = attachExampleQuiz(fb, bank);
       setExampleItem(item);
-      if (manual) setErr(tr("genFallback"));
+      noteLlmFallback(err, manual);
     } finally {
       setBusy(false);
     }
@@ -612,11 +659,11 @@ export default function App() {
       if (!p?.title || !p?.prompt) throw new Error("BAD_SCENE");
       seenRef.current.scenes = rememberKey(seenRef.current.scenes, p.title);
       setSceneItem(attachSceneQuiz(p, bank));
-    } catch {
+    } catch (err) {
       const fb = pickSimilar(bank, seenRef.current.scenes, (x) => x.title, focus) || bank[0];
       seenRef.current.scenes = rememberKey(seenRef.current.scenes, fb.title);
       setSceneItem(attachSceneQuiz(fb, bank));
-      if (manual) setErr(tr("genFallback"));
+      noteLlmFallback(err, manual);
     } finally {
       setBusy(false);
     }
@@ -629,17 +676,17 @@ export default function App() {
     const bank = (EXAMS[lang.code] || EXAMS.en).items;
     const focus = statsFor(lang.code, "exams").weakTag;
     try {
-      const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams, focus), "Give one new quiz item now.");
+      const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams, focus), "Give one new quiz item now.", 1200);
       if (!p?.q || !Array.isArray(p.options) || p.options.length < 2) throw new Error("BAD_EXAM");
-      const a = Number(p.a);
-      if (!Number.isInteger(a) || a < 0 || a >= p.options.length) throw new Error("BAD_EXAM_A");
+      const a = examAnswerIndex(p);
+      if (a < 0) throw new Error("BAD_EXAM_A");
       seenRef.current.exams = rememberKey(seenRef.current.exams, p.q);
       setExamItem(attachExamMeta({ ...p, a }));
-    } catch {
+    } catch (err) {
       const fb = pickSimilar(bank, seenRef.current.exams, (x) => x.q, focus) || bank[0];
       seenRef.current.exams = rememberKey(seenRef.current.exams, fb.q);
       setExamItem(attachExamMeta(fb));
-      if (manual) setErr(tr("genFallback"));
+      noteLlmFallback(err, manual);
     } finally {
       setBusy(false);
     }
@@ -799,7 +846,7 @@ export default function App() {
             {user.quota ? ` · ${user.plan}` : ""}
           </div>
         </div>
-        <button className="btn btn-ghost shrink-0" style={{ minHeight: 40, padding: "0 12px" }} onClick={() => { clearSession(); setUser(null); }}>
+        <button className="btn btn-ghost shrink-0" style={{ minHeight: 40, padding: "0 12px" }} onClick={() => { resetTrack(); stopMic(); clearSession(); setUser(null); }}>
           {tr("logout")}
         </button>
       </header>
@@ -807,7 +854,7 @@ export default function App() {
         {nav.map((n) => {
           const closed = ["vocab", "examples", "scenes", "exams"].includes(n.id) && !canAccess(user, n.id);
           return (
-            <button key={n.id} onClick={() => { if (!closed) { setErr(""); setTab(n.id); } }}
+            <button key={n.id} onClick={() => { if (!closed) goTab(n.id); }}
               className={`nav-btn ${tab === n.id ? "active" : ""} ${closed ? "lock" : ""}`}>
               {n.label}
             </button>
@@ -835,8 +882,7 @@ export default function App() {
                 setLang(next);
                 setMsgs([]);
                 setPassage(null);
-                trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
-                beat.stop();
+                resetTrack();
               }} className="field mt-1">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
               </select>
@@ -863,8 +909,7 @@ export default function App() {
             <label className="block text-sm">{tr("voiceEngine")}
               <select value={engine} onChange={(e) => {
                 setEngine(e.target.value);
-                trackRef.current = { id: "", tokens: [], text: "", mode: "", key: "" };
-                beat.stop();
+                resetTrack();
               }} className="field mt-1">
                 <option value="cloud">{tr("cloud")}</option>
                 <option value="device">{tr("device")}</option>
@@ -1057,7 +1102,7 @@ export default function App() {
                 </div>
                 <div className="story-tools">
                   <button className="btn btn-accent btn-mini" onClick={() => playPassageFrom(0, beat.loop, passage)}>{tr("playAll")}</button>
-                  <button className="btn btn-ghost btn-mini" onClick={() => beat.stop()}>{tr("stop")}</button>
+                  <button className="btn btn-ghost btn-mini" onClick={() => resetTrack()}>{tr("stop")}</button>
                   <button className="btn btn-ghost btn-mini" onClick={() => setShowZh((v) => !v)}>{showZh ? tr("hideZh") : tr("showZh")}</button>
                   <button className="btn btn-line btn-mini" onClick={() => setSaves(savePassage(passage))}>{isSaved(passage.id) ? tr("saved") : tr("save")}</button>
                   <button className="btn btn-ghost btn-mini" disabled={busy} onClick={generatePassage}>{tr("newPassage")}</button>

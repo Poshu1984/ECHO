@@ -124,3 +124,8 @@ export function speakOnDevice(text, { lang, pitch, rate, voiceName, tutor }) {
   }
   return { ok: true, substituted: first.substituted };
 }
+
+export function stopDeviceSpeech() {
+  currentUtterance = null;
+  try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+}
