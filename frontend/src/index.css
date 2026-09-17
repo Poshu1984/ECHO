@@ -163,6 +163,27 @@ input, select, textarea {
   border-color: var(--orange);
   color: var(--orange);
 }
+.btn-ok {
+  background: var(--olive);
+  color: var(--bg);
+  border-color: var(--olive);
+}
+.btn-bad {
+  background: var(--orange);
+  color: var(--bg);
+  border-color: var(--orange);
+}
+.ok-msg { color: var(--olive); font-weight: 700; }
+.drill-meter {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--mute);
+}
+.drill-review {
+  margin-top: 10px;
+  text-align: left;
+}
+.drill-review p { margin: 4px 0 0; }
 .nav-btn {
   min-height: 40px;
   padding: 6px 4px;
