@@ -220,6 +220,9 @@ describe("quiz stay and similar items", () => {
     const next = pickSimilar(EXAMS.en.items, [first.q], (row) => row.q, "look-forward-to");
     assert.equal(next.tag, "look-forward-to");
     assert.notEqual(next.q, first.q);
+    const again = pickSimilar(EXAMS.en.items, [first.q, next.q, "I look forward _____ your reply."], (row) => row.q, "look-forward-to");
+    assert.equal(again.tag, "look-forward-to");
+    assert.notEqual(again.q, "I look forward _____ your reply.");
   });
 
   it("hides the vocab meaning until a quiz is attached", () => {

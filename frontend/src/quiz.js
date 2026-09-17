@@ -45,7 +45,16 @@ export function pickSimilar(items, seenKeys, keyFn, tag) {
   const list = Array.isArray(items) ? items : [];
   if (!list.length) return null;
   const tagged = tag ? list.filter((item) => itemTag(item) === tag) : [];
-  return pickFresh(tagged.length ? tagged : list, seenKeys, keyFn);
+  const pool = tagged.length ? tagged : list;
+  const seen = seenKeys || [];
+  const unused = pool.filter((item) => !seen.includes(keyFn(item)));
+  if (unused.length) return pickFresh(unused, [], keyFn);
+  if (pool.length > 1 && seen.length) {
+    const last = seen[seen.length - 1];
+    const others = pool.filter((item) => keyFn(item) !== last);
+    if (others.length) return pickFresh(others, [], keyFn);
+  }
+  return pickFresh(pool, seen, keyFn);
 }
 
 function fillWhy(item, why) {
