@@ -276,6 +276,9 @@ input, select, textarea {
   border: 1px solid var(--cyan);
   background: var(--paper);
   color: var(--cyan);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .btn-mic-label {
   max-width: 4.5rem;
@@ -288,6 +291,12 @@ input, select, textarea {
   color: #fff;
   border-color: var(--magenta);
   animation: micpulse 1.2s ease-in-out infinite;
+}
+.mic-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--mute);
 }
 @keyframes micpulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 45, 155, 0.45); }

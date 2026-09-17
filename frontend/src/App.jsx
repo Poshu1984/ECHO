@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
-import { armAudio, listDeviceVoices, pickGoogleVoice, speakOnDevice, stopDeviceSpeech } from "./tts.js";
+import { armAudio, cachedVoices, createCloudAudio, listDeviceVoices, pickGoogleVoice, settleAudioRoute, speakOnDevice, stopDeviceSpeech } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess,
   GREET, VOCAB, EXAMPLES, SCENES, EXAMS,
@@ -15,12 +15,12 @@ import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { inferScene } from "./story.js";
 import {
-  chatPrompt, chatStartPrompt, parseModelJson, readingPrompt, SPEAK_RATES,
+  chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
   toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt,
 } from "./prompts.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
-import { createRecognizer, micErrorKey, speechSupported } from "./speech.js";
+import { closeMicStream, createRecognizer, micErrorKey, openMicStream, speechSupported } from "./speech.js";
 import { pickFresh, rememberKey } from "./vary.js";
 import { loadMastery, recordAttempt, statsFor } from "./mastery.js";
 import {
@@ -85,6 +85,10 @@ export default function App() {
   const recRef = useRef(null);
   const busyRef = useRef(false);
   const playSeq = useRef(0);
+  const holdRef = useRef(false);
+  const heldTextRef = useRef("");
+  const listeningRef = useRef(false);
+  const endingHoldRef = useRef(false);
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
@@ -145,6 +149,7 @@ export default function App() {
   useEffect(() => () => {
     try { recRef.current?.stop(); } catch { /* ignore */ }
     recRef.current = null;
+    closeMicStream();
   }, []);
 
   useEffect(() => {
@@ -205,7 +210,7 @@ export default function App() {
       const done = () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0);
       audio.addEventListener("loadedmetadata", done, { once: true });
       audio.addEventListener("error", done, { once: true });
-      setTimeout(done, 800);
+      setTimeout(done, 400);
     });
   }
 
@@ -236,19 +241,21 @@ export default function App() {
       return true;
     }
     try {
-      const voices = (await api.voices(lang.speech)).voices || [];
+      const voices = await cachedVoices(lang.speech, (code) => api.voices(code));
       if (playSeq.current !== seq) return false;
       const voice = pickGoogleVoice(voices, tutor, lang.speech);
       if (!voice) throw new Error("NO_VOICE");
+      const wantMarks = Boolean(id) && !String(id).startsWith("chat");
       const data = await api.synthesize({
-        ssml: ssmlFromBeats(tokens, lang.code),
-        marks: true,
+        ...(wantMarks
+          ? { ssml: ssmlFromBeats(tokens, lang.code), marks: true }
+          : { input: { text }, marks: false }),
         voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
       });
       if (playSeq.current !== seq) return false;
       if (!data.audioContent) throw new Error("NO_AUDIO");
-      const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+      const audio = createCloudAudio(data.audioContent);
       const duration = await waitMeta(audio);
       if (playSeq.current !== seq) {
         try { audio.pause(); } catch { /* ignore */ }
@@ -313,6 +320,7 @@ export default function App() {
     if (id === tab) return;
     resetTrack();
     stopMic();
+    closeMicStream();
     setErr("");
     setTab(id);
   }
@@ -331,6 +339,8 @@ export default function App() {
     if (!text || busyRef.current) return;
     busyRef.current = true;
     stopMic();
+    closeMicStream();
+    resetTrack();
     armAudio();
     setInput("");
     setBusy(true);
@@ -339,27 +349,34 @@ export default function App() {
     setMsgs(next);
     try {
       const system = chatPrompt(tutor, lang, levelRow);
-      const data = await api.llm(system, toLlmMessages(next));
+      let data;
+      try {
+        data = await api.llm(system, toLlmMessages(next), 500, 0.7);
+      } catch (first) {
+        if (first.status === 429) throw first;
+        data = await api.llm(system, toLlmMessages(next), 500, 0.5);
+      }
       const rawReply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
-      const p = parseModelJson(rawReply);
-      const reply = String(p.reply || "").trim();
-      if (!reply) throw new Error("EMPTY_REPLY");
-      const native = p.reply_zh || p.native || "";
+      const p = parseChatPayload(rawReply);
       const tm = {
         role: "ai",
-        text: reply,
-        native,
-        tokens: beatsOf(reply, lang.code),
-        corrections: Array.isArray(p.corrections) ? p.corrections : [],
-        praise: p.praise || "",
+        text: p.reply,
+        native: p.reply_zh,
+        tokens: beatsOf(p.reply, lang.code),
+        corrections: p.corrections,
+        praise: p.praise,
       };
       setMsgs((m) => [...m, tm]);
-      await playTokens(`chat-${next.length}`, reply, tm.tokens, 0, null);
+      busyRef.current = false;
+      setBusy(false);
       await gain(8, 2);
       notePractice("chat", 2);
+      try {
+        await settleAudioRoute(180);
+        await playTokens(`chat-${next.length}`, p.reply, tm.tokens, 0, null);
+      } catch { /* TTS must not look like a chat outage */ }
     } catch {
       setErr(tr("chatFail"));
-    } finally {
       busyRef.current = false;
       setBusy(false);
     }
@@ -472,22 +489,26 @@ export default function App() {
     try {
       const data = await api.llm(chatStartPrompt(tutor, lang, levelRow, seenRef.current.greet), [
         { role: "user", content: "Please start the conversation with a fresh greeting and a new question." },
-      ], 900, 0.95);
+      ], 500, 0.85);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
-      const p = parseModelJson(raw);
-      const reply = String(p.reply || "").trim();
-      if (!reply) throw new Error("EMPTY_REPLY");
-      const tokens = beatsOf(reply, lang.code);
-      seenRef.current.greet = rememberKey(seenRef.current.greet, reply);
-      setMsgs([{ role: "ai", text: reply, native: p.reply_zh || "", tokens, corrections: [], praise: "" }]);
-      await playTokens("chat-0", reply, tokens, 0, null);
+      const p = parseChatPayload(raw);
+      const tokens = beatsOf(p.reply, lang.code);
+      seenRef.current.greet = rememberKey(seenRef.current.greet, p.reply);
+      setMsgs([{ role: "ai", text: p.reply, native: p.reply_zh || "", tokens, corrections: [], praise: "" }]);
+      busyRef.current = false;
+      setBusy(false);
       notePractice("chat", 1);
+      try {
+        await playTokens("chat-0", p.reply, tokens, 0, null);
+      } catch { /* greeting audio is optional */ }
     } catch {
       const g = greetOf(lang.code);
       const tokens = beatsOf(g.text, lang.code);
       setMsgs([{ role: "ai", text: g.text, native: g.zh, tokens }]);
       setErr(tr("genFallback"));
-      await playTokens("chat-0", g.text, tokens, 0, null);
+      busyRef.current = false;
+      setBusy(false);
+      try { await playTokens("chat-0", g.text, tokens, 0, null); } catch { /* ignore */ }
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -497,55 +518,94 @@ export default function App() {
   function stopMic() {
     try { recRef.current?.stop(); } catch { /* ignore */ }
     recRef.current = null;
+    listeningRef.current = false;
     setListening(false);
   }
 
-  function startMic() {
+  async function beginHoldMic(event) {
+    if (busyRef.current || listeningRef.current) return;
+    event.preventDefault();
+    try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
+    holdRef.current = true;
+    heldTextRef.current = "";
+    setInput("");
     setErr("");
     if (!speechSupported()) {
+      holdRef.current = false;
       setErr(tr("micOff"));
       return;
     }
     armAudio();
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     beat.stop();
     stopDeviceSpeech();
+    try {
+      await openMicStream();
+    } catch (error) {
+      holdRef.current = false;
+      closeMicStream();
+      setErr(tr(micErrorKey(error) || "micError"));
+      return;
+    }
+    if (!holdRef.current) {
+      closeMicStream();
+      return;
+    }
     const rec = createRecognizer(lang.speech, {
-      onPartial: (text) => setInput(text),
+      continuous: true,
+      onPartial: (text) => setInput(`${heldTextRef.current} ${text}`.trim()),
       onFinal: (text) => {
-        setInput(text);
-        sendText(text);
+        heldTextRef.current = `${heldTextRef.current} ${text}`.trim();
+        setInput(heldTextRef.current);
       },
       onError: (event) => {
         const key = micErrorKey(event);
         if (key) setErr(tr(key));
         recRef.current = null;
+        listeningRef.current = false;
         setListening(false);
       },
       onEnd: () => {
         recRef.current = null;
+        listeningRef.current = false;
         setListening(false);
       },
     });
     if (!rec) {
+      holdRef.current = false;
+      closeMicStream();
       setErr(tr("micOff"));
       return;
     }
     recRef.current = rec;
     try {
       rec.start();
+      listeningRef.current = true;
       setListening(true);
-    } catch (e) {
-      const key = micErrorKey(e);
+    } catch (error) {
+      holdRef.current = false;
+      closeMicStream();
+      const key = micErrorKey(error);
       setErr(tr(key || "micError"));
       recRef.current = null;
+      listeningRef.current = false;
       setListening(false);
     }
   }
 
-  function toggleMic() {
-    if (listening) stopMic();
-    else startMic();
+  async function endHoldMic() {
+    if (endingHoldRef.current) return;
+    const wasHolding = holdRef.current || listeningRef.current || recRef.current;
+    holdRef.current = false;
+    if (!wasHolding) return;
+    endingHoldRef.current = true;
+    try { recRef.current?.stop(); } catch { /* ignore */ }
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    const text = (heldTextRef.current || "").trim();
+    stopMic();
+    closeMicStream();
+    heldTextRef.current = "";
+    endingHoldRef.current = false;
+    if (text) sendText(text);
   }
 
   async function askJson(system, userMsg, maxTokens = 800, temperature = 0.95) {
@@ -1006,7 +1066,7 @@ export default function App() {
                 onChange={(e) => setInput(e.target.value)}
                 className="field"
                 rows={2}
-                placeholder={listening ? tr("listening") : tr("composerPh")}
+                placeholder={listening ? tr("listeningHold") : tr("composerPh")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -1018,17 +1078,22 @@ export default function App() {
                 <button
                   type="button"
                   className={`btn btn-mic ${listening ? "live" : "btn-ghost"}`}
-                  onClick={toggleMic}
                   disabled={busy}
-                  aria-label={tr("mic")}
-                  title={tr("speakReply")}
+                  aria-label={tr("holdMic")}
+                  title={tr("micBtHint")}
+                  onPointerDown={beginHoldMic}
+                  onPointerUp={endHoldMic}
+                  onPointerCancel={endHoldMic}
+                  onLostPointerCapture={endHoldMic}
+                  onContextMenu={(e) => e.preventDefault()}
                 >
                   <MicIcon />
-                  <span className="btn-mic-label">{listening ? tr("micOn") : tr("mic")}</span>
+                  <span className="btn-mic-label">{listening ? tr("listeningHold") : tr("holdMic")}</span>
                 </button>
                 <button disabled={busy} onClick={send} className="btn btn-primary">{tr("send")}</button>
               </div>
             </div>
+            <p className="mic-hint">{tr("micBtHint")}</p>
           </section>
         )}
 

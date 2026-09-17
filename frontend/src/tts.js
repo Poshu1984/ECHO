@@ -41,18 +41,64 @@ export function pickGoogleVoice(voices, tutor, speechLang) {
 const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
 let armed = false;
+let audioCtx = null;
+let lastBlobUrl = "";
+const voiceMemo = new Map();
+
+function markInline(audio) {
+  if (!audio) return audio;
+  try { audio.playsInline = true; } catch { /* ignore */ }
+  try { audio.setAttribute?.("playsinline", "true"); } catch { /* ignore */ }
+  try { audio.setAttribute?.("webkit-playsinline", "true"); } catch { /* ignore */ }
+  return audio;
+}
+
+export function settleAudioRoute(ms = 180) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function armAudio() {
-  try { window.speechSynthesis?.resume?.(); } catch { /* ignore */ }
+  if (typeof window === "undefined") return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx && !audioCtx) audioCtx = new Ctx();
+    if (audioCtx?.state === "suspended") audioCtx.resume();
+  } catch { /* ignore */ }
   if (armed) return;
   try {
-    const a = new Audio(SILENT_WAV);
+    const a = markInline(new Audio(SILENT_WAV));
     a.volume = 0.001;
     const p = a.play();
     if (p && typeof p.then === "function") {
       p.then(() => { armed = true; a.pause(); }).catch(() => {});
     }
   } catch { /* ignore */ }
+}
+
+export async function cachedVoices(languageCode, loader) {
+  const key = languageCode || "*";
+  const hit = voiceMemo.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.voices;
+  const payload = await loader(languageCode);
+  const voices = Array.isArray(payload?.voices) ? payload.voices : (Array.isArray(payload) ? payload : []);
+  voiceMemo.set(key, { at: Date.now(), voices });
+  return voices;
+}
+
+export function createCloudAudio(base64) {
+  if (lastBlobUrl) {
+    try { URL.revokeObjectURL(lastBlobUrl); } catch { /* ignore */ }
+    lastBlobUrl = "";
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+  lastBlobUrl = url;
+  const audio = markInline(new Audio());
+  audio.preload = "auto";
+  audio.src = url;
+  return audio;
 }
 
 export function listDeviceVoices(speechLang) {

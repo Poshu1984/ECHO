@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { configuredKey, geminiModelList, shouldTryNextGeminiModel } from "./llmModels.js";
+import { configuredKey, geminiModelList, rememberGeminiModel, shouldTryNextGeminiModel } from "./llmModels.js";
 
 describe("llmModels", () => {
   it("skips placeholder keys", () => {
@@ -25,5 +25,11 @@ describe("llmModels", () => {
     assert.equal(shouldTryNextGeminiModel(404), true);
     assert.equal(shouldTryNextGeminiModel(503), true);
     assert.equal(shouldTryNextGeminiModel(400), false);
+  });
+
+  it("tries the last working model first", () => {
+    rememberGeminiModel("gemini-3.5-flash-lite");
+    assert.equal(geminiModelList("gemini-3.6-flash")[0], "gemini-3.5-flash-lite");
+    rememberGeminiModel("");
   });
 });

@@ -64,18 +64,27 @@ router.get("/status", async (_req, res) => {
   }
 });
 
+const voiceCache = new Map();
+
 router.get("/voices", async (req, res) => {
   try {
     const key = requireApiKey(res);
     if (!key) return;
 
     const languageCode = req.query.languageCode || "";
+    const cacheKey = languageCode || "*";
+    const hit = voiceCache.get(cacheKey);
+    if (hit && Date.now() - hit.at < 10 * 60 * 1000) {
+      res.json(hit.body);
+      return;
+    }
     const url = new URL(`${TTS_V1}/voices`);
     if (languageCode) url.searchParams.set("languageCode", languageCode);
     url.searchParams.set("key", key);
 
     const googleRes = await fetch(url);
     const { status, body } = await readJsonResponse(googleRes);
+    if (googleRes.ok) voiceCache.set(cacheKey, { at: Date.now(), body });
     res.status(status).json(body);
   } catch (error) {
     res.status(500).json({ error: error.message });

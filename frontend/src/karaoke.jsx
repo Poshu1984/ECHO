@@ -46,6 +46,10 @@ export function useBeatAudio() {
     if (audioRef.current && audioRef.current !== audio) {
       try { audioRef.current.pause(); } catch { /* ignore */ }
     }
+    try {
+      audio.playsInline = true;
+      audio.setAttribute?.("playsinline", "true");
+    } catch { /* clock stub has no setAttribute */ }
     audioRef.current = audio;
     timesRef.current = times;
     audio.onended = () => {
@@ -108,7 +112,6 @@ export function useBeatAudio() {
   function stop() {
     stopRaf();
     try { audioRef.current?.pause(); } catch { /* ignore */ }
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     setPlaying(false);
     setActive(-1);
   }

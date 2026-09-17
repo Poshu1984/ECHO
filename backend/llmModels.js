@@ -6,9 +6,17 @@ export function configuredKey(...names) {
   return "";
 }
 
+let lastGoodGemini = "";
+
+export function rememberGeminiModel(name) {
+  lastGoodGemini = String(name || "").trim();
+  return lastGoodGemini;
+}
+
 export function geminiModelList(envModel = process.env.GOOGLE_GEMINI_MODEL) {
   const preferred = String(envModel || "").trim();
   const models = [
+    lastGoodGemini,
     preferred,
     "gemini-3.5-flash",
     "gemini-3.6-flash",

@@ -45,11 +45,23 @@ export function toLlmMessages(msgs) {
 export function chatPrompt(tutor, lang, levelRow) {
   return `You are ${tutor.name}, a warm ${lang.name} conversation tutor. The learner is Taiwanese, native language Traditional Chinese, level ${lang.name} CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}).
 Rules:
-- Keep the conversation going naturally in ${lang.name}. Reply in 1-3 short sentences suited to level ${levelRow.id}, and always end with a question.
-- Check the learner's latest message for errors (grammar, word choice, unnatural phrasing). List each one.
+- Reply in 1-2 short spoken ${lang.name} sentences at level ${levelRow.id}, then one short question. Keep it fast to say aloud.
+- Check the learner's latest message for errors. List each one in JSON only.
 - Never lecture. Corrections go in the JSON, not in your reply text.
 Respond ONLY with JSON, no markdown fences:
 {"reply":"<your ${lang.name} reply>","reply_zh":"<繁體中文翻譯>","corrections":[{"original":"<learner's exact wording>","fixed":"<natural version>","why":"<一句繁體中文說明>"}],"praise":"<if there were no errors, one short 繁體中文 encouragement, else empty string>"}`;
+}
+
+export function parseChatPayload(raw) {
+  const parsed = parseModelJson(raw);
+  const reply = String(parsed.reply || parsed.text || "").trim();
+  if (!reply) throw new Error("EMPTY_REPLY");
+  return {
+    reply,
+    reply_zh: parsed.reply_zh || parsed.native || "",
+    corrections: Array.isArray(parsed.corrections) ? parsed.corrections : [],
+    praise: parsed.praise || "",
+  };
 }
 
 export function readingPrompt(lang, levelRow, topic = "") {

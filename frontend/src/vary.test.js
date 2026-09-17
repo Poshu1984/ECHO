@@ -2,10 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, toLlmMessages } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages } from "./prompts.js";
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
-import { pickGoogleVoice } from "./tts.js";
+import { pickGoogleVoice, cachedVoices } from "./tts.js";
 import { EXAMS, TUTORS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
@@ -37,6 +37,7 @@ describe("micErrorKey", () => {
     assert.equal(micErrorKey({ name: "NotFoundError" }), "micError");
     assert.equal(micErrorKey({ error: "network" }), "micError");
     assert.equal(micErrorKey({ error: "aborted" }), "");
+    assert.equal(micErrorKey({ name: "NotReadableError" }), "micBusy");
   });
 });
 
@@ -48,7 +49,10 @@ describe("labels", () => {
     assert.equal(t("zh", "login"), "登入");
     assert.match(t("zh", "authOffline"), /登入服務/);
     assert.equal(t("en", "logout"), "Log out");
-    assert.equal(t("zh", "mic"), "語音回覆");
+    assert.equal(t("zh", "holdMic"), "按住說話");
+    assert.equal(t("zh", "listeningHold"), "放開送出");
+    assert.match(t("zh", "micBtHint"), /藍牙/);
+    assert.equal(t("en", "holdMic"), "Hold to talk");
     assert.equal(t("zh", "chatFail"), "對話連不上。先從朗讀或單字練習。");
     assert.equal(t("en", "chatFail"), "Chat is unavailable. Try reading or words first.");
     assert.equal(t("zh", "ttsOk"), "雲端語音已連上 Google Cloud。");
@@ -92,6 +96,15 @@ describe("prompts", () => {
     assert.equal(history[1].role, "assistant");
     assert.equal(history[2].role, "user");
     assert.equal(history[2].content, "I am fine.");
+  });
+
+  it("requires a spoken reply and keeps chat answers short", () => {
+    const parsed = parseChatPayload('{"reply":"How is your morning going?","reply_zh":"你早上過得如何？","corrections":[]}');
+    assert.equal(parsed.reply, "How is your morning going?");
+    assert.throws(() => parseChatPayload('{"reply_zh":"沒有英文"}'), /EMPTY_REPLY/);
+    const lang = { name: "English" };
+    const level = { id: "B1", toeic: "550-784", ielts: "4.0-5.0" };
+    assert.match(chatPrompt({ name: "Audrey" }, lang, level), /1-2 short spoken/);
   });
 });
 
@@ -158,6 +171,19 @@ describe("google tutors", () => {
       const hit = pickGoogleVoice(voices, tutor, "en-US");
       assert.equal(hit.name, tutor.voices.en);
     }
+  });
+
+  it("reuses a cached voice list instead of refetching", async () => {
+    let calls = 0;
+    const loader = async () => {
+      calls += 1;
+      return { voices };
+    };
+    const first = await cachedVoices("en-US-cache-test", loader);
+    const second = await cachedVoices("en-US-cache-test", loader);
+    assert.equal(calls, 1);
+    assert.equal(first[0].name, "en-US-Neural2-C");
+    assert.equal(second.length, first.length);
   });
 });
 

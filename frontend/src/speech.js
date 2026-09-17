@@ -19,13 +19,35 @@ export function micErrorKey(error) {
   return "micError";
 }
 
+let mediaStream = null;
+
+export async function openMicStream() {
+  if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return null;
+  if (mediaStream && mediaStream.getTracks().some((t) => t.readyState === "live")) return mediaStream;
+  mediaStream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+  });
+  return mediaStream;
+}
+
+export function closeMicStream() {
+  try {
+    (mediaStream?.getTracks() || []).forEach((track) => track.stop());
+  } catch { /* ignore */ }
+  mediaStream = null;
+}
+
 export function createRecognizer(lang, handlers = {}) {
   const Ctor = recognitionCtor();
   if (!Ctor) return null;
   const rec = new Ctor();
   rec.lang = lang || "en-US";
   rec.interimResults = true;
-  rec.continuous = false;
+  rec.continuous = Boolean(handlers.continuous);
   rec.maxAlternatives = 1;
   rec.onresult = (event) => {
     let interim = "";

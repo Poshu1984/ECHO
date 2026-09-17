@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { consumeQuota } from "../store.js";
-import { configuredKey, geminiModelList, shouldTryNextGeminiModel } from "../llmModels.js";
+import { configuredKey, geminiModelList, rememberGeminiModel, shouldTryNextGeminiModel } from "../llmModels.js";
 
 const router = Router();
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
@@ -98,7 +98,10 @@ async function callGemini(system, messages, maxTokens, temperature) {
     if (!result.ok && result.status === 400) {
       result = await callGeminiModel(key, model, system, messages, maxTokens, temperature, false);
     }
-    if (result.ok) return result;
+    if (result.ok) {
+      rememberGeminiModel(model);
+      return result;
+    }
     last = result;
     if (!shouldTryNextGeminiModel(result.status)) return result;
   }
