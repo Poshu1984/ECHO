@@ -15,7 +15,7 @@ import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { inferScene } from "./story.js";
 import {
-  chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
+  chatPrompt, chatStartPrompt, extractChatReply, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
   toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt,
 } from "./prompts.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
@@ -67,6 +67,7 @@ export default function App() {
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState("");
   const [listening, setListening] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [passage, setPassage] = useState(null);
   const [vocabItem, setVocabItem] = useState(null);
   const [exampleItem, setExampleItem] = useState(null);
@@ -87,8 +88,13 @@ export default function App() {
   const playSeq = useRef(0);
   const holdRef = useRef(false);
   const heldTextRef = useRef("");
+  const lastPartialRef = useRef("");
   const listeningRef = useRef(false);
   const endingHoldRef = useRef(false);
+  const voiceLoopRef = useRef(false);
+  const fromMicRef = useRef(false);
+  const tabRef = useRef(tab);
+  const listenForUtteranceRef = useRef(null);
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
@@ -101,6 +107,13 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
   useEffect(() => { localStorage.setItem("echoo-tutor", tutorId); }, [tutorId]);
+  useEffect(() => { tabRef.current = tab; }, [tab]);
+  useEffect(() => {
+    beat.setOnEnded(() => {
+      if (!voiceLoopRef.current || tabRef.current !== "chat" || busyRef.current || listeningRef.current) return;
+      listenForUtteranceRef.current?.({ hold: false });
+    });
+  }, []);
   useEffect(() => {
     if (!user) return undefined;
     let gone = false;
@@ -114,6 +127,9 @@ export default function App() {
         }
         const status = await api.ttsStatus();
         if (!gone) setTtsLive(Boolean(status.ok));
+        try {
+          await cachedVoices(lang.speech, (code) => api.voices(code));
+        } catch { /* prefetch only */ }
       } catch {
         if (!gone) setTtsLive(false);
       }
@@ -256,6 +272,12 @@ export default function App() {
       if (playSeq.current !== seq) return false;
       if (!data.audioContent) throw new Error("NO_AUDIO");
       const audio = createCloudAudio(data.audioContent);
+      if (!wantMarks) {
+        beat.attach(audio, estimateTimes(tokens));
+        trackRef.current = { id, tokens, text, mode: "cloud", key: trackKey };
+        setTrackId(id);
+        return true;
+      }
       const duration = await waitMeta(audio);
       if (playSeq.current !== seq) {
         try { audio.pause(); } catch { /* ignore */ }
@@ -319,6 +341,7 @@ export default function App() {
   function goTab(id) {
     if (id === tab) return;
     resetTrack();
+    voiceLoopRef.current = false;
     stopMic();
     closeMicStream();
     setErr("");
@@ -344,41 +367,76 @@ export default function App() {
     armAudio();
     setInput("");
     setBusy(true);
+    setThinking(true);
     setErr("");
     const next = [...msgs, { role: "me", text }];
-    setMsgs(next);
+    const aiIndex = next.length;
+    setMsgs([...next, { role: "ai", text: "", tokens: [], native: "", corrections: [], praise: "" }]);
+    const system = chatPrompt(tutor, lang, levelRow);
+    let spoken = false;
+
+    const applyReply = (got) => {
+      const tokens = beatsOf(got.reply, lang.code);
+      setMsgs((m) => m.map((msg, i) => (i === aiIndex ? {
+        ...msg,
+        text: got.reply,
+        native: got.reply_zh || msg.native,
+        tokens,
+        corrections: got.corrections?.length ? got.corrections : msg.corrections,
+        praise: got.praise || msg.praise,
+      } : msg)));
+      return tokens;
+    };
+
+    const speakNow = (got) => {
+      if (spoken || !got?.reply) return;
+      spoken = true;
+      const tokens = applyReply(got);
+      busyRef.current = false;
+      setBusy(false);
+      setThinking(false);
+      const delay = fromMicRef.current ? 80 : 0;
+      fromMicRef.current = false;
+      (async () => {
+        try {
+          if (delay) await settleAudioRoute(delay);
+          await playTokens(`chat-${aiIndex}`, got.reply, tokens, 0, null);
+        } catch { /* TTS must not look like a chat outage */ }
+      })();
+    };
+
     try {
-      const system = chatPrompt(tutor, lang, levelRow);
-      let data;
+      let rawReply = "";
       try {
-        data = await api.llm(system, toLlmMessages(next), 500, 0.7);
+        const data = await api.llmStream(system, toLlmMessages(next), 256, 0.6, (full) => {
+          const got = extractChatReply(full);
+          if (got) speakNow(got);
+        });
+        rawReply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       } catch (first) {
         if (first.status === 429) throw first;
-        data = await api.llm(system, toLlmMessages(next), 500, 0.5);
+        const data = await api.llm(system, toLlmMessages(next), 256, 0.5, { chat: true });
+        rawReply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       }
-      const rawReply = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
-      const p = parseChatPayload(rawReply);
-      const tm = {
-        role: "ai",
-        text: p.reply,
-        native: p.reply_zh,
-        tokens: beatsOf(p.reply, lang.code),
-        corrections: p.corrections,
-        praise: p.praise,
-      };
-      setMsgs((m) => [...m, tm]);
-      busyRef.current = false;
-      setBusy(false);
+      const p = (() => {
+        try {
+          return parseChatPayload(rawReply);
+        } catch {
+          const got = extractChatReply(rawReply);
+          if (got) return got;
+          throw new Error("EMPTY_REPLY");
+        }
+      })();
+      applyReply(p);
+      if (!spoken) speakNow(p);
       await gain(8, 2);
       notePractice("chat", 2);
-      try {
-        await settleAudioRoute(180);
-        await playTokens(`chat-${next.length}`, p.reply, tm.tokens, 0, null);
-      } catch { /* TTS must not look like a chat outage */ }
     } catch {
       setErr(tr("chatFail"));
+      setMsgs((m) => (m[aiIndex]?.role === "ai" && !String(m[aiIndex].text || "").trim() ? next : m));
       busyRef.current = false;
       setBusy(false);
+      setThinking(false);
     }
   }
 
@@ -484,12 +542,13 @@ export default function App() {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
+    setThinking(true);
     setErr("");
     armAudio();
     try {
       const data = await api.llm(chatStartPrompt(tutor, lang, levelRow, seenRef.current.greet), [
         { role: "user", content: "Please start the conversation with a fresh greeting and a new question." },
-      ], 500, 0.85);
+      ], 256, 0.7, { chat: true });
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
       const p = parseChatPayload(raw);
       const tokens = beatsOf(p.reply, lang.code);
@@ -497,6 +556,7 @@ export default function App() {
       setMsgs([{ role: "ai", text: p.reply, native: p.reply_zh || "", tokens, corrections: [], praise: "" }]);
       busyRef.current = false;
       setBusy(false);
+      setThinking(false);
       notePractice("chat", 1);
       try {
         await playTokens("chat-0", p.reply, tokens, 0, null);
@@ -508,11 +568,17 @@ export default function App() {
       setErr(tr("genFallback"));
       busyRef.current = false;
       setBusy(false);
+      setThinking(false);
       try { await playTokens("chat-0", g.text, tokens, 0, null); } catch { /* ignore */ }
     } finally {
       busyRef.current = false;
       setBusy(false);
+      setThinking(false);
     }
+  }
+
+  function currentHeard() {
+    return `${heldTextRef.current} ${lastPartialRef.current}`.trim();
   }
 
   function stopMic() {
@@ -522,20 +588,18 @@ export default function App() {
     setListening(false);
   }
 
-  async function beginHoldMic(event) {
-    if (busyRef.current || holdRef.current || listeningRef.current) return;
-    event.preventDefault();
-    try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
-    holdRef.current = true;
+  async function listenForUtterance({ hold = false } = {}) {
+    if (busyRef.current || listeningRef.current) return;
     heldTextRef.current = "";
+    lastPartialRef.current = "";
     setInput("");
     setErr("");
     listeningRef.current = true;
     setListening(true);
     if (!speechSupported()) {
-      holdRef.current = false;
       listeningRef.current = false;
       setListening(false);
+      voiceLoopRef.current = false;
       setErr(tr("micOff"));
       return;
     }
@@ -545,24 +609,28 @@ export default function App() {
     try {
       await openMicStream();
     } catch (error) {
-      holdRef.current = false;
       listeningRef.current = false;
       setListening(false);
       closeMicStream();
+      voiceLoopRef.current = false;
       setErr(tr(micErrorKey(error) || "micError"));
       return;
     }
-    if (!holdRef.current) {
+    if (hold && !holdRef.current) {
       closeMicStream();
       listeningRef.current = false;
       setListening(false);
       return;
     }
     const rec = createRecognizer(lang.speech, {
-      continuous: true,
-      onPartial: (text) => setInput(`${heldTextRef.current} ${text}`.trim()),
+      continuous: hold,
+      onPartial: (text) => {
+        lastPartialRef.current = text;
+        setInput(`${heldTextRef.current} ${text}`.trim());
+      },
       onFinal: (text) => {
         heldTextRef.current = `${heldTextRef.current} ${text}`.trim();
+        lastPartialRef.current = "";
         setInput(heldTextRef.current);
       },
       onError: (event) => {
@@ -574,17 +642,32 @@ export default function App() {
       },
       onEnd: () => {
         recRef.current = null;
-        if (!holdRef.current) {
-          listeningRef.current = false;
-          setListening(false);
+        if (endingHoldRef.current || holdRef.current) return;
+        const spoken = currentHeard();
+        listeningRef.current = false;
+        setListening(false);
+        closeMicStream();
+        heldTextRef.current = "";
+        lastPartialRef.current = "";
+        if (spoken) {
+          fromMicRef.current = true;
+          sendText(spoken);
+          return;
+        }
+        if (voiceLoopRef.current && tabRef.current === "chat" && !busyRef.current) {
+          window.setTimeout(() => {
+            if (voiceLoopRef.current && !busyRef.current && !listeningRef.current) {
+              listenForUtteranceRef.current?.({ hold: false });
+            }
+          }, 280);
         }
       },
     });
     if (!rec) {
-      holdRef.current = false;
       listeningRef.current = false;
       setListening(false);
       closeMicStream();
+      voiceLoopRef.current = false;
       setErr(tr("micOff"));
       return;
     }
@@ -594,7 +677,6 @@ export default function App() {
       listeningRef.current = true;
       setListening(true);
     } catch (error) {
-      holdRef.current = false;
       closeMicStream();
       const key = micErrorKey(error);
       setErr(tr(key || "micError"));
@@ -604,20 +686,42 @@ export default function App() {
     }
   }
 
+  listenForUtteranceRef.current = listenForUtterance;
+
+  async function beginHoldMic(event) {
+    if (busyRef.current) return;
+    event.preventDefault();
+    if (listeningRef.current && !holdRef.current) {
+      holdRef.current = true;
+      try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
+      return;
+    }
+    if (holdRef.current || listeningRef.current) return;
+    try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
+    holdRef.current = true;
+    voiceLoopRef.current = true;
+    fromMicRef.current = true;
+    await listenForUtterance({ hold: true });
+  }
+
   async function endHoldMic() {
     if (endingHoldRef.current) return;
     const wasHolding = holdRef.current || listeningRef.current || recRef.current;
     holdRef.current = false;
     if (!wasHolding) return;
     endingHoldRef.current = true;
+    voiceLoopRef.current = true;
+    fromMicRef.current = true;
     try { recRef.current?.stop(); } catch { /* ignore */ }
-    await new Promise((resolve) => setTimeout(resolve, 220));
-    const text = (heldTextRef.current || "").trim();
+    const had = currentHeard();
+    await new Promise((resolve) => setTimeout(resolve, had ? 40 : 100));
+    const spoken = currentHeard();
     stopMic();
     closeMicStream();
     heldTextRef.current = "";
+    lastPartialRef.current = "";
     endingHoldRef.current = false;
-    if (text) sendText(text);
+    if (spoken) sendText(spoken);
   }
 
   async function askJson(system, userMsg, maxTokens = 800, temperature = 0.95) {
@@ -1039,6 +1143,7 @@ export default function App() {
                 </div>
               )}
               {msgs.map((m, i) => (
+                m.role === "ai" && !String(m.text || "").trim() ? null : (
                 <div key={i} className={m.role === "me" ? "text-right" : ""}>
                   {m.role === "me" ? (
                     <div className="bubble me">{m.text}</div>
@@ -1069,8 +1174,10 @@ export default function App() {
                     </div>
                   )}
                 </div>
+                )
               ))}
             </div>
+            {thinking && <p className="chat-wait">{tr("chatWait")}</p>}
             {err && <p className="notice mt-1">{err}</p>}
             <div className="composer">
               <textarea
