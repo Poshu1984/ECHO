@@ -45,7 +45,8 @@ export function toLlmMessages(msgs) {
 export function chatPrompt(tutor, lang, levelRow) {
   return `You are ${tutor.name}, a warm ${lang.name} conversation tutor. The learner is Taiwanese, native language Traditional Chinese, level ${lang.name} CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}).
 Rules:
-- Reply in 1-2 short spoken ${lang.name} sentences at level ${levelRow.id}, then one short question. Keep it fast to say aloud.
+- Reply in 1 short spoken ${lang.name} sentence at level ${levelRow.id}, then one short question. 12 words or fewer when the language uses spaces. Keep it fast to say aloud.
+- Put "reply" first in the JSON so it can be spoken before the rest is finished.
 - Check the learner's latest message for errors. List each one in JSON only.
 - Never lecture. Corrections go in the JSON, not in your reply text.
 Respond ONLY with JSON, no markdown fences:
@@ -62,6 +63,23 @@ export function parseChatPayload(raw) {
     corrections: Array.isArray(parsed.corrections) ? parsed.corrections : [],
     praise: parsed.praise || "",
   };
+}
+
+export function extractChatReply(raw) {
+  try {
+    return { ...parseChatPayload(raw), complete: true };
+  } catch {
+    /* still streaming */
+  }
+  const match = String(raw || "").match(/"reply"\s*:\s*"((?:\\.|[^"\\])*)"/);
+  if (!match) return null;
+  try {
+    const reply = JSON.parse(`"${match[1]}"`).trim();
+    if (!reply) return null;
+    return { reply, reply_zh: "", corrections: [], praise: "", complete: false };
+  } catch {
+    return null;
+  }
 }
 
 export function readingPrompt(lang, levelRow, topic = "") {

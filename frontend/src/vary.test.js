@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, extractChatReply, chatPrompt, toLlmMessages } from "./prompts.js";
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice, cachedVoices } from "./tts.js";
@@ -104,7 +104,10 @@ describe("prompts", () => {
     assert.throws(() => parseChatPayload('{"reply_zh":"沒有英文"}'), /EMPTY_REPLY/);
     const lang = { name: "English" };
     const level = { id: "B1", toeic: "550-784", ielts: "4.0-5.0" };
-    assert.match(chatPrompt({ name: "Audrey" }, lang, level), /1-2 short spoken/);
+    assert.match(chatPrompt({ name: "Audrey" }, lang, level), /1 short spoken/);
+    const partial = extractChatReply('{"reply":"Nice to see you.","reply_zh":');
+    assert.equal(partial.reply, "Nice to see you.");
+    assert.equal(partial.complete, false);
   });
 });
 

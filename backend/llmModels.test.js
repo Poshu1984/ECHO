@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { configuredKey, geminiModelList, rememberGeminiModel, shouldTryNextGeminiModel } from "./llmModels.js";
+import { configuredKey, geminiChatModelList, geminiModelList, geminiOutputTokens, readSseDataLine, rememberGeminiModel, shouldTryNextGeminiModel } from "./llmModels.js";
 
 describe("llmModels", () => {
   it("skips placeholder keys", () => {
@@ -31,5 +31,18 @@ describe("llmModels", () => {
     rememberGeminiModel("gemini-3.5-flash-lite");
     assert.equal(geminiModelList("gemini-3.6-flash")[0], "gemini-3.5-flash-lite");
     rememberGeminiModel("");
+  });
+
+  it("caps chat output tokens and prefers lite for chat", () => {
+    assert.equal(geminiOutputTokens(500, true), 384);
+    assert.equal(geminiOutputTokens(120, true), 120);
+    assert.equal(geminiOutputTokens(800, false), 800);
+    rememberGeminiModel("");
+    assert.equal(geminiChatModelList("gemini-3.6-flash")[0], "gemini-3.5-flash-lite");
+  });
+
+  it("reads streamed gemini sse text without dropping spaces", () => {
+    assert.equal(readSseDataLine('data: {"candidates":[{"content":{"parts":[{"text":"{\\"reply\\":"}]}}]}'), '{"reply":');
+    assert.equal(readSseDataLine("data: [DONE]"), "");
   });
 });

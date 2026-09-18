@@ -7,6 +7,7 @@ export function useBeatAudio() {
   const rafRef = useRef(0);
   const loopRef = useRef(null);
   const onLoopRef = useRef(null);
+  const onEndedRef = useRef(null);
   const [active, setActive] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [loop, setLoopState] = useState(null);
@@ -30,6 +31,7 @@ export function useBeatAudio() {
       try { a.pause(); } catch { /* ignore */ }
       setPlaying(false);
       setActive(times.length - 1);
+      if (Object.prototype.hasOwnProperty.call(a, "ended")) onEndedRef.current?.();
       return;
     }
     let i = times.findIndex((x) => t < x.end - 0.001);
@@ -60,6 +62,7 @@ export function useBeatAudio() {
       }
       setPlaying(false);
       setActive(Math.max(0, timesRef.current.length - 1));
+      onEndedRef.current?.();
     };
   }
 
@@ -122,9 +125,13 @@ export function useBeatAudio() {
     setLoopState(range);
   }
 
+  function setOnEnded(fn) {
+    onEndedRef.current = fn || null;
+  }
+
   useEffect(() => () => stopRaf(), []);
 
-  return { active, playing, loop, attach, attachClock, playFrom, stop, setLoop, audioRef, timesRef };
+  return { active, playing, loop, attach, attachClock, playFrom, stop, setLoop, setOnEnded, audioRef, timesRef };
 }
 
 export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "", variant = "karaoke" }) {
