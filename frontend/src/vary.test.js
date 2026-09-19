@@ -2,14 +2,15 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages, translatePrompt } from "./prompts.js";
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice, cachedVoices } from "./tts.js";
-import { EXAMS, TUTORS } from "./content.js";
+import { EXAMS, TUTORS, UNLOCKS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
 import { attachExamMeta, attachVocabQuiz, examAnswerIndex, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
+import { guessLang, lookupLocal, pairLang, parseTranslatePayload, speechOf, spokenSide } from "./translate.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -64,6 +65,9 @@ describe("labels", () => {
     assert.equal(t("zh", "drillTag"), "再練");
     assert.equal(t("zh", "mastered"), "已達標");
     assert.equal(t("en", "pickFirst"), "Pick an option first");
+    assert.equal(t("zh", "translate"), "翻譯");
+    assert.equal(t("zh", "lookup"), "查詢");
+    assert.equal(t("en", "translate"), "Translate");
   });
 });
 
@@ -83,6 +87,9 @@ describe("prompts", () => {
     assert.match(scenePrompt(lang, level), /"why"/);
     assert.match(readingPrompt(lang, level), /hook_zh/);
     assert.match(readingPrompt(lang, level), /scene/);
+    const en = { code: "en", name: "English" };
+    assert.match(translatePrompt(en, level, "deadline"), /deadline/);
+    assert.match(translatePrompt({ code: "zh", name: "中文" }, level, "期限"), /English/);
   });
 
   it("repairs messy model json and prefixes assistant-first chat", () => {
@@ -275,5 +282,54 @@ describe("quiz stay and similar items", () => {
     assert.equal(examAnswerIndex(byText), 1);
     assert.equal(byText.a, 1);
     assert.equal(examAnswerIndex({ options: ["off", "on", "up"], a: "B" }), 1);
+  });
+});
+
+describe("translate lookup", () => {
+  const english = { code: "en", name: "English", speech: "en-US" };
+  const chinese = { code: "zh", name: "中文", speech: "zh-TW" };
+
+  it("pairs Chinese study with English and maps speech codes", () => {
+    assert.equal(pairLang(chinese).code, "en");
+    assert.equal(pairLang(english).code, "en");
+    assert.equal(speechOf("zh"), "zh-TW");
+    assert.equal(speechOf("ja"), "ja-JP");
+    assert.equal(guessLang("期限"), "zh");
+    assert.equal(guessLang("こんにちは"), "ja");
+    assert.equal(UNLOCKS.some((row) => row.id === "translate" && row.xp === 0), true);
+  });
+
+  it("looks up local vocab in both directions and speaks the learning side", () => {
+    const fromEn = lookupLocal("deadline", english);
+    assert.equal(fromEn.query, "deadline");
+    assert.equal(fromEn.query_lang, "en");
+    assert.equal(fromEn.translation, "最後期限");
+    assert.equal(fromEn.translation_lang, "zh");
+    assert.match(fromEn.example, /deadline/i);
+    const speakEn = spokenSide(fromEn, english);
+    assert.equal(speakEn.code, "en");
+    assert.equal(speakEn.text, "deadline");
+
+    const fromZh = lookupLocal("最後期限", english);
+    assert.equal(fromZh.translation, "deadline");
+    assert.equal(fromZh.translation_lang, "en");
+    const speakZh = spokenSide(fromZh, english);
+    assert.equal(speakZh.text, "deadline");
+    assert.equal(speakZh.code, "en");
+  });
+
+  it("parses model json and rejects empty lookups", () => {
+    const parsed = parseTranslatePayload({
+      query: "receipt",
+      query_lang: "en",
+      translation: "收據",
+      translation_lang: "zh",
+      example: "Could I have a receipt, please?",
+      example_zh: "可以給我收據嗎？",
+      why: "付錢後要收據。",
+    }, english);
+    assert.equal(parsed.query, "receipt");
+    assert.equal(parsed.translation, "收據");
+    assert.throws(() => parseTranslatePayload({ query: "x" }, english), /EMPTY_TRANSLATE/);
   });
 });

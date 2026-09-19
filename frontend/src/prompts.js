@@ -121,3 +121,18 @@ export function chatStartPrompt(tutor, lang, levelRow, avoid = []) {
 Open with a fresh greeting and a new everyday question. Do not reuse "Signal locked" or the same morning question every time.
 ${avoidLine(avoid)}`;
 }
+
+export function translatePrompt(lang, levelRow, query) {
+  const studyingZh = lang.code === "zh";
+  const target = studyingZh ? "English" : lang.name;
+  const targetCode = studyingZh ? "en" : lang.code;
+  return `You are a bilingual lookup tutor for an adult Taiwanese learner.
+Native language: Traditional Chinese. Learning language: ${target}, CEFR ${levelRow.id}.
+The learner typed: "${String(query || "").trim()}"
+Detect whether the query is Traditional Chinese or ${target}.
+If they typed Chinese, give the natural ${target} equivalent.
+If they typed ${target}, give Traditional Chinese.
+Use everyday spoken wording, not a dictionary dump.
+Respond ONLY with JSON, no markdown fences:
+{"query":"<normalized source>","query_lang":"${targetCode}|zh","translation":"<the other side>","translation_lang":"zh|${targetCode}","reading":"<kana, hangul romanization, or pinyin of the non-Chinese side; empty for English>","example":"<one natural ${target} sentence using the word>","example_zh":"<該句繁體中文>","why":"<一句繁體中文，說明這個詞何時用>"}`;
+}

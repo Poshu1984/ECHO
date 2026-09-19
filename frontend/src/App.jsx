@@ -16,8 +16,9 @@ import { StoryStage } from "./storyStage.jsx";
 import { inferScene } from "./story.js";
 import {
   chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
-  toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt,
+  toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt, translatePrompt,
 } from "./prompts.js";
+import { codeOfSpeech, lookupLocal, parseTranslatePayload, pairLang, speechOf, spokenSide } from "./translate.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 import { closeMicStream, createRecognizer, micErrorKey, openMicStream, speechSupported } from "./speech.js";
@@ -72,6 +73,8 @@ export default function App() {
   const [exampleItem, setExampleItem] = useState(null);
   const [sceneItem, setSceneItem] = useState(null);
   const [examItem, setExamItem] = useState(null);
+  const [translateQuery, setTranslateQuery] = useState("");
+  const [translateItem, setTranslateItem] = useState(null);
   const [showAns, setShowAns] = useState(false);
   const [drillPick, setDrillPick] = useState(-1);
   const [drillChecked, setDrillChecked] = useState(false);
@@ -157,6 +160,7 @@ export default function App() {
     setExampleItem(null);
     setSceneItem(null);
     setExamItem(null);
+    setTranslateItem(null);
     setShowAns(false);
     setDrillPick(-1);
     setDrillChecked(false);
@@ -188,12 +192,12 @@ export default function App() {
     setWeek(recordPractice({ lang: lang.code, mode, minutes }));
   }
 
-  function playDevice(text) {
+  function playDevice(text, speechLang = lang.speech) {
     const result = speakOnDevice(text, {
-      lang: lang.speech,
+      lang: speechLang,
       pitch: speakPitch,
       rate: speakRate,
-      voiceName: deviceVoice,
+      voiceName: speechLang === lang.speech ? deviceVoice : "",
       tutor,
     });
     if (result?.substituted) setVoiceNote(tr("voiceSub"));
@@ -218,15 +222,18 @@ export default function App() {
     return timesEstimated(tokens, Math.max(1.2, tokens.join("").length * 0.12));
   }
 
-  async function loadTrack(id, text, tokens) {
+  async function loadTrack(id, text, tokens, voiceLang = null) {
     const seq = playSeq.current;
+    const speech = voiceLang || lang.speech;
+    const beatCode = codeOfSpeech(speech) || lang.code;
+    const key = `${trackKey}:${speech}`;
     armAudio();
     const want = engine === "device" || ttsLive === false ? "clock" : "cloud";
     if (
       trackRef.current.id === id
       && trackRef.current.text === text
       && trackRef.current.mode === want
-      && trackRef.current.key === trackKey
+      && trackRef.current.key === key
       && beat.audioRef.current
     ) {
       if (playSeq.current !== seq) return false;
@@ -236,21 +243,21 @@ export default function App() {
     if (want === "clock") {
       if (playSeq.current !== seq) return false;
       beat.attachClock(estimateTimes(tokens));
-      trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
+      trackRef.current = { id, tokens, text, mode: "clock", key, speech, beatCode };
       setTrackId(id);
       return true;
     }
     try {
-      const voices = await cachedVoices(lang.speech, (code) => api.voices(code));
+      const voices = await cachedVoices(speech, (code) => api.voices(code));
       if (playSeq.current !== seq) return false;
-      const voice = pickGoogleVoice(voices, tutor, lang.speech);
+      const voice = pickGoogleVoice(voices, tutor, speech);
       if (!voice) throw new Error("NO_VOICE");
       const wantMarks = Boolean(id) && !String(id).startsWith("chat");
       const data = await api.synthesize({
         ...(wantMarks
-          ? { ssml: ssmlFromBeats(tokens, lang.code), marks: true }
+          ? { ssml: ssmlFromBeats(tokens, beatCode), marks: true }
           : { input: { text }, marks: false }),
-        voice: { languageCode: voice.languageCodes?.[0] || lang.speech, name: voice.name },
+        voice: { languageCode: voice.languageCodes?.[0] || speech, name: voice.name },
         audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
       });
       if (playSeq.current !== seq) return false;
@@ -265,30 +272,34 @@ export default function App() {
         ? duration
         : Math.max(1.2, tokens.join("").length * 0.11);
       beat.attach(audio, timesFromPoints(data.timepoints, tokens, dur));
-      trackRef.current = { id, tokens, text, mode: "cloud", key: trackKey };
+      trackRef.current = { id, tokens, text, mode: "cloud", key, speech, beatCode };
       setTrackId(id);
       return true;
     } catch (e) {
       if (playSeq.current !== seq) return false;
       if (e.status === 429) setErr(tr("voiceQuota"));
       beat.attachClock(estimateTimes(tokens));
-      trackRef.current = { id, tokens, text, mode: "clock", key: trackKey };
+      trackRef.current = { id, tokens, text, mode: "clock", key, speech, beatCode };
       setTrackId(id);
       return true;
     }
   }
 
-  async function playTokens(id, text, tokens, startAt = 0, loopRange = null) {
+  async function playTokens(id, text, tokens, startAt = 0, loopRange = null, voiceLang = null) {
     if (!text || !tokens?.length) return;
     const seq = playSeq.current;
-    const ready = await loadTrack(id, text, tokens);
+    const speech = voiceLang || lang.speech;
+    const beatCode = codeOfSpeech(speech) || lang.code;
+    const ready = await loadTrack(id, text, tokens, speech);
     if (!ready || playSeq.current !== seq) return;
     const start = Math.max(0, Math.min(startAt, tokens.length - 1));
+    const lineCode = trackRef.current.beatCode || beatCode;
+    const lineSpeech = trackRef.current.speech || speech;
     beat.setLoop(loopRange, trackRef.current.mode === "clock" && loopRange
-      ? () => playDevice(joinBeats(tokens.slice(loopRange[0], loopRange[1] + 1), lang.code))
+      ? () => playDevice(joinBeats(tokens.slice(loopRange[0], loopRange[1] + 1), lineCode), lineSpeech)
       : null);
     if (trackRef.current.mode === "clock") {
-      playDevice(joinBeats(tokens.slice(start), lang.code) || text);
+      playDevice(joinBeats(tokens.slice(start), lineCode) || text, lineSpeech);
     }
     try {
       await beat.playFrom(start);
@@ -296,9 +307,15 @@ export default function App() {
       if (playSeq.current !== seq) return;
       beat.attachClock(estimateTimes(tokens));
       trackRef.current = { ...trackRef.current, mode: "clock" };
-      playDevice(joinBeats(tokens.slice(start), lang.code) || text);
+      playDevice(joinBeats(tokens.slice(start), lineCode) || text, lineSpeech);
       try { await beat.playFrom(start); } catch { /* ignore */ }
     }
+  }
+
+  function playLine(id, text, code) {
+    if (!text) return Promise.resolve();
+    const tokens = beatsOf(text, code);
+    return playTokens(id, text, tokens, 0, null, speechOf(code));
   }
 
   async function speak(text) {
@@ -764,11 +781,40 @@ export default function App() {
     }
   }
 
+  async function lookupTranslate() {
+    const q = String(translateQuery || "").trim();
+    if (!q || busy) return;
+    armAudio();
+    setBusy(true);
+    setErr("");
+    try {
+      let item = null;
+      try {
+        const raw = await askJson(translatePrompt(lang, levelRow, q), `Look up: ${q}`, 700, 0.2);
+        item = parseTranslatePayload(raw, lang);
+      } catch {
+        item = lookupLocal(q, lang);
+      }
+      if (!item) throw new Error("NO_HIT");
+      setTranslateItem(item);
+      gain(2, 1);
+      notePractice("translate", 1);
+      const speak = spokenSide(item, lang);
+      if (speak?.text) await playLine(speak.id, speak.text, speak.code);
+    } catch {
+      setTranslateItem(null);
+      setErr(tr("lookupFail"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   useEffect(() => {
     setVocabItem(null);
     setExampleItem(null);
     setSceneItem(null);
     setExamItem(null);
+    setTranslateItem(null);
     resetDrill();
     setShowAns(false);
   }, [lang.code, level]);
@@ -838,6 +884,7 @@ export default function App() {
   const nav = [
     { id: "chat", label: tr("chat") },
     { id: "read", label: tr("read") },
+    { id: "translate", label: tr("translate") },
     { id: "vocab", label: tr("vocab") },
     { id: "examples", label: tr("examples") },
     { id: "scenes", label: tr("scenes") },
@@ -855,6 +902,11 @@ export default function App() {
   const vocabSentTokens = v ? beatsOf(v.sentence, lang.code) : [];
   const exampleTokens = ex ? beatsOf(ex.sentence, lang.code) : [];
   const sceneTokens = scene ? beatsOf(scene.prompt, lang.code) : [];
+  const hit = translateItem;
+  const qTokens = hit ? beatsOf(hit.query, hit.query_lang) : [];
+  const tTokens = hit ? beatsOf(hit.translation, hit.translation_lang) : [];
+  const exLang = hit ? (hit.example_lang || pairLang(lang).code) : lang.code;
+  const hitExTokens = hit?.example ? beatsOf(hit.example, exLang) : [];
   const examStats = statsFor(lang.code, "exams", mastery);
   const vocabStats = statsFor(lang.code, "vocab", mastery);
   const exampleStats = statsFor(lang.code, "examples", mastery);
@@ -1195,6 +1247,89 @@ export default function App() {
                 </div>
               </>
             )}
+          </section>
+        )}
+
+        {tab === "translate" && (
+          <section className="panel">
+            <h2>{tr("translate")}</h2>
+            <p className="text-sm text-[var(--mute)] mt-1">{tr("lookupHint")}</p>
+            <div className="scroll-pane mt-2">
+              {!hit && <p className="empty-pane">{tr("lookupEmpty")}</p>}
+              {hit && (
+                <>
+                  <div className="lookup-block is-first">
+                    <div className="lookup-head">
+                      <span className="lookup-k">{tr("source")}</span>
+                      <button type="button" className="btn btn-ghost btn-mini" onClick={() => playLine("translate-query", hit.query, hit.query_lang)}>{tr("listen")}</button>
+                    </div>
+                    <BeatLine
+                      tokens={qTokens}
+                      joiner={isCjk(hit.query_lang) ? "" : " "}
+                      active={trackId === "translate-query" ? highlight : -1}
+                      fromHere={tr("fromHere")}
+                      onToken={(tok) => playTokens("translate-query", hit.query, qTokens, tok, null, speechOf(hit.query_lang))}
+                    />
+                  </div>
+                  <div className="lookup-block">
+                    <div className="lookup-head">
+                      <span className="lookup-k">{tr("meaning")}</span>
+                      <button type="button" className="btn btn-line btn-mini" onClick={() => playLine("translate-hit", hit.translation, hit.translation_lang)}>{tr("listen")}</button>
+                    </div>
+                    <BeatLine
+                      className="beat-hero"
+                      tokens={tTokens}
+                      joiner={isCjk(hit.translation_lang) ? "" : " "}
+                      active={trackId === "translate-hit" ? highlight : -1}
+                      fromHere={tr("fromHere")}
+                      onToken={(tok) => playTokens("translate-hit", hit.translation, tTokens, tok, null, speechOf(hit.translation_lang))}
+                    />
+                    {hit.reading ? <p className="lookup-read">{tr("readingLabel")} {hit.reading}</p> : null}
+                  </div>
+                  {hit.example ? (
+                    <div className="lookup-block">
+                      <div className="lookup-head">
+                        <span className="lookup-k">{tr("sample")}</span>
+                        <button type="button" className="btn btn-ghost btn-mini" onClick={() => playLine("translate-ex", hit.example, exLang)}>{tr("listen")}</button>
+                      </div>
+                      <BeatLine
+                        tokens={hitExTokens}
+                        joiner={isCjk(exLang) ? "" : " "}
+                        active={trackId === "translate-ex" ? highlight : -1}
+                        native={gloss(hit.example_zh)}
+                        nativeRatio={trackId === "translate-ex" ? zhRatio(highlight, hitExTokens.length) : 0}
+                        fromHere={tr("fromHere")}
+                        onToken={(tok) => playTokens("translate-ex", hit.example, hitExTokens, tok, null, speechOf(exLang))}
+                      />
+                    </div>
+                  ) : null}
+                  {hit.why ? <p className="fix-why mt-3">{hit.why}</p> : null}
+                </>
+              )}
+            </div>
+            {err && <p className="notice mt-1">{err}</p>}
+            <form
+              className="lookup-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                lookupTranslate();
+              }}
+            >
+              <textarea
+                value={translateQuery}
+                onChange={(e) => setTranslateQuery(e.target.value)}
+                className="field"
+                rows={2}
+                placeholder={tr("lookupPh")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    lookupTranslate();
+                  }
+                }}
+              />
+              <button type="submit" disabled={busy} className="btn btn-primary">{busy ? "…" : tr("lookup")}</button>
+            </form>
           </section>
         )}
 

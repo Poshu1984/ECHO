@@ -263,6 +263,53 @@ input, select, textarea {
   height: auto;
   white-space: normal;
 }
+.lookup-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 12px;
+  flex: 0 0 auto;
+}
+.lookup-form .field {
+  min-width: 0;
+  resize: none;
+  min-height: 72px;
+}
+.lookup-form .btn {
+  min-height: 72px;
+  height: auto;
+  white-space: normal;
+}
+.lookup-block {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.lookup-block.is-first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.lookup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.lookup-k {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-weight: 800;
+}
+.lookup-read {
+  font-size: 0.9rem;
+  color: var(--mute);
+  margin: 6px 0 0;
+}
 .btn-mic {
   padding: 6px 6px;
   display: inline-flex;
@@ -927,8 +974,8 @@ input, select, textarea {
     max-width: 960px;
     margin: 0 auto;
   }
-  .app-nav { grid-template-columns: repeat(9, minmax(0, 1fr)); }
-  .nav-btn { font-size: 12px; padding: 6px 2px; }
+  .app-nav { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .nav-btn { font-size: 11px; padding: 6px 2px; }
   .tutor-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
