@@ -10,7 +10,7 @@ import { EXAMS, TUTORS, UNLOCKS } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
 import { attachExamMeta, attachVocabQuiz, examAnswerIndex, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
-import { guessLang, lookupLocal, pairLang, parseTranslatePayload, speechOf, spokenSide } from "./translate.js";
+import { guessLang, lookupBeats, lookupLocal, pairLang, parseTranslatePayload, speechOf, spokenSide } from "./translate.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -89,6 +89,7 @@ describe("prompts", () => {
     assert.match(readingPrompt(lang, level), /scene/);
     const en = { code: "en", name: "English" };
     assert.match(translatePrompt(en, level, "deadline"), /deadline/);
+    assert.match(translatePrompt(en, level, "deadline"), /ONE best equivalent/);
     assert.match(translatePrompt({ code: "zh", name: "中文" }, level, "期限"), /English/);
   });
 
@@ -316,6 +317,8 @@ describe("translate lookup", () => {
     const speakZh = spokenSide(fromZh, english);
     assert.equal(speakZh.text, "deadline");
     assert.equal(speakZh.code, "en");
+    assert.deepEqual(lookupBeats("最後期限", "zh"), ["最後期限"]);
+    assert.ok(lookupBeats("The deadline is tonight.", "en").length > 1);
   });
 
   it("parses model json and rejects empty lookups", () => {

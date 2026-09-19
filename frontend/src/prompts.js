@@ -132,7 +132,7 @@ The learner typed: "${String(query || "").trim()}"
 Detect whether the query is Traditional Chinese or ${target}.
 If they typed Chinese, give the natural ${target} equivalent.
 If they typed ${target}, give Traditional Chinese.
-Use everyday spoken wording, not a dictionary dump.
+Use everyday spoken wording, not a dictionary dump. Give ONE best equivalent; do not list alternatives with slashes.
 Respond ONLY with JSON, no markdown fences:
 {"query":"<normalized source>","query_lang":"${targetCode}|zh","translation":"<the other side>","translation_lang":"zh|${targetCode}","reading":"<kana, hangul romanization, or pinyin of the non-Chinese side; empty for English>","example":"<one natural ${target} sentence using the word>","example_zh":"<該句繁體中文>","why":"<一句繁體中文，說明這個詞何時用>"}`;
 }

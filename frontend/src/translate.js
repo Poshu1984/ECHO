@@ -1,4 +1,5 @@
 import { LEARN_LANGS, VOCAB } from "./content.js";
+import { beatsOf, isCjk } from "./beats.js";
 
 const CODES = new Set(LEARN_LANGS.map((row) => row.code));
 
@@ -11,6 +12,13 @@ export function pairLang(learn) {
 
 export function speechOf(code) {
   return LEARN_LANGS.find((row) => row.code === code)?.speech || "en-US";
+}
+
+export function lookupBeats(text, code) {
+  const s = String(text || "").trim();
+  if (!s) return [];
+  if (isCjk(code) && s.length <= 18 && !/[。！？!?，,]/.test(s)) return [s];
+  return beatsOf(s, code);
 }
 
 export function codeOfSpeech(speech) {

@@ -18,7 +18,7 @@ import {
   chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
   toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt, translatePrompt,
 } from "./prompts.js";
-import { codeOfSpeech, lookupLocal, parseTranslatePayload, pairLang, speechOf, spokenSide } from "./translate.js";
+import { codeOfSpeech, lookupBeats, lookupLocal, parseTranslatePayload, pairLang, speechOf, spokenSide } from "./translate.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 import { closeMicStream, createRecognizer, micErrorKey, openMicStream, speechSupported } from "./speech.js";
@@ -314,7 +314,7 @@ export default function App() {
 
   function playLine(id, text, code) {
     if (!text) return Promise.resolve();
-    const tokens = beatsOf(text, code);
+    const tokens = lookupBeats(text, code);
     return playTokens(id, text, tokens, 0, null, speechOf(code));
   }
 
@@ -903,10 +903,10 @@ export default function App() {
   const exampleTokens = ex ? beatsOf(ex.sentence, lang.code) : [];
   const sceneTokens = scene ? beatsOf(scene.prompt, lang.code) : [];
   const hit = translateItem;
-  const qTokens = hit ? beatsOf(hit.query, hit.query_lang) : [];
-  const tTokens = hit ? beatsOf(hit.translation, hit.translation_lang) : [];
+  const qTokens = hit ? lookupBeats(hit.query, hit.query_lang) : [];
+  const tTokens = hit ? lookupBeats(hit.translation, hit.translation_lang) : [];
   const exLang = hit ? (hit.example_lang || pairLang(lang).code) : lang.code;
-  const hitExTokens = hit?.example ? beatsOf(hit.example, exLang) : [];
+  const hitExTokens = hit?.example ? lookupBeats(hit.example, exLang) : [];
   const examStats = statsFor(lang.code, "exams", mastery);
   const vocabStats = statsFor(lang.code, "vocab", mastery);
   const exampleStats = statsFor(lang.code, "examples", mastery);
