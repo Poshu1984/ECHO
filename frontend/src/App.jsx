@@ -764,7 +764,8 @@ export default function App() {
     setBusy(true);
     if (manual) setErr("");
     const bank = examItemsFor(lang.code, level);
-    const focus = statsFor(lang.code, "exams").weakTag;
+    const focusRaw = statsFor(lang.code, "exams").weakTag;
+    const focus = focusRaw && bank.some((row) => itemTag(row) === focusRaw) ? focusRaw : "";
     try {
       const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams, focus), "Give one new quiz item now.", 1200);
       if (!p?.q || !Array.isArray(p.options) || p.options.length < 2) throw new Error("BAD_EXAM");

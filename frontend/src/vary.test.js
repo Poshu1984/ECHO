@@ -377,6 +377,7 @@ describe("exam levels", () => {
     const prompt = examPrompt(lang, levelById("C1"));
     assert.match(prompt, /IELTS 7\.0-8\.0/);
     assert.match(prompt, /7\.5 or above/);
+    assert.match(examPrompt(lang, levelById("Bridge")), /survival English/);
     assert.match(examStyleLine(levelById("Bridge"), lang), /TOEIC Bridge/);
     assert.equal(itemLevel({ tag: "look-forward-to" }), "B2");
   });

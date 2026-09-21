@@ -111,7 +111,16 @@ Respond ONLY with JSON, no markdown fences:
 }
 
 export function examPrompt(lang, levelRow, avoid = [], focusTag = "") {
-  return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}). Match this exam family: ${lang.exam || "IELTS / TOEIC / TOEFL / Cambridge"}. Exactly 4 options, one correct. Keep it classroom-clean.
+  const cefr = cefrOf(levelRow);
+  const bridgeRule = levelRow?.id === "Bridge" || cefr === "A1"
+    ? "This is TOEIC Bridge / A1. Use survival English only: be, articles, present simple, this/that, can. Do NOT write conditionals, inversion, phrasal verbs, or subjunctive, even if a focus tag is given."
+    : "";
+  const highRule = levelRow?.id === "C1" || levelRow?.id === "C2"
+    ? "This is IELTS 7.5 or above. Use inversion, subjunctive, clefts, or precise collocation. Do not write A1/A2 survival items."
+    : "";
+  return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${cefr} (${examStyleLine(levelRow, lang)}). Match this exam family: ${lang.exam || "IELTS / TOEIC / TOEFL / Cambridge"}. Exactly 4 options, one correct. Keep it classroom-clean.
+${bridgeRule}
+${highRule}
 ${avoidLine(avoid)}
 ${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
