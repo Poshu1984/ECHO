@@ -1,19 +1,103 @@
 export const LEARN_LANGS = [
-  { code: "en", name: "English", zh: "英文", speech: "en-US", exam: "IELTS / TOEIC" },
+  { code: "en", name: "English", zh: "英文", speech: "en-US", exam: "IELTS / TOEIC / TOEFL / Cambridge" },
   { code: "ja", name: "日本語", zh: "日文", speech: "ja-JP", exam: "JLPT" },
-  { code: "fr", name: "Français", zh: "法文", speech: "fr-FR", exam: "DELF" },
+  { code: "fr", name: "Français", zh: "法文", speech: "fr-FR", exam: "DELF / DALF" },
   { code: "ko", name: "한국어", zh: "韓文", speech: "ko-KR", exam: "TOPIK" },
   { code: "es", name: "Español", zh: "西文", speech: "es-ES", exam: "DELE" },
   { code: "zh", name: "中文", zh: "中文", speech: "zh-TW", exam: "TOCFL" },
 ];
 
 export const LEVELS = [
-  { id: "A2", zh: "初級", toeic: "225-549", ielts: "3.0-3.5" },
-  { id: "B1", zh: "中級", toeic: "550-784", ielts: "4.0-5.0" },
-  { id: "B2", zh: "中高級", toeic: "785-944", ielts: "5.5-6.5" },
+  { id: "Bridge", cefr: "A1", zh: "入門", ielts: "2.0-2.5", toeic: "Bridge 30-60", toeicBridge: "30-60", toefl: "—", cambridge: "A1", jlpt: "N5", delf: "A1", topik: "1", dele: "A1", tocfl: "1" },
+  { id: "A2", cefr: "A2", zh: "初級", ielts: "3.0-3.5", toeic: "225-549", toefl: "0-18", cambridge: "A2 Key", jlpt: "N4", delf: "A2", topik: "2", dele: "A2", tocfl: "2" },
+  { id: "B1", cefr: "B1", zh: "中級", ielts: "4.0-5.0", toeic: "550-784", toefl: "19-56", cambridge: "B1 Preliminary", jlpt: "N3", delf: "B1", topik: "3", dele: "B1", tocfl: "3" },
+  { id: "B2", cefr: "B2", zh: "中高級", ielts: "5.5-6.5", toeic: "785-944", toefl: "57-86", cambridge: "B2 First", jlpt: "N2", delf: "B2", topik: "4", dele: "B2", tocfl: "4" },
+  { id: "C1", cefr: "C1", zh: "高級", ielts: "7.0-8.0", toeic: "945-990", toefl: "87-109", cambridge: "C1 Advanced", jlpt: "N1", delf: "C1", topik: "5-6", dele: "C1", tocfl: "5" },
+  { id: "C2", cefr: "C2", zh: "精通", ielts: "8.5-9.0", toeic: "990", toefl: "110-120", cambridge: "C2 Proficiency", jlpt: "N1+", delf: "C2", topik: "6", dele: "C2", tocfl: "6" },
 ];
 
 export const LEVEL_DISCLAIMER = "對照為常見公開換算區間，非官方成績預測";
+
+const LEVEL_ORDER = LEVELS.map((row) => row.id);
+const B2_TAGS = new Set(["look-forward-to", "used-to-gerund", "neither-singular", "second-conditional", "phrasal-put-off"]);
+
+export function levelById(id) {
+  return LEVELS.find((row) => row.id === id) || LEVELS.find((row) => row.id === "B1") || LEVELS[0];
+}
+
+export function cefrOf(row) {
+  return row?.cefr || row?.id || "B1";
+}
+
+export function levelOptionLabel(row) {
+  if (row.id === "Bridge") return `${row.id} ${row.zh} · TOEIC Bridge ${row.toeicBridge}`;
+  return `${row.id} ${row.zh} · IELTS ${row.ielts}`;
+}
+
+export function levelEquivLine(row, langCode = "en") {
+  if (!row) return "";
+  const blocks = {
+    ielts: `IELTS ${row.ielts}`,
+    toeic: row.id === "Bridge" ? `TOEIC Bridge ${row.toeicBridge}` : `TOEIC ${row.toeic}`,
+    toefl: row.toefl && row.toefl !== "—" ? `TOEFL ${row.toefl}` : "",
+    cambridge: `Cambridge ${row.cambridge}`,
+    jlpt: `JLPT ${row.jlpt}`,
+    delf: `DELF/DALF ${row.delf}`,
+    topik: `TOPIK ${row.topik}`,
+    dele: `DELE ${row.dele}`,
+    tocfl: `TOCFL ${row.tocfl}`,
+  };
+  const order = {
+    en: ["ielts", "toeic", "toefl", "cambridge", "jlpt", "delf", "topik", "dele", "tocfl"],
+    ja: ["jlpt", "ielts", "toeic", "cambridge", "delf", "topik", "dele", "tocfl", "toefl"],
+    fr: ["delf", "ielts", "cambridge", "toeic", "jlpt", "topik", "dele", "tocfl", "toefl"],
+    ko: ["topik", "ielts", "toeic", "jlpt", "delf", "dele", "tocfl", "cambridge", "toefl"],
+    es: ["dele", "ielts", "toeic", "delf", "jlpt", "topik", "tocfl", "cambridge", "toefl"],
+    zh: ["tocfl", "ielts", "toeic", "jlpt", "delf", "topik", "dele", "cambridge", "toefl"],
+  };
+  return (order[langCode] || order.en).map((key) => blocks[key]).filter(Boolean).join(" · ");
+}
+
+export function examStyleLine(row, lang) {
+  const code = lang?.code || "en";
+  const cefr = cefrOf(row);
+  if (code === "ja") return `JLPT ${row.jlpt || "N3"}, CEFR ${cefr}, roughly IELTS ${row.ielts || ""}`.trim();
+  if (code === "fr") return `DELF/DALF ${row.delf || ""}, CEFR ${cefr}, roughly IELTS ${row.ielts || ""}`.trim();
+  if (code === "ko") return `TOPIK ${row.topik || ""}, CEFR ${cefr}, roughly IELTS ${row.ielts || ""}`.trim();
+  if (code === "es") return `DELE ${row.dele || ""}, CEFR ${cefr}, roughly IELTS ${row.ielts || ""}`.trim();
+  if (code === "zh") return `TOCFL ${row.tocfl || ""}, CEFR ${cefr}, roughly IELTS ${row.ielts || ""}`.trim();
+  const toeic = row.id === "Bridge"
+    ? `TOEIC Bridge ${row.toeicBridge || row.toeic || ""}`
+    : `TOEIC ${row.toeic || ""}`;
+  const bits = [`IELTS ${row.ielts || ""}`];
+  if (row.id === "C1" || row.id === "C2") bits[0] += "; target IELTS 7.5 or above";
+  if (row.id === "Bridge") bits[0] += "; TOEIC Bridge / A1 survival English";
+  bits.push(toeic);
+  if (row.toefl && row.toefl !== "—") bits.push(`TOEFL iBT ${row.toefl}`);
+  if (row.cambridge) bits.push(`Cambridge ${row.cambridge}`);
+  return bits.join(", ");
+}
+
+export function itemLevel(item) {
+  if (item?.level) return item.level;
+  if (B2_TAGS.has(item?.tag)) return "B2";
+  return "B1";
+}
+
+export function examItemsFor(code, levelId) {
+  const items = (EXAMS[code] || EXAMS.en).items || [];
+  const id = LEVELS.some((row) => row.id === levelId) ? levelId : "B1";
+  const tagged = items.filter((item) => itemLevel(item) === id);
+  if (tagged.length) return tagged;
+  const index = LEVEL_ORDER.indexOf(id);
+  for (const step of [1, -1, 2, -2, 3, -3]) {
+    const near = LEVEL_ORDER[index + step];
+    if (!near) continue;
+    const hit = items.filter((item) => itemLevel(item) === near);
+    if (hit.length) return hit;
+  }
+  return items;
+}
 
 export const TUTORS = [
   {
@@ -267,7 +351,7 @@ export const SCENES = {
 
 export const EXAMS = {
   en: {
-    board: "IELTS / TOEIC 風格",
+    board: "IELTS / TOEIC / TOEFL / Cambridge 風格",
     items: [
       { q: "The report must be filed _____ Friday.", q_zh: "這份報告最晚要在週五前_____。", options: ["until", "by", "since", "at"], options_zh: ["直到", "在…之前", "自從", "在（時刻）"], a: 1, tag: "preposition-deadline", why: "期限用 by（在某時之前完成）。until 是「一直持續到」，不能搭配 must be filed。" },
       { q: "Please send the form _____ tomorrow morning.", q_zh: "請在明天早上之前把表單寄出。", options: ["until", "by", "since", "during"], options_zh: ["直到", "在…之前", "自從", "在…期間"], a: 1, tag: "preposition-deadline", why: "完成期限用 by。until 表示動作持續到那一刻，不是截止點。" },
@@ -286,6 +370,19 @@ export const EXAMS = {
       { q: "I am used _____ in a noisy office.", q_zh: "我習慣_____在吵雜的辦公室工作。", options: ["to work", "to working", "work", "working"], options_zh: ["去工作", "習慣於 + 動名詞", "工作", "正在工作"], a: 1, tag: "used-to-gerund", why: "be used to 後面接 V-ing，所以是 to working。" },
       { q: "Neither of the answers _____ correct.", q_zh: "兩個答案_____都不對。", options: ["is", "are", "be", "were"], options_zh: ["是（單數）", "是（複數）", "原形", "過去複數"], a: 0, tag: "neither-singular", why: "neither of + 複數名詞，動詞仍用單數 is。" },
       { q: "Neither of the reports _____ ready.", q_zh: "兩份報告_____都還沒好。", options: ["is", "are", "be", "were"], options_zh: ["是（單數）", "是（複數）", "原形", "過去複數"], a: 0, tag: "neither-singular", why: "neither of 後面動詞仍用單數 is。" },
+      { q: "I _____ a teacher.", q_zh: "我_____老師。", options: ["am", "is", "are", "be"], options_zh: ["是（我）", "是（他）", "是（複數）", "原形"], a: 0, tag: "be-am", level: "Bridge", why: "I 後面用 am。is 用於 he/she/it，are 用於 you/we/they。" },
+      { q: "This is _____ apple.", q_zh: "這是_____蘋果。", options: ["a", "an", "the", "any"], options_zh: ["一個（子音）", "一個（母音）", "那個", "任何"], a: 1, tag: "article-an", level: "Bridge", why: "apple 以母音開頭，要用 an。" },
+      { q: "She _____ to work every day.", q_zh: "她每天_____上班。", options: ["go", "goes", "going", "gone"], options_zh: ["去（原形）", "去（第三人稱）", "正在去", "去過"], a: 1, tag: "present-simple", level: "Bridge", why: "現在簡單式、主詞是 she，動詞加 s。" },
+      { q: "_____ you have a receipt?", q_zh: "_____你有收據嗎？", options: ["Do", "Does", "Are", "Is"], options_zh: ["助動詞（you）", "助動詞（he）", "是（複數）", "是（單數）"], a: 0, tag: "do-question", level: "Bridge", why: "you 的疑問句用 Do。Does 用於 he/she/it。" },
+      { q: "There _____ a station near here.", q_zh: "這附近_____一個車站。", options: ["is", "are", "have", "has"], options_zh: ["有（單數）", "有（複數）", "擁有", "擁有（第三人稱）"], a: 0, tag: "there-is", level: "A2", why: "a station 是單數，用 There is。" },
+      { q: "I _____ coffee every morning.", q_zh: "我每天早上_____咖啡。", options: ["drink", "drinks", "drank", "drunk"], options_zh: ["喝（原形）", "喝（第三人稱）", "喝了", "喝過"], a: 0, tag: "present-habit", level: "A2", why: "主詞是 I，現在簡單式用原形 drink。" },
+      { q: "Hardly _____ the meeting started when the alarm went off.", q_zh: "會議才剛開始，警報就響了。", options: ["had", "did", "has", "was"], options_zh: ["過去完成", "過去助動詞", "現在完成", "過去是"], a: 0, tag: "inversion-hardly", level: "C1", why: "Hardly 置於句首要倒裝，且搭配過去完成 had。" },
+      { q: "The board insisted that the clause _____ rewritten.", q_zh: "董事會堅持該條款_____改寫。", options: ["be", "is", "was", "being"], options_zh: ["原形（假設語氣）", "現在", "過去", "進行"], a: 0, tag: "subjunctive-insist", level: "C1", why: "insist that 後面用原形 be，這是正式假設語氣，IELTS 7.5 / C1 常見。" },
+      { q: "Were it not for the delay, we _____ on time.", q_zh: "要不是延誤，我們_____準時到。", options: ["would have arrived", "will arrive", "arrived", "had arrived"], options_zh: ["就會已經到", "將會到", "到了", "已經到"], a: 0, tag: "inverted-conditional", level: "C1", why: "Were it not for 是倒裝假設，主句用 would have + 過去分詞。" },
+      { q: "No sooner _____ we sat down than the phone rang.", q_zh: "我們一坐下電話就響了。", options: ["had", "did", "have", "were"], options_zh: ["過去完成", "過去助動詞", "現在完成", "過去是"], a: 0, tag: "no-sooner", level: "C1", why: "No sooner 句首倒裝，用 had + 過去分詞。" },
+      { q: "Not until the audit ended _____ the discrepancy.", q_zh: "直到稽核結束，他們才注意到差異。", options: ["did they notice", "they noticed", "they did notice", "had they notice"], options_zh: ["倒裝過去", "陳述過去", "強調過去", "錯誤倒裝"], a: 0, tag: "not-until-inversion", level: "C2", why: "Not until 置於句首，主句要倒裝：did they notice。" },
+      { q: "Little _____ that the clause would be struck out.", q_zh: "他們萬萬沒想到這條款會被刪掉。", options: ["did they know", "they knew", "had they knew", "they did know"], options_zh: ["倒裝過去", "陳述過去", "錯誤完成", "強調過去"], a: 0, tag: "little-inversion", level: "C2", why: "否定副詞 Little 置於句首要倒裝，用 did they know。" },
+      { q: "The wording is _____ as to invite two readings.", q_zh: "這措辭_____到會有兩種讀法。", options: ["so ambiguous", "such ambiguous", "too ambiguous", "enough ambiguous"], options_zh: ["如此含糊", "such 不能直接加形容詞", "太含糊（不接 as to）", "enough 位置不對"], a: 0, tag: "so-as-to", level: "C2", why: "so + 形容詞 + as to 表示「以至於」。such 後面要接名詞。" },
     ],
   },
   zh: {
@@ -295,6 +392,10 @@ export const EXAMS = {
       { q: "他對流程非常_____。", q_zh: "He is very _____ with the process.", options: ["陌生", "熟悉", "遙遠", "空白"], options_zh: ["unfamiliar", "familiar", "distant", "blank"], a: 1, tag: "word-choice", why: "對流程很了解要用「熟悉」。" },
       { q: "請把窗戶_____一點。", q_zh: "Please _____ the window a bit.", options: ["打開", "打開了", "打開過", "打開著"], options_zh: ["open", "opened", "have opened", "is opening"], a: 0, tag: "aspect", why: "祈使句用動詞原形「打開」。" },
       { q: "這家店的咖啡_____好喝。", q_zh: "The coffee here is _____ good.", options: ["很", "太不", "沒有", "正在"], options_zh: ["very", "not too", "without", "in the middle of"], a: 0, tag: "degree", why: "形容程度用「很」。" },
+      { q: "我_____老師。", q_zh: "I _____ a teacher.", options: ["是", "有", "在", "會"], options_zh: ["am", "have", "at", "can"], a: 0, tag: "shi", level: "Bridge", why: "身分判斷用「是」。" },
+      { q: "請把這份資料_____一遍。", q_zh: "Please _____ this file once more.", options: ["核對", "核對了", "核對過", "核對著"], options_zh: ["check", "checked", "have checked", "checking"], a: 0, tag: "imperative", level: "A2", why: "祈使句用動詞原形。" },
+      { q: "這項條款_____，否則無法簽署。", q_zh: "The clause must be _____, or it cannot be signed.", options: ["必須修訂", "正在修訂", "修訂過了", "可以修訂嗎"], options_zh: ["must be revised", "is being revised", "has been revised", "can it be revised"], a: 0, tag: "formal-must", level: "C1", why: "正式書面要求用「必須」+ 動詞。" },
+      { q: "與其說是疏失，_____是程序本身有漏洞。", q_zh: "Rather than a slip, _____ the procedure itself is flawed.", options: ["不如說", "然後", "所以", "不過"], options_zh: ["rather", "then", "so", "however"], a: 0, tag: "rather-than", level: "C2", why: "「與其…不如說」用來重新定性。" },
     ],
   },
   ja: {
@@ -303,14 +404,18 @@ export const EXAMS = {
       { q: "この書類は金曜日までに（　）。", q_zh: "這份文件請在週五前（　）。", options: ["出します", "出してください", "出しましょうか", "出ています"], options_zh: ["我會交", "請交", "要交嗎", "已經交了"], a: 1, tag: "request-form", why: "請對方交文件用てください。" },
       { q: "電車が遅れた（　）、会議に間に合わなかった。", q_zh: "電車誤點（　），沒趕上會議。", options: ["ので", "のに", "ても", "だけ"], options_zh: ["因為", "雖然", "即使", "只有"], a: 0, tag: "conjunction", why: "前後是因果，用ので。" },
       { q: "もう少し（　）話してください。", q_zh: "請再說（　）一點。", options: ["ゆっくり", "たぶん", "しっかり", "ほとんど"], options_zh: ["慢慢地", "大概", "好好地", "幾乎"], a: 0, tag: "adverb", why: "請對方說慢一點用ゆっくり。" },
+      { q: "わたしは学生（　）。", q_zh: "我（　）學生。", options: ["です", "ます", "する", "いる"], options_zh: ["是", "禮貌詞尾", "做", "在"], a: 0, tag: "desu", level: "Bridge", why: "身分判斷用です。N5 / Bridge 入門。" },
+      { q: "この条件では引き受け（　）。", q_zh: "在這種條件下只好接受。", options: ["ざるを得ない", "っぽい", "がちだ", "ずじまいだ"], options_zh: ["不得不", "好像", "容易", "沒做成"], a: 0, tag: "zaru-enai", level: "C1", why: "ざるを得ない 是 N1 程度的「不得不」。" },
     ],
   },
   fr: {
-    board: "DELF 風格",
+    board: "DELF / DALF 風格",
     items: [
       { q: "Je dois envoyer le dossier _____ lundi.", q_zh: "我必須在週一_____把檔案寄出。", options: ["avant", "depuis", "pendant", "sans"], options_zh: ["在…之前", "自從", "在…期間", "沒有"], a: 0, tag: "preposition-deadline", why: "截止時間用 avant。" },
       { q: "Elle _____ au bureau depuis 9 heures.", q_zh: "她從九點起就_____在辦公室。", options: ["est", "a", "va", "fait"], options_zh: ["是／在", "有", "去", "做"], a: 0, tag: "etre-location", why: "人在某處用 être。" },
       { q: "Pouvez-vous parler plus _____ ?", q_zh: "可以請你說更_____嗎？", options: ["lentement", "souvent", "jamais", "beaucoup"], options_zh: ["慢", "常", "從不", "很多"], a: 0, tag: "adverb", why: "請對方說慢一點用 lentement。" },
+      { q: "Je _____ etudiant.", q_zh: "我_____學生。", options: ["suis", "es", "est", "sommes"], options_zh: ["是（我）", "是（你）", "是（他）", "是（我們）"], a: 0, tag: "etre-suis", level: "Bridge", why: "je 配 suis。DELF A1 / Bridge。" },
+      { q: "Il faut que vous _____ prets.", q_zh: "你們必須準備好。", options: ["soyez", "etes", "etre", "etiez"], options_zh: ["虛擬式", "直陳現在", "原形", "未完成過去"], a: 0, tag: "subjunctive-falloir", level: "C1", why: "il faut que 後面用虛擬式 soyez。DALF C1。" },
     ],
   },
   ko: {
@@ -319,6 +424,8 @@ export const EXAMS = {
       { q: "보고서를 금요일까지 ( ).", q_zh: "報告請在週五前（ ）。", options: ["제출하세요", "제출입니다", "제출하고", "제출의"], options_zh: ["請提交", "是提交", "提交然後", "提交的"], a: 0, tag: "request-form", why: "請對方提交用 -세요。" },
       { q: "조금만 더 ( ) 말해 주세요.", q_zh: "請再說（ ）一點。", options: ["천천히", "갑자기", "이미", "전혀"], options_zh: ["慢慢地", "突然", "已經", "完全不"], a: 0, tag: "adverb", why: "請對方說慢一點用 천천히。" },
       { q: "약속이 있어서 먼저 ( ).", q_zh: "我有約，先（ ）。", options: ["가 볼게요", "가는 중입니다", "가십시오", "갔습니다"], options_zh: ["我先走", "正在走", "請走", "已經走了"], a: 0, tag: "polite-leave", why: "自己先離開用 가 볼게요。" },
+      { q: "저는 학생( ).", q_zh: "我（ ）學生。", options: ["입니다", "해요", "있어요", "하세요"], options_zh: ["是", "做", "有", "請做"], a: 0, tag: "imnida", level: "Bridge", why: "身分判斷用 입니다。TOPIK 1 / Bridge。" },
+      { q: "시간이 없는 만큼 더 ( ) 해야 한다.", q_zh: "正因為沒時間，才更要徹底做。", options: ["철저히", "철저한", "철저하다", "철저를"], options_zh: ["徹底地", "徹底的", "徹底（動詞）", "徹底（賓語）"], a: 0, tag: "adverb-cheoljeo", level: "C1", why: "修飾動詞用副詞 철저히。TOPIK 5-6。" },
     ],
   },
   es: {
@@ -327,6 +434,8 @@ export const EXAMS = {
       { q: "El informe debe estar listo _____ el viernes.", q_zh: "報告必須在週五_____準備好。", options: ["para", "desde", "sin", "entre"], options_zh: ["在…之前", "自從", "沒有", "在…之間"], a: 0, tag: "preposition-deadline", why: "截止期限用 para。" },
       { q: "Puedes hablar mas _____ ?", q_zh: "可以說更_____嗎？", options: ["despacio", "nunca", "ayer", "mucho"], options_zh: ["慢", "從不", "昨天", "很多"], a: 0, tag: "adverb", why: "請對方說慢一點用 despacio。" },
       { q: "Llevo dos anos _____ aqui.", q_zh: "我在這裡已經兩年_____。", options: ["viviendo", "vivo", "vivi", "vivir"], options_zh: ["住著", "我住", "住了", "住（原形）"], a: 0, tag: "llevar-gerund", why: "llevar + 時間 + gerundio 表示持續，所以用 viviendo。" },
+      { q: "Yo _____ estudiante.", q_zh: "我_____學生。", options: ["soy", "eres", "es", "somos"], options_zh: ["是（我）", "是（你）", "是（他）", "是（我們）"], a: 0, tag: "ser-soy", level: "Bridge", why: "yo 配 soy。DELE A1 / Bridge。" },
+      { q: "Es necesario que _____ inmediatamente.", q_zh: "必須立刻_____。", options: ["actuen", "actuan", "actuar", "actuaban"], options_zh: ["虛擬式", "直陳現在", "原形", "過去進行"], a: 0, tag: "subjunctive-necesario", level: "C1", why: "es necesario que 後面用虛擬式。DELE C1。" },
     ],
   },
 };

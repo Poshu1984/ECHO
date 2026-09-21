@@ -6,7 +6,7 @@ import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, par
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice, cachedVoices } from "./tts.js";
-import { EXAMS, TUTORS, UNLOCKS } from "./content.js";
+import { EXAMS, TUTORS, UNLOCKS, LEVELS, examItemsFor, itemLevel, levelById, levelEquivLine, levelOptionLabel, examStyleLine } from "./content.js";
 import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
 import { attachExamMeta, attachVocabQuiz, examAnswerIndex, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
@@ -334,5 +334,50 @@ describe("translate lookup", () => {
     assert.equal(parsed.query, "receipt");
     assert.equal(parsed.translation, "收據");
     assert.throws(() => parseTranslatePayload({ query: "x" }, english), /EMPTY_TRANSLATE/);
+  });
+});
+
+describe("exam levels", () => {
+  it("offers Bridge through C2 with IELTS 7.5+ and other boards", () => {
+    assert.deepEqual(LEVELS.map((row) => row.id), ["Bridge", "A2", "B1", "B2", "C1", "C2"]);
+    const c1 = levelById("C1");
+    assert.equal(c1.cefr, "C1");
+    assert.equal(c1.ielts, "7.0-8.0");
+    assert.match(c1.ielts, /7\.0/);
+    assert.equal(levelById("C2").ielts, "8.5-9.0");
+    const bridge = levelById("Bridge");
+    assert.equal(bridge.cefr, "A1");
+    assert.equal(bridge.toeicBridge, "30-60");
+    assert.match(levelOptionLabel(bridge), /TOEIC Bridge/);
+    assert.match(levelOptionLabel(c1), /IELTS 7\.0-8\.0/);
+    const enLine = levelEquivLine(c1, "en");
+    assert.match(enLine, /IELTS 7\.0-8\.0/);
+    assert.match(enLine, /TOEIC 945-990/);
+    assert.match(enLine, /TOEFL 87-109/);
+    assert.match(enLine, /Cambridge C1/);
+    assert.match(enLine, /JLPT N1/);
+    assert.match(enLine, /DELF\/DALF C1/);
+    assert.match(enLine, /TOPIK 5-6/);
+    assert.match(enLine, /DELE C1/);
+    assert.match(enLine, /TOCFL 5/);
+    const jaLine = levelEquivLine(c1, "ja");
+    assert.ok(jaLine.indexOf("JLPT") < jaLine.indexOf("IELTS"));
+  });
+
+  it("filters fallback quizzes by level and asks C1 prompts for IELTS 7.5", () => {
+    const bridge = examItemsFor("en", "Bridge");
+    assert.ok(bridge.every((item) => itemLevel(item) === "Bridge"));
+    assert.ok(bridge.some((item) => item.tag === "be-am"));
+    const c1 = examItemsFor("en", "C1");
+    assert.ok(c1.every((item) => itemLevel(item) === "C1"));
+    assert.ok(c1.some((item) => item.tag === "subjunctive-insist"));
+    const c2 = examItemsFor("en", "C2");
+    assert.ok(c2.every((item) => itemLevel(item) === "C2"));
+    const lang = { code: "en", name: "English", exam: "IELTS / TOEIC / TOEFL / Cambridge" };
+    const prompt = examPrompt(lang, levelById("C1"));
+    assert.match(prompt, /IELTS 7\.0-8\.0/);
+    assert.match(prompt, /7\.5 or above/);
+    assert.match(examStyleLine(levelById("Bridge"), lang), /TOEIC Bridge/);
+    assert.equal(itemLevel({ tag: "look-forward-to" }), "B2");
   });
 });

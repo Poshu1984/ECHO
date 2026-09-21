@@ -4,8 +4,9 @@ import { t } from "./i18n.js";
 import { armAudio, cachedVoices, createCloudAudio, listDeviceVoices, pickGoogleVoice, settleAudioRoute, speakOnDevice, stopDeviceSpeech } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess,
-  GREET, VOCAB, EXAMPLES, SCENES, EXAMS,
-  greetOf, examBoard, fallbackPassage, previewPassage,
+  GREET, VOCAB, EXAMPLES, SCENES,
+  greetOf, examBoard, examItemsFor, fallbackPassage, previewPassage,
+  levelById, levelEquivLine, levelOptionLabel,
 } from "./content.js";
 import {
   beatsOf, isCjk, joinBeats, sentenceRange, ssmlFromBeats,
@@ -95,7 +96,7 @@ export default function App() {
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
-  const levelRow = LEVELS.find((l) => l.id === level) || LEVELS[1];
+  const levelRow = levelById(level);
   const joiner = isCjk(lang.code) ? "" : " ";
   const highlight = beat.active;
   const speakPitch = (tutor.pitch || 1) + Number(pitchTrim || 0);
@@ -762,7 +763,7 @@ export default function App() {
     resetDrill();
     setBusy(true);
     if (manual) setErr("");
-    const bank = (EXAMS[lang.code] || EXAMS.en).items;
+    const bank = examItemsFor(lang.code, level);
     const focus = statsFor(lang.code, "exams").weakTag;
     try {
       const p = await askJson(examPrompt(lang, levelRow, seenRef.current.exams, focus), "Give one new quiz item now.", 1200);
@@ -1013,9 +1014,10 @@ export default function App() {
             </label>
             <label className="block text-sm">{tr("level")}
               <select value={level} onChange={(e) => setLevel(e.target.value)} className="field mt-1">
-                {LEVELS.map((l) => <option key={l.id} value={l.id}>{l.id} {l.zh} · TOEIC {l.toeic} · IELTS {l.ielts}</option>)}
+                {LEVELS.map((l) => <option key={l.id} value={l.id}>{levelOptionLabel(l)}</option>)}
               </select>
             </label>
+            <p className="level-equiv">{levelEquivLine(levelRow, lang.code)}</p>
             <p className="text-xs text-[var(--mute)]">{LEVEL_DISCLAIMER}</p>
             <p className="text-sm text-[var(--mute)]">{tr("tutor")}</p>
             <div className="tutor-grid">
@@ -1455,6 +1457,7 @@ export default function App() {
         {tab === "exams" && canAccess(user, "exams") && (
           <section className="panel">
             <h2>{tr("exam")} · {examBoard(lang.code)}</h2>
+            <p className="level-equiv">{levelRow.id} {levelRow.zh} · {levelEquivLine(levelRow, lang.code)}</p>
             {meter(examStats)}
             {item && (
               <>

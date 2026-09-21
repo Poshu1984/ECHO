@@ -1,3 +1,5 @@
+import { cefrOf, examStyleLine } from "./content.js";
+
 export const SPEAK_RATES = {
   slow: 0.75,
   normal: 0.95,
@@ -43,7 +45,7 @@ export function toLlmMessages(msgs) {
 }
 
 export function chatPrompt(tutor, lang, levelRow) {
-  return `You are ${tutor.name}, a warm ${lang.name} conversation tutor. The learner is Taiwanese, native language Traditional Chinese, level ${lang.name} CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}).
+  return `You are ${tutor.name}, a warm ${lang.name} conversation tutor. The learner is Taiwanese, native language Traditional Chinese, level ${lang.name} CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}).
 Rules:
 - Reply in 1-2 short spoken ${lang.name} sentences at level ${levelRow.id}, then one short question. Keep it fast to say aloud.
 - Check the learner's latest message for errors. List each one in JSON only.
@@ -66,7 +68,7 @@ export function parseChatPayload(raw) {
 
 export function readingPrompt(lang, levelRow, topic = "") {
   const topicBit = topic ? ` about ${topic}` : "";
-  return `Write a short ${lang.name} story passage for a read-along video, CEFR ${levelRow.id} (roughly TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}), 4-6 sentences, everyday adult life${topicBit}. Cinematic but not gory. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
+  return `Write a short ${lang.name} story passage for a read-along video, CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}), 4-6 sentences, everyday adult life${topicBit}. Cinematic but not gory. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
 Pick ONE scene mood from: rain, cafe, commute, market, office, night.
 Break it into individual sentences. For EACH sentence provide the ${lang.name} text AND its Traditional Chinese translation on its own line (same meaning, same order). Every sentence must have zh.
 Respond ONLY with JSON, no markdown fences:
@@ -85,7 +87,7 @@ function focusLine(tag) {
 }
 
 export function vocabPrompt(lang, levelRow, avoid = [], focusTag = "") {
-  return `Create ONE new ${lang.name} vocabulary item for an adult Taiwanese learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Everyday life, work, travel, food, or health. Not slang-heavy. Not the same word twice.
+  return `Create ONE new ${lang.name} vocabulary item for an adult Taiwanese learner, CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}). Everyday life, work, travel, food, or health. Not slang-heavy. Not the same word twice.
 ${avoidLine(avoid)}
 ${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
@@ -93,7 +95,7 @@ Respond ONLY with JSON, no markdown fences:
 }
 
 export function examplePrompt(lang, levelRow, avoid = [], focusTag = "") {
-  return `Write ONE new natural ${lang.name} example sentence for an adult learner, CEFR ${levelRow.id} (TOEIC ${levelRow.toeic}, IELTS ${levelRow.ielts}). Spoken, useful, 8-18 words if the language uses spaces. Vary topic: cafe, office, commute, clinic, shopping, weekend.
+  return `Write ONE new natural ${lang.name} example sentence for an adult learner, CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}). Spoken, useful, 8-18 words if the language uses spaces. Vary topic: cafe, office, commute, clinic, shopping, weekend.
 ${avoidLine(avoid)}
 ${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
@@ -101,7 +103,7 @@ Respond ONLY with JSON, no markdown fences:
 }
 
 export function scenePrompt(lang, levelRow, avoid = [], focusTag = "") {
-  return `Invent ONE new role-play scene for speaking practice in ${lang.name}, CEFR ${levelRow.id}. Adult daily life. Give a short title and a 1-2 sentence prompt that tells the learner what to say.
+  return `Invent ONE new role-play scene for speaking practice in ${lang.name}, CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}). Adult daily life. Give a short title and a 1-2 sentence prompt that tells the learner what to say.
 ${avoidLine(avoid)}
 ${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
@@ -109,7 +111,7 @@ Respond ONLY with JSON, no markdown fences:
 }
 
 export function examPrompt(lang, levelRow, avoid = [], focusTag = "") {
-  return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${levelRow.id} (TOEIC/IELTS-style if English). Exactly 4 options, one correct. Keep it classroom-clean.
+  return `Write ONE new multiple-choice grammar or usage item in ${lang.name} at CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}). Match this exam family: ${lang.exam || "IELTS / TOEIC / TOEFL / Cambridge"}. Exactly 4 options, one correct. Keep it classroom-clean.
 ${avoidLine(avoid)}
 ${focusLine(focusTag)}
 Respond ONLY with JSON, no markdown fences:
@@ -127,7 +129,7 @@ export function translatePrompt(lang, levelRow, query) {
   const target = studyingZh ? "English" : lang.name;
   const targetCode = studyingZh ? "en" : lang.code;
   return `You are a bilingual lookup tutor for an adult Taiwanese learner.
-Native language: Traditional Chinese. Learning language: ${target}, CEFR ${levelRow.id}.
+Native language: Traditional Chinese. Learning language: ${target}, CEFR ${cefrOf(levelRow)}.
 The learner typed: "${String(query || "").trim()}"
 Detect whether the query is Traditional Chinese or ${target}.
 If they typed Chinese, give the natural ${target} equivalent.
