@@ -909,7 +909,12 @@ export default function App() {
   const tTokens = hit ? lookupBeats(hit.translation, hit.translation_lang) : [];
   const exLang = hit ? (hit.example_lang || pairLang(lang).code) : lang.code;
   const hitExTokens = hit?.example ? lookupBeats(hit.example, exLang) : [];
-  const examStats = statsFor(lang.code, "exams", mastery);
+  const examStatsRaw = statsFor(lang.code, "exams", mastery);
+  const examBankNow = examItemsFor(lang.code, level);
+  const examStats = {
+    ...examStatsRaw,
+    weakTag: examBankNow.some((row) => itemTag(row) === examStatsRaw.weakTag) ? examStatsRaw.weakTag : "",
+  };
   const vocabStats = statsFor(lang.code, "vocab", mastery);
   const exampleStats = statsFor(lang.code, "examples", mastery);
   const sceneStats = statsFor(lang.code, "scenes", mastery);
