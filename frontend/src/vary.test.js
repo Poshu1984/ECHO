@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickFresh, rememberKey } from "./vary.js";
 import { micErrorKey } from "./speech.js";
-import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages, translatePrompt } from "./prompts.js";
+import { vocabPrompt, examplePrompt, scenePrompt, examPrompt, readingPrompt, articlePrompt, parseModelJson, parseChatPayload, chatPrompt, toLlmMessages, translatePrompt } from "./prompts.js";
 import { t } from "./i18n.js";
 import { inferScene, formatClock, liveSentence } from "./story.js";
 import { pickGoogleVoice, cachedVoices } from "./tts.js";
@@ -11,6 +11,9 @@ import { beatsOf, joinBeats, timesEstimated, sentenceRange } from "./beats.js";
 import { MASTERY_CAP, MASTERY_MIN, recordAttempt, statsFor } from "./mastery.js";
 import { attachExamMeta, attachVocabQuiz, examAnswerIndex, pickSimilar, quizAnswer, quizOptions } from "./quiz.js";
 import { guessLang, lookupBeats, lookupLocal, pairLang, parseTranslatePayload, speechOf, spokenSide } from "./translate.js";
+import {
+  articleBand, articleItemsFor, countWords, currentQuestion, parseArticlePayload, passageBody, pickArticle,
+} from "./article.js";
 
 describe("pickFresh", () => {
   it("skips seen keys then wraps", () => {
@@ -68,6 +71,10 @@ describe("labels", () => {
     assert.equal(t("zh", "translate"), "翻譯");
     assert.equal(t("zh", "lookup"), "查詢");
     assert.equal(t("en", "translate"), "Translate");
+    assert.equal(t("zh", "articles"), "閱讀");
+    assert.equal(t("en", "articles"), "Passages");
+    assert.equal(t("zh", "nextQuestion"), "下一題");
+    assert.match(t("zh", "articleHint"), /理解題/);
   });
 });
 
@@ -380,5 +387,58 @@ describe("exam levels", () => {
     assert.match(examPrompt(lang, levelById("Bridge")), /survival English/);
     assert.match(examStyleLine(levelById("Bridge"), lang), /TOEIC Bridge/);
     assert.equal(itemLevel({ tag: "look-forward-to" }), "B2");
+  });
+});
+
+describe("reading passages", () => {
+  it("unlocks 閱讀 from the start and sizes text by exam band", () => {
+    assert.equal(UNLOCKS.some((row) => row.id === "articles" && row.xp === 0), true);
+    assert.equal(articleBand("Bridge").questions, 2);
+    assert.equal(articleBand("C1").questions, 3);
+    assert.ok(articleBand("C1").min >= 210);
+    assert.equal(countWords("I go to the cafe near my office.", "en"), 8);
+    assert.ok(countWords("今早我差半分鐘沒搭上第一班公車。", "zh") >= 12);
+  });
+
+  it("asks C1 prompts for IELTS 7.5 reading, not karaoke scenes", () => {
+    const lang = { code: "en", name: "English", exam: "IELTS / TOEIC / TOEFL / Cambridge" };
+    const prompt = articlePrompt(lang, levelById("C1"), ["Hybrid Tuesdays"], "", articleBand("C1"));
+    assert.match(prompt, /IELTS 7\.0-8\.0/);
+    assert.match(prompt, /7\.5 or above/);
+    assert.match(prompt, /silent reading/);
+    assert.match(prompt, /210-280 words/);
+    assert.match(prompt, /exactly 3 multiple-choice/);
+    assert.doesNotMatch(prompt, /hook_zh/);
+    assert.match(articlePrompt(lang, levelById("Bridge"), [], "", articleBand("Bridge")), /Survival daily life/);
+  });
+
+  it("parses a generated passage and keeps fallback items in the selected band", () => {
+    const parsed = parseArticlePayload({
+      title: "Late Bus",
+      title_zh: "晚到的公車",
+      tag: "late-bus",
+      sentences: [
+        { text: "I missed the first bus.", zh: "我沒搭上第一班車。" },
+        { text: "I told the team I would be late.", zh: "我跟小組說我會晚到。" },
+      ],
+      questions: [
+        { q: "Why was the writer late?", options: ["Missed the bus", "Overslept", "Traffic", "Rain"], a: "A", type: "gist", why: "第一句。" },
+        { q: "Who did the writer message?", options: ["A friend", "The team", "A driver", "A cafe"], a: 1, type: "detail" },
+      ],
+    });
+    assert.equal(parsed.questions.length, 2);
+    assert.equal(quizAnswer(parsed.questions[0]), 0);
+    assert.equal(currentQuestion(parsed, 1).type, "detail");
+    assert.match(passageBody(parsed.sentences, "en"), /missed the first bus/);
+
+    const bridge = articleItemsFor("en", "Bridge");
+    assert.ok(bridge.every((row) => row.level === "Bridge"));
+    assert.ok(bridge.some((row) => row.tag === "cafe-order"));
+    const c1 = articleItemsFor("en", "C1");
+    assert.ok(c1.every((row) => row.level === "C1"));
+    const picked = pickArticle("en", "C1", [], "always-on");
+    assert.equal(picked.tag, "always-on");
+    assert.ok(picked.questions.length >= 2);
+    assert.throws(() => parseArticlePayload({ title: "Empty", sentences: [{ text: "Hi" }] }), /NO_ARTICLE/);
   });
 });

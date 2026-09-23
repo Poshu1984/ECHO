@@ -75,6 +75,36 @@ Respond ONLY with JSON, no markdown fences:
 {"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","scene":"rain|cafe|commute|market|office|night","hook_zh":"<6-12字中文畫面標語>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<該句繁體中文翻譯>"}]}`;
 }
 
+export function articlePrompt(lang, levelRow, avoid = [], focusTag = "", band) {
+  const cefr = cefrOf(levelRow);
+  const size = band || { min: 110, max: 160, cjkMin: 180, cjkMax: 280, questions: 3, sentences: "5-8" };
+  const cjk = lang.code === "zh" || lang.code === "ja" || lang.code === "ko";
+  const lengthRule = cjk
+    ? `${size.cjkMin}-${size.cjkMax} characters, ${size.sentences} sentences`
+    : `${size.min}-${size.max} words, ${size.sentences} sentences`;
+  const bridgeRule = levelRow?.id === "Bridge" || cefr === "A1"
+    ? "This is TOEIC Bridge / A1. Survival daily life only: present simple, be, can, this/that. No conditionals, inversion, or abstract argument."
+    : "";
+  const highRule = levelRow?.id === "C1" || levelRow?.id === "C2"
+    ? "This is IELTS 7.5 or above. Write a short article or argument, not a children's story. Precise collocation, a counter-point, no survival tourist English."
+    : "";
+  return `Write ONE new ${lang.name} reading passage for an adult Taiwanese learner, CEFR ${cefr} (${examStyleLine(levelRow, lang)}). Match this exam family: ${lang.exam || "IELTS / TOEFL / TOEIC / Cambridge"}.
+This is silent reading practice, not a karaoke storyboard. Everyday adult life: work, commute, health, food, or travel. Connected prose, no bullet lists.
+Length: ${lengthRule}.
+${bridgeRule}
+${highRule}
+Then write exactly ${size.questions} multiple-choice questions IN ${lang.name} about THIS passage.
+Question 1: gist / main idea.
+Question 2: a specific detail.
+${size.questions >= 3 ? "Question 3: inference or vocabulary in context." : ""}
+Each question: exactly 4 options, one correct, and a Traditional Chinese why.
+Answers must be findable in the passage. Do not ask about facts that are not there.
+${avoidLine(avoid)}
+${focusLine(focusTag)}
+Respond ONLY with JSON, no markdown fences:
+{"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","topic":"work|commute|health|food|travel|home","tag":"<short topic id>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<該句繁體中文>"}],"questions":[{"q":"<question in ${lang.name}>","q_zh":"<題幹繁體中文>","options":["<a>","<b>","<c>","<d>"],"options_zh":["<a 中文>","<b 中文>","<c 中文>","<d 中文>"],"a":0,"type":"gist|detail|infer","tag":"<skill id>","why":"<一句繁體中文，說明為什麼對、其他為什麼不行>"}]}`;
+}
+
 function avoidLine(items) {
   const list = (items || []).filter(Boolean).slice(-16);
   if (!list.length) return "No previous items.";

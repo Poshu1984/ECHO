@@ -190,6 +190,29 @@ input, select, textarea {
   text-align: left;
 }
 .drill-review p { margin: 4px 0 0; }
+.article-body {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0 16px;
+}
+.article-body p {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 1.02rem;
+}
+.article-q-label {
+  margin: 12px 0 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.article-sent { margin: 0; }
+.article-sent.live {
+  border-radius: 10px;
+  background: rgba(142, 111, 104, 0.07);
+}
 .nav-btn {
   min-height: 40px;
   padding: 6px 4px;
@@ -980,7 +1003,7 @@ input, select, textarea {
     max-width: 960px;
     margin: 0 auto;
   }
-  .app-nav { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .app-nav { grid-template-columns: repeat(11, minmax(0, 1fr)); }
   .nav-btn { font-size: 11px; padding: 6px 2px; }
   .tutor-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

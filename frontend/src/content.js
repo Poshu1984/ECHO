@@ -135,6 +135,7 @@ export const TUTORS = [
 export const UNLOCKS = [
   { id: "chat", xp: 0 },
   { id: "read", xp: 0 },
+  { id: "articles", xp: 0 },
   { id: "translate", xp: 0 },
   { id: "vocab", xp: 40 },
   { id: "examples", xp: 90 },

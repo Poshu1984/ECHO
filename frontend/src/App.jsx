@@ -16,9 +16,12 @@ import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { inferScene } from "./story.js";
 import {
-  chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
+  articlePrompt, chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
   toLlmMessages, vocabPrompt, examplePrompt, scenePrompt, examPrompt, translatePrompt,
 } from "./prompts.js";
+import {
+  articleBand, articleItemsFor, currentQuestion, parseArticlePayload, pickArticle,
+} from "./article.js";
 import { codeOfSpeech, lookupBeats, lookupLocal, parseTranslatePayload, pairLang, speechOf, spokenSide } from "./translate.js";
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
@@ -74,6 +77,8 @@ export default function App() {
   const [exampleItem, setExampleItem] = useState(null);
   const [sceneItem, setSceneItem] = useState(null);
   const [examItem, setExamItem] = useState(null);
+  const [articleItem, setArticleItem] = useState(null);
+  const [articleQIndex, setArticleQIndex] = useState(0);
   const [translateQuery, setTranslateQuery] = useState("");
   const [translateItem, setTranslateItem] = useState(null);
   const [showAns, setShowAns] = useState(false);
@@ -93,7 +98,7 @@ export default function App() {
   const heldTextRef = useRef("");
   const listeningRef = useRef(false);
   const endingHoldRef = useRef(false);
-  const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], greet: [] });
+  const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], articles: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
   const tr = (k) => t(ui, k);
   const levelRow = levelById(level);
@@ -161,11 +166,13 @@ export default function App() {
     setExampleItem(null);
     setSceneItem(null);
     setExamItem(null);
+    setArticleItem(null);
+    setArticleQIndex(0);
     setTranslateItem(null);
     setShowAns(false);
     setDrillPick(-1);
     setDrillChecked(false);
-    seenRef.current = { vocab: [], examples: [], scenes: [], exams: [], greet: seenRef.current.greet };
+    seenRef.current = { vocab: [], examples: [], scenes: [], exams: [], articles: [], greet: seenRef.current.greet };
   }, [lang.code, level]);
 
   async function submitAuth(e) {
@@ -420,6 +427,9 @@ export default function App() {
       scene: inferScene(raw),
       lang: meta.lang || lang.code,
       level: meta.level || level,
+      tag: raw.tag || "",
+      topic: raw.topic || "",
+      questions: raw.questions || [],
       sentences,
       allTokens: sentences.flatMap((s) => s.tokens),
     };
@@ -670,7 +680,7 @@ export default function App() {
     setDrillChecked(true);
     setErr("");
     setMastery(recordAttempt(lang.code, mode, itemTag(item, mode), ok));
-    if (ok) gain(mode === "exams" ? 12 : 4);
+    if (ok) gain(mode === "exams" ? 12 : mode === "articles" ? 8 : 4);
     notePractice(mode, 1);
   }
 
@@ -783,6 +793,58 @@ export default function App() {
     }
   }
 
+  function articleText(packed = articleItem) {
+    return (packed?.sentences || []).map((s) => s.text).join(isCjk(lang.code) ? "" : " ");
+  }
+
+  async function playArticleFrom(globalIndex, loopRange = beat.loop, packed = articleItem) {
+    if (!packed) return;
+    await playTokens("article", articleText(packed), packed.allTokens, globalIndex, loopRange);
+  }
+
+  async function nextArticle(manual = true) {
+    resetTrack();
+    resetDrill();
+    setArticleQIndex(0);
+    setBusy(true);
+    if (manual) setErr("");
+    const band = articleBand(level);
+    const bank = articleItemsFor(lang.code, level);
+    const focusRaw = statsFor(lang.code, "articles").weakTag;
+    const focus = focusRaw && bank.some((row) => itemTag(row) === focusRaw) ? focusRaw : "";
+    try {
+      const p = await askJson(
+        articlePrompt(lang, levelRow, seenRef.current.articles, focus, band),
+        "Write one new reading passage and questions now.",
+        2200,
+      );
+      const parsed = parseArticlePayload(p);
+      seenRef.current.articles = rememberKey(seenRef.current.articles, parsed.title);
+      setArticleItem(hydratePassage(parsed));
+    } catch (err) {
+      const fb = pickArticle(lang.code, level, seenRef.current.articles, focus);
+      seenRef.current.articles = rememberKey(seenRef.current.articles, fb.title);
+      setArticleItem(hydratePassage(fb));
+      noteLlmFallback(err, manual);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function advanceArticle() {
+    if (!articleItem) {
+      nextArticle(true);
+      return;
+    }
+    if (drillChecked && articleQIndex < (articleItem.questions || []).length - 1) {
+      resetDrill();
+      setErr("");
+      setArticleQIndex((i) => i + 1);
+      return;
+    }
+    nextArticle(true);
+  }
+
   async function lookupTranslate() {
     const q = String(translateQuery || "").trim();
     if (!q || busy) return;
@@ -816,6 +878,8 @@ export default function App() {
     setExampleItem(null);
     setSceneItem(null);
     setExamItem(null);
+    setArticleItem(null);
+    setArticleQIndex(0);
     setTranslateItem(null);
     resetDrill();
     setShowAns(false);
@@ -832,7 +896,8 @@ export default function App() {
     if (tab === "examples" && canAccess(user, "examples") && !exampleItem) nextExample(false);
     if (tab === "scenes" && canAccess(user, "scenes") && !sceneItem) nextScene(false);
     if (tab === "exams" && canAccess(user, "exams") && !examItem) nextExam(false);
-  }, [tab, user, vocabItem, exampleItem, sceneItem, examItem, lang.code, level]);
+    if (tab === "articles" && canAccess(user, "articles") && !articleItem) nextArticle(false);
+  }, [tab, user, vocabItem, exampleItem, sceneItem, examItem, articleItem, lang.code, level]);
 
   function gloss(text) {
     return showZh ? text : "";
@@ -845,8 +910,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (tab !== "read" || trackId !== "read") return;
-    document.querySelector(".read-sent.live")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (tab === "read" && trackId === "read") {
+      document.querySelector(".read-sent.live")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    if (tab === "articles" && trackId === "article") {
+      document.querySelector(".article-sent.live")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }, [highlight, tab, trackId]);
 
   if (!user) {
@@ -886,6 +955,7 @@ export default function App() {
   const nav = [
     { id: "chat", label: tr("chat") },
     { id: "read", label: tr("read") },
+    { id: "articles", label: tr("articles") },
     { id: "translate", label: tr("translate") },
     { id: "vocab", label: tr("vocab") },
     { id: "examples", label: tr("examples") },
@@ -918,6 +988,14 @@ export default function App() {
   const vocabStats = statsFor(lang.code, "vocab", mastery);
   const exampleStats = statsFor(lang.code, "examples", mastery);
   const sceneStats = statsFor(lang.code, "scenes", mastery);
+  const articleStatsRaw = statsFor(lang.code, "articles", mastery);
+  const articleBankNow = articleItemsFor(lang.code, level);
+  const articleStats = {
+    ...articleStatsRaw,
+    weakTag: articleBankNow.some((row) => itemTag(row) === articleStatsRaw.weakTag) ? articleStatsRaw.weakTag : "",
+  };
+  const article = articleItem;
+  const articleQ = currentQuestion(article, articleQIndex);
 
   function meter(stats) {
     if (!stats.total) return null;
@@ -1013,6 +1091,7 @@ export default function App() {
                 setLang(next);
                 setMsgs([]);
                 setPassage(null);
+                setArticleItem(null);
                 resetTrack();
               }} className="field mt-1">
                 {LEARN_LANGS.map((l) => <option key={l.code} value={l.code}>{l.name} / {l.exam}</option>)}
@@ -1255,6 +1334,68 @@ export default function App() {
                 </div>
               </>
             )}
+          </section>
+        )}
+
+        {tab === "articles" && (
+          <section className="panel">
+            <h2>{tr("articles")} · {examBoard(lang.code)}</h2>
+            <p className="level-equiv">{levelRow.id} {levelRow.zh} · {levelEquivLine(levelRow, lang.code)}</p>
+            <p className="text-sm text-[var(--mute)] mt-1">{tr("articleHint")}</p>
+            {meter(articleStats)}
+            {article && (
+              <>
+                <div className="scroll-pane mt-2">
+                  <h3 className="story-title">{article.title}</h3>
+                  {gloss(article.title_zh) ? <p className="story-title-zh">{article.title_zh}</p> : null}
+                  <div className="article-body">
+                    {article.sentences.map((s, i) => {
+                      const range = sentenceRange(article.sentences, i);
+                      const local = trackId === "article" && highlight >= range[0] && highlight <= range[1] ? highlight - s.start : -1;
+                      const done = trackId === "article" && highlight > range[1];
+                      const ratio = local >= 0 ? zhRatio(local, s.tokens.length) : (done ? 1 : 0);
+                      return (
+                        <article key={`${s.text}-${i}`} className={`article-sent ${local >= 0 ? "live" : ""}`}>
+                          <BeatLine
+                            tokens={s.tokens}
+                            joiner={joiner}
+                            active={local}
+                            native={gloss(s.zh)}
+                            nativeRatio={ratio}
+                            fromHere={tr("fromHere")}
+                            onToken={(tok) => playArticleFrom(s.start + tok, beat.loop, article)}
+                          />
+                        </article>
+                      );
+                    })}
+                  </div>
+                  {articleQ && (
+                    <>
+                      <p className="article-q-label">{tr("readQ")} {articleQIndex + 1}/{article.questions.length}</p>
+                      <p>{articleQ.q}</p>
+                      {gloss(articleQ.q_zh) ? <p className="beat-native on mt-1">{articleQ.q_zh}</p> : null}
+                      {choices(articleQ)}
+                      {review(articleQ)}
+                    </>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3 shrink-0">
+                  <button className="btn btn-primary" disabled={!articleQ || drillChecked} onClick={() => checkDrill("articles", articleQ)}>{tr("check")}</button>
+                  <button className="btn btn-ghost" disabled={busy} onClick={advanceArticle}>
+                    {drillChecked && articleQIndex < (article.questions || []).length - 1 ? tr("nextQuestion") : tr("newArticle")}
+                  </button>
+                </div>
+                <div className="story-tools mt-2">
+                  <button className="btn btn-line btn-mini" onClick={() => playArticleFrom(0, null, article)}>{tr("listenArticle")}</button>
+                  <button className="btn btn-ghost btn-mini" onClick={() => resetTrack()}>{tr("stop")}</button>
+                  <button className="btn btn-ghost btn-mini" onClick={() => setShowZh((v) => !v)}>{showZh ? tr("hideZh") : tr("showZh")}</button>
+                </div>
+              </>
+            )}
+            {!article && (
+              <button className="btn btn-accent w-full mt-3 shrink-0" disabled={busy} onClick={() => nextArticle(true)}>{busy ? "…" : tr("newArticle")}</button>
+            )}
+            {err && <p className="notice mt-2 shrink-0">{err}</p>}
           </section>
         )}
 
