@@ -816,7 +816,7 @@ export default function App() {
       const p = await askJson(
         articlePrompt(lang, levelRow, seenRef.current.articles, focus, band),
         "Write one new reading passage and questions now.",
-        2200,
+        band.min >= 200 ? 2800 : 2200,
       );
       const parsed = parseArticlePayload(p);
       seenRef.current.articles = rememberKey(seenRef.current.articles, parsed.title);
