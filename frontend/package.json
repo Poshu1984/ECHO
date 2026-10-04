@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "serve -s dist -l tcp://0.0.0.0:$PORT",
-    "test": "node --test src/vary.test.js"
+    "test": "node --test src/vary.test.js src/coach/coach.test.js"
   },
   "dependencies": {
     "react": "^18.3.1",

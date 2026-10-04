@@ -32,6 +32,7 @@ import {
   attachExamMeta, attachExampleQuiz, attachSceneQuiz, attachVocabQuiz,
   examAnswerIndex, itemTag, itemWhy, pickSimilar, quizAnswer, quizGlosses, quizOptions,
 } from "./quiz.js";
+import CoachPanel from "./coach/CoachPanel.jsx";
 
 function MicIcon() {
   return (
@@ -49,7 +50,7 @@ export default function App() {
   const [pass, setPass] = useState("");
   const [authErr, setAuthErr] = useState("");
   const [ui, setUi] = useState(localStorage.getItem("echoo-ui") || "zh");
-  const [tab, setTab] = useState("chat");
+  const [tab, setTab] = useState("coach");
   const [lang, setLang] = useState(LEARN_LANGS[0]);
   const [level, setLevel] = useState("B1");
   const [tutorId, setTutorId] = useState(() => {
@@ -953,6 +954,7 @@ export default function App() {
   }
 
   const nav = [
+    { id: "coach", label: tr("coach") },
     { id: "chat", label: tr("chat") },
     { id: "read", label: tr("read") },
     { id: "articles", label: tr("articles") },
@@ -1071,6 +1073,7 @@ export default function App() {
         })}
       </nav>
       <main className="app-main">
+        {tab === "coach" && <CoachPanel />}
         {tab === "settings" && (
           <section className="panel">
             <h2>{tr("settings")}</h2>
