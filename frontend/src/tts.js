@@ -148,6 +148,8 @@ export function pickDeviceVoice(speechLang, tutor, chosenName) {
   return { voice: null, substituted: true };
 }
 
+// Holds a reference so the browser does not garbage-collect a speaking utterance.
+// eslint-disable-next-line no-unused-vars
 let currentUtterance = null;
 
 export function speakOnDevice(text, { lang, pitch, rate, voiceName, tutor }) {
