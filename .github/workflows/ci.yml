@@ -10,7 +10,9 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel superseded PR runs; every push to main must finish so the
+  # post-merge check has a real result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
@@ -21,8 +23,10 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -39,8 +43,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -51,19 +57,23 @@ jobs:
       - run: npm run build
 
   audit:
-    # Report-only for now; becomes blocking once the open dependency
-    # advisories are cleared (tracked in docs/maturity/ROADMAP.md).
-    name: npm audit (report)
+    # Report-only: prints vulnerability counts per severity (no advisory
+    # details in the public log). Becomes blocking once the dependency
+    # security fix lands (see docs/maturity/ROADMAP.md).
+    name: dependency audit (report only, never blocks)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
-      - name: backend audit
-        continue-on-error: true
-        run: cd backend && npm audit --omit=dev --audit-level=high
-      - name: frontend audit
-        continue-on-error: true
-        run: cd frontend && npm audit --audit-level=high
+      - name: count advisories
+        run: |
+          for dir in backend frontend; do
+            counts=$(cd "$dir" && npm audit --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const v=JSON.parse(s).metadata.vulnerabilities;console.log(JSON.stringify(v))}catch{console.log("unavailable")}})')
+            echo "$dir: $counts"
+            echo "::notice title=$dir dependency audit::$counts"
+          done

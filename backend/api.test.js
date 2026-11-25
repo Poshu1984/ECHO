@@ -16,6 +16,7 @@ const ADMIN_PASS = "ci-admin-password";
 let dir;
 let child;
 let base;
+let serverLog = "";
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -32,6 +33,7 @@ function freePort() {
 async function waitForHealth(url, ms = 15000) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
+    if (child.exitCode !== null) throw new Error(`server exited early (${child.exitCode}):\n${serverLog}`);
     try {
       const res = await fetch(`${url}/api/health`);
       if (res.ok) return;
@@ -40,7 +42,7 @@ async function waitForHealth(url, ms = 15000) {
     }
     await new Promise((r) => setTimeout(r, 100));
   }
-  throw new Error("server did not start");
+  throw new Error(`server did not start:\n${serverLog}`);
 }
 
 async function call(method, route, { body, token, headers = {} } = {}) {
@@ -79,8 +81,14 @@ before(async () => {
     ECHO_ADMIN_USER: ADMIN_USER,
     ECHO_ADMIN_PASSWORD: ADMIN_PASS,
   });
-  child = spawn(process.execPath, ["server.js"], { cwd: dir, env, stdio: "ignore" });
+  child = spawn(process.execPath, ["server.js"], { cwd: dir, env, stdio: ["ignore", "pipe", "pipe"] });
+  child.stdout.on("data", (d) => { serverLog += d; });
+  child.stderr.on("data", (d) => { serverLog += d; });
   await waitForHealth(base);
+
+  // Shared learner used by several suites, so each suite can run on its own.
+  const reg = await call("POST", "/api/auth/register", { body: { username: "learner1", password: "secret1" } });
+  assert.equal(reg.status, 200);
 });
 
 after(() => {
@@ -119,19 +127,19 @@ describe("auth", () => {
   });
 
   it("registers, logs in and reads the profile without leaking the password hash", async () => {
-    const reg = await call("POST", "/api/auth/register", { body: { username: "learner1", password: "secret1" } });
+    const reg = await call("POST", "/api/auth/register", { body: { username: "learner0", password: "secret0" } });
     assert.equal(reg.status, 200);
     assert.ok(reg.data.token);
     assert.equal(reg.data.user.plan, "free");
     assert.equal(reg.data.user.role, "user");
     assert.equal("passwordHash" in reg.data.user, false);
 
-    const login = await call("POST", "/api/auth/login", { body: { username: "LEARNER1", password: "secret1" } });
+    const login = await call("POST", "/api/auth/login", { body: { username: "LEARNER0", password: "secret0" } });
     assert.equal(login.status, 200);
 
     const me = await call("GET", "/api/auth/me", { token: login.data.token });
     assert.equal(me.status, 200);
-    assert.equal(me.data.user.username, "learner1");
+    assert.equal(me.data.user.username, "learner0");
     assert.equal(JSON.stringify(me.data).includes("passwordHash"), false);
   });
 
@@ -207,8 +215,13 @@ describe("paid upstream calls without keys", () => {
   });
 
   it("fails clearly and does not spend quota when no key is set", async () => {
-    const login = await call("POST", "/api/auth/login", { body: { username: "learner1", password: "secret1" } });
-    const token = login.data.token;
+    // Use a plan that has model quota, so "not spent" is actually observable.
+    const admin = await call("POST", "/api/auth/login", { body: { username: ADMIN_USER, password: ADMIN_PASS } });
+    const reg = await call("POST", "/api/auth/register", { body: { username: "learner3", password: "secret3" } });
+    const plan = await call("POST", `/api/auth/users/${reg.data.user.id}/plan`, { token: admin.data.token, body: { plan: "starter" } });
+    assert.equal(plan.status, 200);
+    assert.ok(plan.data.user.quota.llmLimit > 0);
+    const token = reg.data.token;
 
     const status = await call("GET", "/api/tts/status", { token });
     assert.equal(status.status, 200);
