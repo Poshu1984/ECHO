@@ -26,7 +26,7 @@ import { codeOfSpeech, lookupBeats, lookupLocal, parseTranslatePayload, pairLang
 import { computeScore, fakeFriends, loadWeek, recordPractice } from "./score.js";
 import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 import { closeMicStream, createRecognizer, micErrorKey, openMicStream, speechSupported } from "./speech.js";
-import { pickFresh, rememberKey } from "./vary.js";
+import { rememberKey } from "./vary.js";
 import { loadMastery, recordAttempt, statsFor } from "./mastery.js";
 import {
   attachExamMeta, attachExampleQuiz, attachSceneQuiz, attachVocabQuiz,
@@ -475,6 +475,8 @@ export default function App() {
     await playTokens("read", passageText(packed), packed.allTokens, globalIndex, loopRange);
   }
 
+  // Kept for the sentence-loop control; not wired to the UI right now.
+  // eslint-disable-next-line no-unused-vars
   function toggleLoopSentence(i, packed = passage) {
     if (!packed) return;
     const range = sentenceRange(packed.sentences, i);
