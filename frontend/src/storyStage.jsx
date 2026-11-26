@@ -43,8 +43,13 @@ export function StoryStage({
   useEffect(() => {
     if (!theater) return undefined;
     const onKey = (e) => { if (e.key === "Escape") setTheater(false); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [theater]);
   const scene = inferScene(passage);
   const hook = passage?.hook_zh || passage?.title_zh || passage?.title || "";

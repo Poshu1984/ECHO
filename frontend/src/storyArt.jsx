@@ -2,7 +2,8 @@ import { useId } from "react";
 
 // Original vector artwork for the story stage. Everything is inline SVG so
 // it works offline, costs nothing per story and scales to any screen.
-// Two recurring characters ("A" in orange, "B" in olive) act out the scene.
+// Two recurring characters act out the scene: A (a young woman in orange)
+// and B (a young man in olive).
 
 function Rainy() {
   return (
