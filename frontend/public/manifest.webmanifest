@@ -1,6 +1,6 @@
 {
-  "name": "Lingostep 語階",
-  "short_name": "Lingostep",
+  "name": "ECHO",
+  "short_name": "ECHO",
   "description": "每一題，往前一步。",
   "start_url": "/",
   "display": "standalone",

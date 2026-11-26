@@ -944,7 +944,10 @@ export default function App() {
     return (
       <div className="app-shell is-auth items-center justify-center">
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
-          <img src="/brand/logo/lockup-primary.png" alt="Lingostep 語階" className="brand-seal brand-lockup-img mx-auto" />
+          <div className="brand-login-lockup">
+            <img src="/brand/logo/mark-primary.svg" alt="" className="brand-seal brand-seal-lg" />
+            <span className="brand-name brand-name-lg">ECHO</span>
+          </div>
           <img src="/brand/mascots/lingostep-lineup.png" alt="" className="brand-lineup mx-auto" />
           <p className="slogan">{tr("tag")}</p>
           <h1 className="text-2xl mt-3 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
@@ -1067,8 +1070,7 @@ export default function App() {
         <img src="/brand/logo/mark-primary.svg" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="brand-lockup">
-            <span className="brand-name">Lingostep</span>
-            <span className="brand-name-zh">語階</span>
+            <span className="brand-name">ECHO</span>
           </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">

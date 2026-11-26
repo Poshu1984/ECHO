@@ -1243,7 +1243,7 @@ input, select, textarea {
 .story-stage .story-fx .story-play { top: 50%; }
 .story-stage.is-theater .story-caption { max-width: 900px; width: 100%; margin: 0 auto; }
 
-/* ===================== Lingostep 語階 · CI v2 theme ===================== */
+/* ===================== ECHO · brand CI v2 theme ===================== */
 /* Tokens from docs/brand/tokens.css, mapped onto the app's variables.     */
 :root {
   --ls-ink: #212033;
@@ -1340,7 +1340,7 @@ h1, h2, h3, .display { font-family: var(--ls-font-ui); color: var(--ls-purple); 
 /* keep the dark mascots readable on night scenes */
 .story-art.is-dark .char { filter: drop-shadow(0 0 1.5px rgba(250, 248, 242, 0.85)) drop-shadow(0 0 6px rgba(217, 243, 107, 0.35)); }
 
-/* ---- Lingostep review fixes ---- */
+/* ---- brand review fixes ---- */
 /* status messages: errors in retry wine, success in mastered green (CI v2) */
 .notice { color: #772238; }
 .notice.is-ok { color: #22533D; }
@@ -1389,3 +1389,7 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ls-purpl
   .nav-btn { min-height: 44px; flex-direction: row; gap: 4px; }
   .nav-ico { width: 18px; height: 18px; }
 }
+/* ECHO wordmark (mark + Lilita One text) */
+.brand-login-lockup { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.brand-seal-lg { width: 64px; height: 64px; border-radius: 16px; }
+.brand-name-lg { font-family: var(--ls-font-display); font-size: 3rem; line-height: 1; color: var(--ls-ink); letter-spacing: 0.02em; }

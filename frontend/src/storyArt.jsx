@@ -4,7 +4,7 @@ import { partnerFor } from "./storyDirector.js";
 
 // Original vector artwork for the story stage. Everything is inline SVG so
 // it works offline, costs nothing per story and scales to any screen.
-// The Lingostep mascots act out the scene: Koto (A) with the language
+// The ECHO brand mascots act out the scene: Koto (A) with the language
 // partner (B): Pip for English, Nami for Japanese.
 
 function Rainy() {
@@ -232,7 +232,7 @@ function Shape({ tag, attrs }) {
   return <Tag {...attrs} />;
 }
 
-// Lingostep CI v2 characters: Koto (lead), Pip (English), Nami (Japanese).
+// Brand CI v2 characters: Koto (lead), Pip (English), Nami (Japanese).
 // Shapes come from the brand SVGs; eyes blink and the mouth opens in time
 // with the highlighted word while the character is talking.
 export function Mascot({ id = "koto", x, y, talking = false, open = false, mood = "neutral", focus = false, scale = 0.55, flip = false }) {

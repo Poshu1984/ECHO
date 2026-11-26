@@ -3,7 +3,7 @@ const CACHE = "lingostep-v1";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll(["/brand/logo/mark-primary.svg", "/brand/logo/lockup-primary.png", "/brand/app/lingostep-192.png", "/brand/app/lingostep-512.png", "/manifest.webmanifest"]),
+      cache.addAll(["/brand/logo/mark-primary.svg", "/brand/app/lingostep-192.png", "/brand/app/lingostep-512.png", "/manifest.webmanifest"]),
     ).then(() => self.skipWaiting()),
   );
 });

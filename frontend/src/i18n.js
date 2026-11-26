@@ -9,7 +9,7 @@ export const UI_LANGS = [
 
 const dict = {
   zh: {
-    tag: "Lingostep 語階｜每一題，往前一步。",
+    tag: "ECHO｜每一題，往前一步。",
     tagShort: "每一題，往前一步",
     login: "登入",
     register: "註冊",
@@ -140,7 +140,7 @@ const dict = {
     chatFail: "對話連不上。先從朗讀或單字練習。",
   },
   en: {
-    tag: "Lingostep | Every question, one step forward.",
+    tag: "ECHO | Every question, one step forward.",
     tagShort: "Every question, one step forward",
     login: "Log in",
     register: "Sign up",
@@ -209,7 +209,7 @@ const dict = {
     mastered: "Target reached",
     sceneAsk: "What should you do now?",
     install: "Add to Home Screen",
-    installHint: "Install Lingostep like an app. On iPhone use Safari Share, then Add to Home Screen.",
+    installHint: "Install ECHO like an app. On iPhone use Safari Share, then Add to Home Screen.",
     voiceQuota: "Cloud voice quota is used up. Playing on this device.",
     replay: "Replay sentence",
     loop: "Loop",
@@ -277,7 +277,7 @@ const dict = {
 });
 
 Object.assign(dict.ja, {
-  tag: "Lingostep｜一問ごとに、一歩前へ。",
+  tag: "ECHO｜一問ごとに、一歩前へ。",
   tagShort: "一問ごとに、一歩前へ",
   login: "ログイン",
   register: "新規登録",
@@ -340,7 +340,7 @@ Object.assign(dict.ja, {
 });
 
 Object.assign(dict.ko, {
-  tag: "Lingostep | 한 문제마다, 한 걸음 앞으로.",
+  tag: "ECHO | 한 문제마다, 한 걸음 앞으로.",
   tagShort: "한 문제마다, 한 걸음 앞으로",
   login: "로그인",
   register: "회원가입",
@@ -402,7 +402,7 @@ Object.assign(dict.ko, {
 });
 
 Object.assign(dict.fr, {
-  tag: "Lingostep | Chaque question, un pas en avant.",
+  tag: "ECHO | Chaque question, un pas en avant.",
   tagShort: "Chaque question, un pas en avant",
   login: "Connexion",
   register: "Inscription",
@@ -464,7 +464,7 @@ Object.assign(dict.fr, {
 });
 
 Object.assign(dict.es, {
-  tag: "Lingostep | Cada pregunta, un paso adelante.",
+  tag: "ECHO | Cada pregunta, un paso adelante.",
   tagShort: "Cada pregunta, un paso adelante",
   login: "Entrar",
   register: "Registrarse",
