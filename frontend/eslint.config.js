@@ -37,6 +37,11 @@ export default [
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node } },
   },
   {
+    // Playwright scripts run in Node; page.evaluate callbacks run in the browser.
+    files: ["e2e/**/*.mjs"],
+    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ["public/sw.js"],
     languageOptions: { globals: { ...globals.serviceworker } },
   },

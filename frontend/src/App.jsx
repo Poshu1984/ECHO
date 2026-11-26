@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
 import { armAudio, cachedVoices, createCloudAudio, listDeviceVoices, pickGoogleVoice, settleAudioRoute, speakOnDevice, stopDeviceSpeech } from "./tts.js";
@@ -31,6 +31,8 @@ import { isSaved, loadSaves, removeSave, savePassage } from "./bookmarks.js";
 import { closeMicStream, createRecognizer, micErrorKey, openMicStream, speechSupported } from "./speech.js";
 import { rememberKey } from "./vary.js";
 import { loadMastery, recordAttempt, statsFor } from "./mastery.js";
+
+const KidsMode = lazy(() => import("./kids/KidsMode.jsx"));
 import {
   attachExamMeta, attachExampleQuiz, attachSceneQuiz, attachVocabQuiz,
   examAnswerIndex, itemTag, itemWhy, pickSimilar, quizAnswer, quizGlosses, quizOptions,
@@ -92,6 +94,7 @@ export default function App() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installHint, setInstallHint] = useState(false);
   const [trackId, setTrackId] = useState("");
+  const [kidsOpen, setKidsOpen] = useState(false);
   const beat = useBeatAudio();
   const trackRef = useRef({ id: "", tokens: [], text: "", mode: "", key: "" });
   const recRef = useRef(null);
@@ -361,7 +364,16 @@ export default function App() {
     setTrackId("");
   }
 
+  function openKids() {
+    resetTrack();
+    stopMic();
+    closeMicStream();
+    setErr("");
+    setKidsOpen(true);
+  }
+
   function goTab(id) {
+    if (id === "kids") { openKids(); return; }
     if (id === tab) return;
     resetTrack();
     stopMic();
@@ -977,6 +989,7 @@ export default function App() {
 
   const navIconUrl = (icon) => (icon.startsWith("x/") ? `/brand/icons-extra/${icon.slice(2)}.svg` : `/brand/icons/${icon}.svg`);
   const nav = [
+    { id: "kids", label: tr("kids"), icon: "x/kids" },
     { id: "chat", label: tr("chat"), icon: "speak" },
     { id: "read", label: tr("read"), icon: "listen" },
     { id: "articles", label: tr("articles"), icon: "read" },
@@ -1061,6 +1074,14 @@ export default function App() {
           </button>
         ))}
       </div>
+    );
+  }
+
+  if (kidsOpen) {
+    return (
+      <Suspense fallback={<div className="kids-shell" aria-busy="true" />}>
+        <KidsMode ui={ui} onExit={() => setKidsOpen(false)} />
+      </Suspense>
     );
   }
 
