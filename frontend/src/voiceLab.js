@@ -39,3 +39,25 @@ export function sampleRequest(text, voiceName, speech, speakingRate = 1) {
     audioConfig: { audioEncoding: "MP3", speakingRate },
   };
 }
+
+export const STORY_CHARS = 400;
+
+export function sampleText(passage, sampleId = "story", langCode = "en") {
+  const sentences = passage?.sentences || [];
+  if (sampleId === "line") return sentences[0]?.text || "";
+  const joiner = langCode === "zh" || langCode === "ja" ? "" : " ";
+  return sentences.slice(0, 2).map((s) => s.text).join(joiner);
+}
+
+// Plain-language cost note: per 1,000 stories of about STORY_CHARS characters.
+export function costPerThousandStories(pricePerM) {
+  return Math.round(((STORY_CHARS * 1000) / 1e6) * pricePerM * 10) / 10;
+}
+
+export function monthlyCostLine() {
+  const low = costPerThousandStories(WAVENET_PRICE_PER_M);
+  const mid = costPerThousandStories(NEURAL2_PRICE_PER_M);
+  const chirp = costPerThousandStories(CHIRP_PRICE_PER_M);
+  const freeStories = Math.round(1e6 / STORY_CHARS);
+  return `費用估算（每篇故事約 ${STORY_CHARS} 字）：每 1,000 篇故事，目前聲音約 US$${low}–${mid}，Chirp 3 HD 約 US$${chirp}。每月前 100 萬字免費，約 ${freeStories.toLocaleString("en-US")} 篇故事。`;
+}

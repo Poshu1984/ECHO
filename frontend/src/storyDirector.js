@@ -1,23 +1,85 @@
-// Pure "director" helpers for the story stage: which camera shot each line
-// gets, who is talking, and when the talking character's mouth is open.
+// Pure "director" helpers for the story stage: who is talking, who the camera
+// follows, which shot each line gets and the character's expression.
 // Kept free of React so it can be unit-tested with node --test.
-import { beatsOf } from "./beats.js";
 
-export const SHOTS = ["wide", "push", "pan", "a", "b"];
+export const SHOTS = ["wide", "push", "pan", "a", "b", "fa", "fb"];
 const NARRATION_CYCLE = ["push", "pan", "wide"];
-const QUOTE = /["“”«»„「」『』‹›]/;
+const ROLES = new Set(["a", "b", "narrator"]);
 
-export function speakerFor(index, sentence) {
-  const text = String(sentence?.text || "");
-  if (!QUOTE.test(text)) return "narrator";
-  return index % 2 === 1 ? "a" : "b";
+// Quoted spans: "…" “…” «…» „…“ ‘…’ 「…」 『…』 ‹…›
+const QUOTED = /"([^"]+)"|“([^”]+)”|«([^»]+)»|„([^“”]+)[“”]|‘([^’]+)’|「([^」]+)」|『([^』]+)』|‹([^›]+)›/g;
+// A real line of speech has a space or punctuation inside (not a single
+// scare-quoted word, not a book title like 『ノルウェイの森』を読んだ).
+const SPOKEN = /[\s?!.,…。？！、，~]/;
+const DASH_LINE = /^\s*[—–]\s*\S/;
+
+const FEMALE = /\b(she|her|hers|elle|ella)\b|彼女|她|그녀/i;
+const MALE = /\b(he|him|his|il|él|lui)\b|彼(?!女)|他|그가|그는/i;
+// First-person narration follows the protagonist (A).
+const FIRST = /\b(I|me|my|je|moi|yo|mi)\b|\bj'|私|僕|我|나는|내가|저는|제가/i;
+
+function outsideQuotes(text) {
+  return text.replace(QUOTED, " ");
 }
 
-export function shotFor(index, sentence) {
-  const speaker = speakerFor(index, sentence);
-  if (speaker !== "narrator") return speaker;
-  if (index <= 0) return "wide";
-  return NARRATION_CYCLE[(index - 1) % NARRATION_CYCLE.length];
+export function isDialogue(text) {
+  const t = String(text || "");
+  if (DASH_LINE.test(t)) return true;
+  for (const m of t.matchAll(QUOTED)) {
+    const inner = m.slice(1).find(Boolean) || "";
+    const startsLine = m.index === 0 || /^[「『]/.test(m[0]);
+    if (inner.trim().length >= 2 && (SPOKEN.test(inner) || (startsLine && /^[「『]/.test(m[0]) && m.index === 0))) return true;
+  }
+  return false;
+}
+
+export function genderHint(text) {
+  const t = outsideQuotes(String(text || ""));
+  if (FEMALE.test(t)) return "a";
+  if (MALE.test(t)) return "b";
+  if (FIRST.test(t)) return "a";
+  return null;
+}
+
+export function moodOf(text) {
+  const t = String(text || "");
+  if (/[!！]/.test(t)) return "surprised";
+  if (/[?？¿]/.test(t)) return "curious";
+  return "neutral";
+}
+
+// One plan entry per sentence: { speaker, focus, shot, mood }.
+// speaker = who talks (mouth moves); focus = who the camera follows.
+export function directStory(passage) {
+  const sentences = passage?.sentences || [];
+  const plan = [];
+  let lastTalker = null;
+  let prevShot = null;
+  sentences.forEach((s, i) => {
+    const text = String(s?.text || "");
+    const given = ROLES.has(s?.speaker) ? s.speaker : null;
+    let speaker = "narrator";
+    if (given) {
+      speaker = given;
+    } else if (isDialogue(text)) {
+      speaker = genderHint(text) || (lastTalker === "a" ? "b" : "a");
+    }
+    if (speaker !== "narrator") lastTalker = speaker;
+    const givenFocus = s?.focus === "a" || s?.focus === "b" ? s.focus : null;
+    const focus = speaker !== "narrator" ? speaker : (givenFocus || genderHint(text));
+    let shot;
+    if (speaker !== "narrator") shot = speaker;
+    else if (focus) shot = `f${focus}`;
+    else if (i === 0) shot = "wide";
+    else {
+      shot = NARRATION_CYCLE[(i - 1) % NARRATION_CYCLE.length];
+      if (shot === prevShot) shot = NARRATION_CYCLE[i % NARRATION_CYCLE.length];
+    }
+    if (i === 0 && speaker === "narrator") shot = "wide";
+    prevShot = shot;
+    plan.push({ speaker, focus: focus || null, shot, mood: moodOf(text) });
+  });
+  return plan;
 }
 
 export function mouthOpen(playing, highlight) {
@@ -29,17 +91,4 @@ export function progressOf(current, duration) {
   const d = Number(duration);
   if (!Number.isFinite(c) || !Number.isFinite(d) || d <= 0) return 0;
   return Math.max(0, Math.min(1, c / d));
-}
-
-export function sentenceIndexOf(passage, highlight, langCode = "en") {
-  const sentences = passage?.sentences || [];
-  if (!sentences.length || highlight < 0) return 0;
-  let offset = 0;
-  for (let i = 0; i < sentences.length; i += 1) {
-    const s = sentences[i];
-    const n = (s.tokens?.length ? s.tokens : beatsOf(s.text || "", langCode)).length;
-    if (highlight < offset + n) return i;
-    offset += n;
-  }
-  return sentences.length - 1;
 }

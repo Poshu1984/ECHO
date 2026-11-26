@@ -489,7 +489,7 @@ export const PASSAGES = {
     ]},
     { title: "土曜の市場", title_zh: "週六市集", scene: "market", hook_zh: "雨前的水果攤", sentences: [
       { text: "雨の前に果物屋が開いた。", zh: "下雨前水果攤就開了。" },
-      { text: "柔らかすぎないマンゴーを二つ頼んだ。", zh: "我要了兩顆不要太軟的芒果。" },
+      { focus: "a", text: "柔らかすぎないマンゴーを二つ頼んだ。", zh: "我要了兩顆不要太軟的芒果。" },
     ]},
   ],
   fr: [

@@ -1172,3 +1172,73 @@ input, select, textarea {
 .story-art .char-arm { transform-box: fill-box; transform-origin: 0% 0%; transition: transform 0.5s ease; }
 .story-art .char.is-talking .arm-gesture { animation: fx-gesture 1.8s ease-in-out infinite; }
 @keyframes fx-gesture { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(-38deg); } 65% { transform: rotate(-22deg); } }
+
+/* v2 refinements: readable subtitles, theater mode, calmer close-ups */
+.story-stage .story-hook { left: 12px; transition: opacity 0.4s ease; }
+.story-stage.is-close .story-hook { opacity: 0; }
+.story-stage .story-caption {
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  padding: 8px 12px 10px;
+  border-radius: 12px;
+  background: rgba(14, 12, 10, 0.72);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.story-stage .story-caption .beat-block.is-story .beat-line { font-size: 1.15rem; }
+.story-stage .story-caption .beat-block.is-story .beat { color: rgba(244, 239, 230, 0.8); }
+.story-stage .story-caption .beat-block.is-story .beat.on { background: #ffcf5a; color: #1a1612; }
+.story-stage .story-caption .zh-lit { color: #ffe08a; }
+.story-stage .story-caption .zh-rest { color: rgba(244, 239, 230, 0.7); }
+.story-stage .story-scrim {
+  background: linear-gradient(180deg, rgba(12,10,8,0.45) 0%, rgba(12,10,8,0) 22%);
+}
+.story-theater {
+  position: absolute;
+  right: 10px;
+  top: 34px;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(14, 12, 10, 0.55);
+  color: #f4efe6;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.story-stage.is-theater {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  justify-content: center;
+  background: #0c0b09;
+}
+.story-stage.is-theater .story-fx { max-height: 78vh; }
+.story-stage.is-theater .story-caption .beat-block.is-story .beat-line { font-size: 1.35rem; }
+.story-art .char.is-focus { animation-duration: 2.6s; }
+.story-art .char-head.is-curious { transform: rotate(4deg); }
+.story-art .char-tail { transform-box: fill-box; transform-origin: 20% 0%; animation: fx-sway 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .story-art .char-head, .story-art .char-arm, .story-progress i, .story-stage .story-hook { transition: none; }
+}
+
+/* Subtitles sit in their own band under the picture (no characters hidden). */
+.story-stage .story-fx { order: 0; }
+.story-stage .story-progress { order: 1; }
+.story-stage .story-caption {
+  order: 2;
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  border-radius: 0;
+  padding: 10px 14px 12px;
+  background: #15130f;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.story-stage .story-fx .story-play { top: 50%; }
+.story-stage.is-theater .story-caption { max-width: 900px; width: 100%; margin: 0 auto; }

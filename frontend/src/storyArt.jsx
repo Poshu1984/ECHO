@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 // Original vector artwork for the story stage. Everything is inline SVG so
 // it works offline, costs nothing per story and scales to any screen.
 // Two recurring characters ("A" in orange, "B" in olive) act out the scene.
@@ -5,12 +7,12 @@
 function Rainy() {
   return (
     <g className="fx-rain">
-      {Array.from({ length: 26 }, (_, i) => (
+      {Array.from({ length: 18 }, (_, i) => (
         <line
           key={i}
-          x1={(i * 53) % 640}
+          x1={(i * 71) % 640}
           y1={-20}
-          x2={(i * 53) % 640 - 10}
+          x2={(i * 71) % 640 - 10}
           y2={14}
           style={{ animationDelay: `${(i * 0.17) % 1.4}s`, animationDuration: `${0.8 + (i % 4) * 0.15}s` }}
         />
@@ -29,12 +31,14 @@ function Lamp({ x, y, color = "#ffd58a" }) {
   );
 }
 
-function SceneRain() {
+const BOKEH = ["#ff9d5c", "#7fb2ff", "#ffd27a", "#ff7a7a", "#9fe0c0"];
+
+function SceneRain({ uid }) {
   return (
     <g>
-      <rect width="640" height="360" fill="url(#g-rain-sky)" />
-      {[[80, 120, "#ff9d5c"], [190, 90, "#7fb2ff"], [330, 130, "#ffd27a"], [470, 100, "#ff7a7a"], [580, 140, "#9fe0c0"]].map(([x, y, c], i) => (
-        <circle key={i} cx={x} cy={y} r={26 + (i % 3) * 8} fill={c} opacity="0.35" filter="url(#f-blur)" className="fx-twinkle" style={{ animationDelay: `${i * 0.6}s` }} />
+      <rect width="640" height="360" fill={`url(#${uid}rain)`} />
+      {[[80, 120], [190, 90], [330, 130], [470, 100], [580, 140]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={34 + (i % 3) * 10} fill={`url(#${uid}bk${i})`} className="fx-twinkle" style={{ animationDelay: `${i * 0.6}s` }} />
       ))}
       <rect x="0" y="210" width="640" height="150" fill="#14161f" />
     </g>
@@ -70,10 +74,10 @@ function SceneCafe() {
         <rect x="450" y="120" width="30" height="80" fill="#b8dcec" />
         <rect x="520" y="130" width="50" height="70" fill="#cfe7f2" />
       </g>
-      <rect x="40" y="70" width="190" height="90" rx="8" fill="#5b3a29" />
-      <text x="135" y="105" textAnchor="middle" fill="#f6e6cf" fontSize="16" fontFamily="Sora, sans-serif">MENU</text>
-      <rect x="62" y="118" width="80" height="6" rx="3" fill="#f6e6cf" opacity="0.6" />
-      <rect x="62" y="132" width="120" height="6" rx="3" fill="#f6e6cf" opacity="0.6" />
+      <rect x="40" y="92" width="170" height="80" rx="8" fill="#5b3a29" />
+      <text x="125" y="122" textAnchor="middle" fill="#f6e6cf" fontSize="16" fontFamily="Sora, sans-serif">MENU</text>
+      <rect x="60" y="136" width="80" height="6" rx="3" fill="#f6e6cf" opacity="0.6" />
+      <rect x="60" y="150" width="110" height="6" rx="3" fill="#f6e6cf" opacity="0.6" />
       <Lamp x={170} y={40} />
       <Lamp x={470} y={30} />
       <rect x="0" y="262" width="640" height="98" fill="#a8693f" />
@@ -88,21 +92,21 @@ function SceneCafe() {
   );
 }
 
-function SceneCommute() {
+function SceneCommute({ uid }) {
   return (
     <g>
       <rect width="640" height="360" fill="#d8dee6" />
       {[30, 230, 430].map((x) => (
         <g key={x}>
           <rect x={x} y="40" width="180" height="120" rx="14" fill="#7ec3e6" />
-          <g clipPath={`url(#clip-win-${x})`}>
+          <g clipPath={`url(#${uid}win${x})`}>
             <g className="fx-passby">
               {Array.from({ length: 8 }, (_, i) => (
                 <rect key={i} x={x - 60 + i * 60} y={70 + ((i * 37) % 40)} width="42" height={120} fill={i % 2 ? "#5d7d96" : "#45657e"} />
               ))}
             </g>
           </g>
-          <clipPath id={`clip-win-${x}`}><rect x={x} y="40" width="180" height="120" rx="14" /></clipPath>
+          <clipPath id={`${uid}win${x}`}><rect x={x} y="40" width="180" height="120" rx="14" /></clipPath>
           <rect x={x} y="40" width="180" height="120" rx="14" fill="none" stroke="#9aa6b3" strokeWidth="8" />
         </g>
       ))}
@@ -119,11 +123,11 @@ function SceneCommute() {
   );
 }
 
-function SceneMarket() {
+function SceneMarket({ uid }) {
   const fruit = ["#f6a623", "#e94e3c", "#7cb342", "#ffcf3f", "#f07c2a"];
   return (
     <g>
-      <rect width="640" height="360" fill="url(#g-market-sky)" />
+      <rect width="640" height="360" fill={`url(#${uid}market)`} />
       <circle cx="560" cy="60" r="30" fill="#fff3c4" className="fx-twinkle" />
       <g className="fx-sway-soft">
         <path d="M0 40 Q160 70 320 40 Q480 70 640 40" stroke="#7a4a2e" strokeWidth="2" fill="none" />
@@ -179,10 +183,10 @@ function SceneOffice() {
   );
 }
 
-function SceneNight() {
+function SceneNight({ uid }) {
   return (
     <g>
-      <rect width="640" height="360" fill="url(#g-night-sky)" />
+      <rect width="640" height="360" fill={`url(#${uid}night)`} />
       {Array.from({ length: 22 }, (_, i) => (
         <circle key={i} cx={(i * 97) % 640} cy={(i * 41) % 140} r={i % 3 ? 1.4 : 2.2} fill="#fff" className="fx-twinkle" style={{ animationDelay: `${(i % 7) * 0.4}s` }} />
       ))}
@@ -215,15 +219,21 @@ const SCENES = {
   night: SceneNight,
 };
 
-export function Character({ who = "a", x, y, talking = false, open = false, scale = 1 }) {
+// A: a young woman (orange, long hair in a ponytail).
+// B: a young man (olive, short hair, thicker brows).
+export function Character({ who = "a", x, y, talking = false, open = false, mood = "neutral", focus = false, scale = 1 }) {
   const a = who === "a";
   const coat = a ? "#f08a3c" : "#556b3d";
-  const hair = a ? "#3b2a22" : "#2a2520";
+  const hair = a ? "#5a3324" : "#2a2520";
   const skin = a ? "#f6d2b5" : "#e8bd98";
+  const surprised = mood === "surprised" && (talking || focus);
+  const curious = mood === "curious" && (talking || focus);
+  const eyeRy = surprised ? 6.5 : 5;
   return (
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <g className={`char ${talking ? "is-talking" : ""}`}>
+      <g className={`char ${talking ? "is-talking" : ""} ${focus ? "is-focus" : ""}`}>
         <ellipse cx="0" cy="104" rx="46" ry="8" fill="#000" opacity="0.15" />
+        {a ? <path d="M18 -18 Q52 10 40 62 Q30 70 22 58 Q34 20 10 -8 Z" fill={hair} className="char-tail" /> : null}
         <path d="M-44 104 Q-44 40 0 38 Q44 40 44 104 Z" fill={coat} />
         <path d="M-12 40 L0 62 L12 40 Z" fill="#fff6ea" />
         <g className="char-arm">
@@ -234,21 +244,37 @@ export function Character({ who = "a", x, y, talking = false, open = false, scal
           <path d="M36 56 Q54 76 48 98" stroke={coat} strokeWidth="13" strokeLinecap="round" fill="none" />
           <circle cx="48" cy="99" r="7" fill={skin} />
         </g>
-        <g className="char-head">
+        <g className={`char-head ${curious ? "is-curious" : ""}`}>
           <circle cx="0" cy="0" r="34" fill={skin} />
           {a ? (
-            <path d="M-36 6 Q-40 -38 0 -38 Q40 -38 36 6 Q30 -18 0 -20 Q-30 -18 -36 6 Z" fill={hair} />
+            <>
+              <path d="M-36 8 Q-42 -40 0 -40 Q42 -40 36 8 Q32 -14 14 -20 Q-6 -10 -30 -12 Q-34 -2 -36 8 Z" fill={hair} />
+              <circle cx="22" cy="-34" r="9" fill={coat} />
+            </>
           ) : (
             <path d="M-34 -6 Q-32 -40 0 -38 Q32 -40 34 -6 Q22 -24 4 -22 Q-16 -26 -34 -6 Z" fill={hair} />
           )}
-          <g className="char-eyes">
-            <ellipse cx="-12" cy="2" rx="4" ry="5" fill="#2a2520" />
-            <ellipse cx="12" cy="2" rx="4" ry="5" fill="#2a2520" />
+          <g className="char-brows">
+            <path d={surprised ? "M-18 -12 Q-12 -17 -6 -12" : "M-18 -9 Q-12 -12 -6 -9"} stroke={hair} strokeWidth={a ? 2.5 : 3.5} fill="none" strokeLinecap="round" />
+            <path d={surprised || curious ? "M6 -13 Q12 -18 18 -13" : "M6 -9 Q12 -12 18 -9"} stroke={hair} strokeWidth={a ? 2.5 : 3.5} fill="none" strokeLinecap="round" />
           </g>
-          <circle cx="-20" cy="14" r="5" fill="#f4a3a3" opacity="0.6" />
-          <circle cx="20" cy="14" r="5" fill="#f4a3a3" opacity="0.6" />
+          <g className="char-eyes">
+            <ellipse cx="-12" cy="2" rx="4" ry={eyeRy} fill="#2a2520" />
+            <ellipse cx="12" cy="2" rx="4" ry={eyeRy} fill="#2a2520" />
+            <circle cx="-10.5" cy="0" r="1.3" fill="#fff" />
+            <circle cx="13.5" cy="0" r="1.3" fill="#fff" />
+            {a ? (
+              <>
+                <path d="M-17 -2 l-4 -3 M17 -2 l4 -3" stroke="#2a2520" strokeWidth="1.8" strokeLinecap="round" />
+              </>
+            ) : null}
+          </g>
+          <circle cx="-20" cy="14" r="5" fill="#f4a3a3" opacity={a ? 0.7 : 0.4} />
+          <circle cx="20" cy="14" r="5" fill="#f4a3a3" opacity={a ? 0.7 : 0.4} />
           {open ? (
             <ellipse cx="0" cy="18" rx="7" ry="6" fill="#7a2e2e" />
+          ) : surprised ? (
+            <ellipse cx="0" cy="19" rx="4" ry="4.5" fill="#7a2e2e" />
           ) : (
             <path d="M-7 17 Q0 22 7 17" stroke="#7a2e2e" strokeWidth="3" fill="none" strokeLinecap="round" />
           )}
@@ -258,29 +284,45 @@ export function Character({ who = "a", x, y, talking = false, open = false, scal
   );
 }
 
-export function StoryArt({ scene = "cafe", speaker = "narrator", open = false }) {
+export function StoryArt({ scene = "cafe", speaker = "narrator", focus = null, mood = "neutral", open = false }) {
+  const uid = `s${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const Scene = SCENES[scene] || SceneCafe;
   const seated = scene === "rain";
+  const props = (who) => ({
+    who,
+    x: who === "a" ? (seated ? 220 : 200) : (seated ? 420 : 450),
+    y: 150,
+    talking: speaker === who,
+    open: speaker === who && open,
+    focus: focus === who,
+    mood,
+    scale: seated ? 0.95 : 1,
+  });
   return (
     <svg className="story-art" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
-        <linearGradient id="g-rain-sky" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}rain`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#1b2440" />
           <stop offset="1" stopColor="#3a2c3e" />
         </linearGradient>
-        <linearGradient id="g-market-sky" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}market`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffd9a0" />
           <stop offset="1" stopColor="#ffb889" />
         </linearGradient>
-        <linearGradient id="g-night-sky" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${uid}night`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0f1430" />
           <stop offset="1" stopColor="#2b2f5c" />
         </linearGradient>
-        <filter id="f-blur"><feGaussianBlur stdDeviation="8" /></filter>
+        {BOKEH.map((c, i) => (
+          <radialGradient key={c} id={`${uid}bk${i}`}>
+            <stop offset="0" stopColor={c} stopOpacity="0.55" />
+            <stop offset="1" stopColor={c} stopOpacity="0" />
+          </radialGradient>
+        ))}
       </defs>
-      <Scene />
-      <Character who="a" x={seated ? 220 : 200} y={150} talking={speaker === "a"} open={speaker === "a" && open} scale={seated ? 0.95 : 1} />
-      <Character who="b" x={seated ? 420 : 450} y={150} talking={speaker === "b"} open={speaker === "b" && open} scale={seated ? 0.95 : 1} />
+      <Scene uid={uid} />
+      <Character {...props("a")} />
+      <Character {...props("b")} />
       {seated ? <RainFront /> : null}
     </svg>
   );

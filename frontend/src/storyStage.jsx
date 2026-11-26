@@ -2,7 +2,23 @@ import { inferScene, formatClock, liveSentence } from "./story.js";
 import { beatsOf } from "./beats.js";
 import { BeatLine } from "./karaoke.jsx";
 import { StoryArt } from "./storyArt.jsx";
-import { mouthOpen, progressOf, shotFor, speakerFor } from "./storyDirector.js";
+import { useEffect, useMemo, useState } from "react";
+import { directStory, mouthOpen, progressOf } from "./storyDirector.js";
+
+function useReducedMotion() {
+  const query = "(prefers-reduced-motion: reduce)";
+  const [reduced, setReduced] = useState(() => (
+    typeof window !== "undefined" && window.matchMedia ? window.matchMedia(query).matches : false
+  ));
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const mq = window.matchMedia(query);
+    const on = () => setReduced(mq.matches);
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
+  return reduced;
+}
 
 export function StoryStage({
   passage,
@@ -18,7 +34,18 @@ export function StoryStage({
   onToken,
   playLabel,
   pauseLabel,
+  theaterLabel = "全螢幕",
+  exitTheaterLabel = "離開全螢幕",
 }) {
+  const [theater, setTheater] = useState(false);
+  const reduced = useReducedMotion();
+  const plan = useMemo(() => directStory(passage), [passage]);
+  useEffect(() => {
+    if (!theater) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") setTheater(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [theater]);
   const scene = inferScene(passage);
   const hook = passage?.hook_zh || passage?.title_zh || passage?.title || "";
   const clock = playing ? formatClock(current) : formatClock(duration);
@@ -35,16 +62,26 @@ export function StoryStage({
     local = highlight - offset;
   }
   const lineIndex = live?.index || 0;
-  const shot = playing || highlight >= 0 ? shotFor(lineIndex, sentence) : "wide";
-  const speaker = playing ? speakerFor(lineIndex, sentence) : "narrator";
-  const progress = progressOf(current, duration);
+  const cue = plan[lineIndex] || { speaker: "narrator", focus: null, shot: "wide", mood: "neutral" };
+  const engaged = playing || highlight >= 0;
+  const shot = engaged && !reduced ? cue.shot : "wide";
+  const speaker = playing ? cue.speaker : "narrator";
+  const progress = highlight >= 0 ? progressOf(current, duration) : 0;
+  const close = shot !== "wide";
   return (
-    <div className={`story-stage is-${scene} ${playing ? "is-live" : ""} ${preview ? "is-preview" : ""}`}>
+    <div className={`story-stage is-${scene} ${playing ? "is-live" : ""} ${preview ? "is-preview" : ""} ${theater ? "is-theater" : ""} ${close ? "is-close" : ""}`}>
       <button type="button" className="story-hit" onClick={onToggle} aria-label={playing ? pauseLabel : playLabel} />
       <div className="story-fx" aria-hidden="true">
         <div className={`story-cam shot-${shot}`}>
-          <StoryArt scene={scene} speaker={speaker} open={mouthOpen(playing, local)} />
+          <StoryArt
+            scene={scene}
+            speaker={speaker}
+            focus={engaged ? cue.focus : null}
+            mood={engaged ? cue.mood : "neutral"}
+            open={mouthOpen(playing, local)}
+          />
         </div>
+        <span className={`story-play ${playing ? "is-pause" : ""}`} />
       </div>
       <div className="story-scrim" />
       {hook ? <p className="story-hook">{hook}</p> : null}
@@ -62,8 +99,16 @@ export function StoryStage({
         </div>
       ) : null}
       <span className="story-clock">{clock}</span>
-      <div className="story-progress" aria-hidden="true"><i style={{ width: `${Math.round((playing ? progress : 0) * 100)}%` }} /></div>
-      <span className={`story-play ${playing ? "is-pause" : ""}`} />
+      <div className="story-progress" aria-hidden="true"><i style={{ width: `${Math.round(progress * 100)}%` }} /></div>
+      <button
+        type="button"
+        className="story-theater"
+        onClick={(e) => { e.stopPropagation(); setTheater((v) => !v); }}
+        aria-label={theater ? exitTheaterLabel : theaterLabel}
+        aria-pressed={theater}
+      >
+        {theater ? "✕" : "⛶"}
+      </button>
     </div>
   );
 }

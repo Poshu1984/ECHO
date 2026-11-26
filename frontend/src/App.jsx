@@ -1272,6 +1272,8 @@ export default function App() {
                   onToggle={generatePassage}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
+                  theaterLabel={tr("theater")}
+                  exitTheaterLabel={tr("exitTheater")}
                 />
                 <div className="story-empty-copy">
                   <p>{tr("storyHint")}</p>
@@ -1299,6 +1301,8 @@ export default function App() {
                   }}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
+                  theaterLabel={tr("theater")}
+                  exitTheaterLabel={tr("exitTheater")}
                 />
                 <div className="scroll-pane story-page">
                   <h2 className="story-title">{passage.title}</h2>
