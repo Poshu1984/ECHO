@@ -222,7 +222,10 @@ const SCENES = {
   night: SceneNight,
 };
 
-const LOOK_BY_MOOD = { neutral: "hello", curious: "focus", surprised: "celebrate" };
+// CI v2 looks: hello (start), focus (prepare / correct), celebrate (a round
+// is finished). Questions use focus; exclamations keep the hello face with
+// a round open mouth, so "celebrate" stays reserved for finishing a round.
+const LOOK_BY_MOOD = { neutral: "hello", curious: "focus", surprised: "hello" };
 
 function Shape({ tag, attrs }) {
   const Tag = tag;
@@ -247,6 +250,8 @@ export function Mascot({ id = "koto", x, y, talking = false, open = false, mood 
         </g>
         {open ? (
           <ellipse cx={mx} cy={my + 2} rx="9" ry="8" fill={data.faceColor} />
+        ) : (mood === "surprised" && (talking || focus)) ? (
+          <ellipse cx={mx} cy={my + 1} rx="6" ry="7" fill={data.faceColor} />
         ) : (
           <Shape {...look.mouth} />
         )}
@@ -262,12 +267,13 @@ export function StoryArt({ scene = "cafe", speaker = "narrator", focus = null, m
   const props = (who) => ({
     id: who === "a" ? "koto" : partnerFor(langCode),
     x: who === "a" ? (seated ? 220 : 200) : (seated ? 420 : 450),
-    y: seated ? 262 : 256,
+    y: seated ? 266 : 272,
+    flip: who === "b",
     talking: speaker === who,
     open: speaker === who && open,
     focus: focus === who,
     mood,
-    scale: seated ? 0.52 : 0.56,
+    scale: seated ? 0.56 : 0.66,
   });
   return (
     <svg className={`story-art ${scene === "rain" || scene === "night" ? "is-dark" : ""}`} viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">

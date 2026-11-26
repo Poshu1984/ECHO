@@ -1,6 +1,6 @@
 # Lingostep 語階
 
-每一題，往前一步。（原 Echo Studio，2026-11-26 起改用 Lingostep CI v2；品牌素材在 `frontend/public/brand/`，規範在 `docs/brand/`。）
+每一題，往前一步。品牌素材在 `frontend/public/brand/`（權利聲明見 `NOTICE.md`），使用說明在 `docs/brand/`。
 
 GitHub 倉庫名稱是 `ECHO`（https://github.com/Poshu1984/ECHO）。產品名稱是 **Lingostep 語階**。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
 
