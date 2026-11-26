@@ -1,8 +1,8 @@
-# Echo Studio
+# Lingostep 語階
 
-LANGUAGE × YOUR FUTURE · 學習，讓世界聽見你。
+每一題，往前一步。（原 Echo Studio，2026-11-26 起改用 Lingostep CI v2；品牌素材在 `frontend/public/brand/`，規範在 `docs/brand/`。）
 
-GitHub 倉庫名稱是 `ECHO`（https://github.com/Poshu1984/ECHO）。產品名稱是 **Echo Studio**。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
+GitHub 倉庫名稱是 `ECHO`（https://github.com/Poshu1984/ECHO）。產品名稱是 **Lingostep 語階**。瀏覽器只打自家 API；TTS 與模型金鑰留在後端。帳號登入、積分解鎖、PWA。
 
 最高權限帳號由環境變數設定（不要把真實密碼提交到 git）：
 

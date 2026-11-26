@@ -1,14 +1,29 @@
 {
-  "name": "Echo Studio",
-  "short_name": "Echo Studio",
-  "description": "LANGUAGE × YOUR FUTURE",
+  "name": "Lingostep 語階",
+  "short_name": "Lingostep",
+  "description": "每一題，往前一步。",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F2EFE6",
-  "theme_color": "#556B3D",
+  "background_color": "#FAF8F2",
+  "theme_color": "#392477",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/brand/app/lingostep-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/app/lingostep-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/app/lingostep-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

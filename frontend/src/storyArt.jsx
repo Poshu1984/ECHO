@@ -1,9 +1,11 @@
 import { useId } from "react";
+import { MASCOTS } from "./brandMascots.js";
+import { partnerFor } from "./storyDirector.js";
 
 // Original vector artwork for the story stage. Everything is inline SVG so
 // it works offline, costs nothing per story and scales to any screen.
-// Two recurring characters act out the scene: A (a young woman in orange)
-// and B (a young man in olive).
+// The Lingostep mascots act out the scene: Koto (A) with the language
+// partner (B): Pip for English, Nami for Japanese.
 
 function Rainy() {
   return (
@@ -220,87 +222,55 @@ const SCENES = {
   night: SceneNight,
 };
 
-// A: a young woman (orange, long hair in a ponytail).
-// B: a young man (olive, short hair, thicker brows).
-export function Character({ who = "a", x, y, talking = false, open = false, mood = "neutral", focus = false, scale = 1 }) {
-  const a = who === "a";
-  const coat = a ? "#f08a3c" : "#556b3d";
-  const hair = a ? "#5a3324" : "#2a2520";
-  const skin = a ? "#f6d2b5" : "#e8bd98";
-  const surprised = mood === "surprised" && (talking || focus);
-  const curious = mood === "curious" && (talking || focus);
-  const eyeRy = surprised ? 6.5 : 5;
+const LOOK_BY_MOOD = { neutral: "hello", curious: "focus", surprised: "celebrate" };
+
+function Shape({ tag, attrs }) {
+  const Tag = tag;
+  return <Tag {...attrs} />;
+}
+
+// Lingostep CI v2 characters: Koto (lead), Pip (English), Nami (Japanese).
+// Shapes come from the brand SVGs; eyes blink and the mouth opens in time
+// with the highlighted word while the character is talking.
+export function Mascot({ id = "koto", x, y, talking = false, open = false, mood = "neutral", focus = false, scale = 0.55, flip = false }) {
+  const data = MASCOTS[id] || MASCOTS.koto;
+  const look = data.looks[(talking || focus) ? (LOOK_BY_MOOD[mood] || "hello") : "hello"];
+  const [mx, my] = look.mouthCenter;
+  const sx = flip ? -scale : scale;
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+    <g transform={`translate(${x} ${y}) scale(${sx} ${scale}) translate(-120 -270)`}>
       <g className={`char ${talking ? "is-talking" : ""} ${focus ? "is-focus" : ""}`}>
-        <ellipse cx="0" cy="104" rx="46" ry="8" fill="#000" opacity="0.15" />
-        {a ? <path d="M18 -18 Q52 10 40 62 Q30 70 22 58 Q34 20 10 -8 Z" fill={hair} className="char-tail" /> : null}
-        <path d="M-44 104 Q-44 40 0 38 Q44 40 44 104 Z" fill={coat} />
-        <path d="M-12 40 L0 62 L12 40 Z" fill="#fff6ea" />
-        <g className="char-arm">
-          <path d="M-36 56 Q-54 76 -48 98" stroke={coat} strokeWidth="13" strokeLinecap="round" fill="none" />
-          <circle cx="-48" cy="99" r="7" fill={skin} />
+        <ellipse cx="120" cy="252" rx="78" ry="10" fill="#000" opacity="0.14" />
+        {look.body.map((shape, i) => <Shape key={`b${i}`} {...shape} />)}
+        <g className="char-eyes">
+          {look.eyes.map((shape, i) => <Shape key={`e${i}`} {...shape} />)}
         </g>
-        <g className="char-arm arm-gesture">
-          <path d="M36 56 Q54 76 48 98" stroke={coat} strokeWidth="13" strokeLinecap="round" fill="none" />
-          <circle cx="48" cy="99" r="7" fill={skin} />
-        </g>
-        <g className={`char-head ${curious ? "is-curious" : ""}`}>
-          <circle cx="0" cy="0" r="34" fill={skin} />
-          {a ? (
-            <>
-              <path d="M-36 8 Q-42 -40 0 -40 Q42 -40 36 8 Q32 -14 14 -20 Q-6 -10 -30 -12 Q-34 -2 -36 8 Z" fill={hair} />
-              <circle cx="22" cy="-34" r="9" fill={coat} />
-            </>
-          ) : (
-            <path d="M-34 -6 Q-32 -40 0 -38 Q32 -40 34 -6 Q22 -24 4 -22 Q-16 -26 -34 -6 Z" fill={hair} />
-          )}
-          <g className="char-brows">
-            <path d={surprised ? "M-18 -12 Q-12 -17 -6 -12" : "M-18 -9 Q-12 -12 -6 -9"} stroke={hair} strokeWidth={a ? 2.5 : 3.5} fill="none" strokeLinecap="round" />
-            <path d={surprised || curious ? "M6 -13 Q12 -18 18 -13" : "M6 -9 Q12 -12 18 -9"} stroke={hair} strokeWidth={a ? 2.5 : 3.5} fill="none" strokeLinecap="round" />
-          </g>
-          <g className="char-eyes">
-            <ellipse cx="-12" cy="2" rx="4" ry={eyeRy} fill="#2a2520" />
-            <ellipse cx="12" cy="2" rx="4" ry={eyeRy} fill="#2a2520" />
-            <circle cx="-10.5" cy="0" r="1.3" fill="#fff" />
-            <circle cx="13.5" cy="0" r="1.3" fill="#fff" />
-            {a ? (
-              <>
-                <path d="M-17 -2 l-4 -3 M17 -2 l4 -3" stroke="#2a2520" strokeWidth="1.8" strokeLinecap="round" />
-              </>
-            ) : null}
-          </g>
-          <circle cx="-20" cy="14" r="5" fill="#f4a3a3" opacity={a ? 0.7 : 0.4} />
-          <circle cx="20" cy="14" r="5" fill="#f4a3a3" opacity={a ? 0.7 : 0.4} />
-          {open ? (
-            <ellipse cx="0" cy="18" rx="7" ry="6" fill="#7a2e2e" />
-          ) : surprised ? (
-            <ellipse cx="0" cy="19" rx="4" ry="4.5" fill="#7a2e2e" />
-          ) : (
-            <path d="M-7 17 Q0 22 7 17" stroke="#7a2e2e" strokeWidth="3" fill="none" strokeLinecap="round" />
-          )}
-        </g>
+        {open ? (
+          <ellipse cx={mx} cy={my + 2} rx="9" ry="8" fill={data.faceColor} />
+        ) : (
+          <Shape {...look.mouth} />
+        )}
       </g>
     </g>
   );
 }
 
-export function StoryArt({ scene = "cafe", speaker = "narrator", focus = null, mood = "neutral", open = false }) {
+export function StoryArt({ scene = "cafe", speaker = "narrator", focus = null, mood = "neutral", open = false, langCode = "en" }) {
   const uid = `s${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const Scene = SCENES[scene] || SceneCafe;
   const seated = scene === "rain";
   const props = (who) => ({
-    who,
+    id: who === "a" ? "koto" : partnerFor(langCode),
     x: who === "a" ? (seated ? 220 : 200) : (seated ? 420 : 450),
-    y: 150,
+    y: seated ? 262 : 256,
     talking: speaker === who,
     open: speaker === who && open,
     focus: focus === who,
     mood,
-    scale: seated ? 0.95 : 1,
+    scale: seated ? 0.52 : 0.56,
   });
   return (
-    <svg className="story-art" viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <svg className={`story-art ${scene === "rain" || scene === "night" ? "is-dark" : ""}`} viewBox="0 0 640 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={`${uid}rain`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#1b2440" />
@@ -322,8 +292,8 @@ export function StoryArt({ scene = "cafe", speaker = "narrator", focus = null, m
         ))}
       </defs>
       <Scene uid={uid} />
-      <Character {...props("a")} />
-      <Character {...props("b")} />
+      <Mascot {...props("a")} />
+      <Mascot {...props("b")} />
       {seated ? <RainFront /> : null}
     </svg>
   );

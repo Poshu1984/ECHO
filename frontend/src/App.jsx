@@ -943,11 +943,9 @@ export default function App() {
     return (
       <div className="app-shell is-auth items-center justify-center">
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
-          <img src="/logo.png" alt="Echo Studio" className="brand-seal mx-auto" />
+          <img src="/brand/logo/lockup-primary.png" alt="Lingostep 語階" className="brand-seal brand-lockup-img mx-auto" />
+          <img src="/brand/mascots/lingostep-lineup.png" alt="" className="brand-lineup mx-auto" />
           <p className="slogan">{tr("tag")}</p>
-          <div className="brand-dots" aria-hidden="true">
-            <i className="d-olive" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
-          </div>
           <h1 className="text-2xl mt-3 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="field mt-1" />
@@ -974,17 +972,17 @@ export default function App() {
   }
 
   const nav = [
-    { id: "chat", label: tr("chat") },
-    { id: "read", label: tr("read") },
-    { id: "articles", label: tr("articles") },
-    { id: "translate", label: tr("translate") },
-    { id: "vocab", label: tr("vocab") },
-    { id: "examples", label: tr("examples") },
-    { id: "scenes", label: tr("scenes") },
-    { id: "exams", label: tr("exams") },
-    { id: "saves", label: tr("saves") },
-    { id: "board", label: tr("board") },
-    { id: "settings", label: tr("settings") },
+    { id: "chat", label: tr("chat"), icon: "speak" },
+    { id: "read", label: tr("read"), icon: "listen" },
+    { id: "articles", label: tr("articles"), icon: "read" },
+    { id: "translate", label: tr("translate"), icon: "grammar" },
+    { id: "vocab", label: tr("vocab"), icon: "write" },
+    { id: "examples", label: tr("examples"), icon: "retry" },
+    { id: "scenes", label: tr("scenes"), icon: "speak" },
+    { id: "exams", label: tr("exams"), icon: "confused" },
+    { id: "saves", label: tr("saves"), icon: "review" },
+    { id: "board", label: tr("board"), icon: "mastered" },
+    { id: "settings", label: tr("settings"), icon: "" },
   ];
 
   const v = vocabItem;
@@ -1064,11 +1062,11 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="panel app-header">
-        <img src="/mark.png" alt="" className="brand-seal brand-seal-sm shrink-0" />
+        <img src="/brand/logo/mark-primary.svg" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="brand-lockup">
-            <span className="echo">Echo</span>
-            <span className="studio">studio</span>
+            <span className="brand-name">Lingostep</span>
+            <span className="brand-name-zh">語階</span>
           </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">
@@ -1086,7 +1084,8 @@ export default function App() {
           return (
             <button key={n.id} onClick={() => { if (!closed) goTab(n.id); }}
               className={`nav-btn ${tab === n.id ? "active" : ""} ${closed ? "lock" : ""}`}>
-              {n.label}
+              {n.icon ? <span className="nav-ico" aria-hidden="true" style={{ "--ico": `url(/brand/icons/${n.icon}.svg)` }} /> : <span className="nav-ico nav-ico-gear" aria-hidden="true">⚙</span>}
+              <span className="nav-label">{n.label}</span>
             </button>
           );
         })}

@@ -1242,3 +1242,100 @@ input, select, textarea {
 }
 .story-stage .story-fx .story-play { top: 50%; }
 .story-stage.is-theater .story-caption { max-width: 900px; width: 100%; margin: 0 auto; }
+
+/* ===================== Lingostep 語階 · CI v2 theme ===================== */
+/* Tokens from docs/brand/tokens.css, mapped onto the app's variables.     */
+:root {
+  --ls-ink: #212033;
+  --ls-paper: #FAF8F2;
+  --ls-purple: #392477;
+  --ls-lime: #D9F36B;
+  --ls-lilac: #CEC0FF;
+  --ls-coral: #FF875B;
+  --ls-wine: #691F37;
+  --ls-line: #DAD5E3;
+  --ls-muted: #575268;
+  --ls-retry: #772238;
+  --ls-retry-bg: #FFE4DF;
+  --bg: var(--ls-paper);
+  --paper: var(--ls-paper);
+  --panel: #FFFFFF;
+  --line: var(--ls-line);
+  --olive: var(--ls-purple);
+  --cyan: var(--ls-purple);
+  --orange: var(--ls-purple);
+  --pink: var(--ls-wine);
+  --magenta: var(--ls-wine);
+  --amber: var(--ls-coral);
+  --ink: var(--ls-ink);
+  --mute: var(--ls-muted);
+  --gray: var(--ls-muted);
+  --radius: 24px;
+  --ls-font-display: "Lilita One", "Arial Black", sans-serif;
+  --ls-font-ui: Manrope, "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", "Segoe UI", sans-serif;
+}
+body { font-family: var(--ls-font-ui); color: var(--ls-ink); background: var(--bg); }
+:lang(ja) { font-family: "Noto Sans JP", var(--ls-font-ui); }
+h1, h2, h3, .display { font-family: var(--ls-font-ui); color: var(--ls-purple); letter-spacing: -0.01em; }
+.panel { border-radius: var(--radius); }
+.btn { border-radius: 14px; text-transform: none; letter-spacing: 0.01em; font-size: 0.92rem; }
+.btn-primary { background: var(--ls-purple); color: #FFFFFF; }
+.btn-accent { background: var(--ls-lime); color: var(--ls-purple); }
+.btn-line { border-color: var(--ls-purple); color: var(--ls-purple); }
+.btn-ghost { background: #FFFFFF; color: var(--ls-ink); }
+.btn-ok { background: var(--ls-purple); border-color: var(--ls-purple); color: #FFFFFF; }
+.btn-bad { background: var(--ls-retry-bg); border-color: var(--ls-retry); color: var(--ls-retry); }
+.field { border-radius: 14px; background: #FFFFFF; color: var(--ls-ink); }
+
+/* header + login */
+.brand-lockup { align-items: baseline; gap: 0.35em; }
+.brand-lockup .brand-name { font-family: var(--ls-font-display); font-size: 1.55rem; color: var(--ls-ink); line-height: 1; letter-spacing: 0.01em; }
+.brand-lockup .brand-name-zh { font-family: "Noto Sans TC", sans-serif; font-weight: 800; font-size: 1rem; color: var(--ls-ink); }
+.slogan { text-transform: none; letter-spacing: 0.04em; font-size: 0.72rem; color: var(--ls-muted); font-family: var(--ls-font-ui); }
+.slogan-inline { letter-spacing: 0.04em; font-size: 0.72rem; }
+.brand-seal-sm { border-radius: 12px; }
+.brand-lockup-img { width: min(15rem, 80%); }
+.brand-lineup { display: block; width: min(20rem, 100%); height: auto; border-radius: 18px; margin-top: 10px; }
+
+/* nav with icons */
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 56px;
+  border-radius: 16px;
+  background: #FFFFFF;
+  color: var(--ls-ink);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+}
+.nav-btn.active { background: var(--ls-lime); border-color: var(--ls-lime); color: var(--ls-purple); }
+.nav-ico {
+  width: 22px;
+  height: 22px;
+  display: block;
+  background: currentColor;
+  -webkit-mask: var(--ico) center / contain no-repeat;
+  mask: var(--ico) center / contain no-repeat;
+}
+.nav-ico-gear { background: none; -webkit-mask: none; mask: none; font-size: 18px; line-height: 22px; }
+.nav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* karaoke + story accents follow the brand */
+.zh-lit { color: var(--ls-purple); }
+.story-progress i { background: var(--ls-lime); }
+.story-stage .story-play { background: var(--ls-lime); }
+.story-stage .story-play::after { border-color: transparent transparent transparent var(--ls-purple); }
+.story-stage .story-play.is-pause::after {
+  background:
+    linear-gradient(var(--ls-purple), var(--ls-purple)) 0 0 / 7px 100% no-repeat,
+    linear-gradient(var(--ls-purple), var(--ls-purple)) 13px 0 / 7px 100% no-repeat;
+}
+.story-stage .story-caption .beat-block.is-story .beat.on { background: var(--ls-lime); color: var(--ls-purple); }
+.story-stage .story-caption .zh-lit { color: var(--ls-lime); }
+.voice-lab { border-color: var(--ls-line); background: #FFFFFF; }
+/* keep the dark mascots readable on night scenes */
+.story-art.is-dark .char { filter: drop-shadow(0 0 1.5px rgba(250, 248, 242, 0.85)) drop-shadow(0 0 6px rgba(217, 243, 107, 0.35)); }
