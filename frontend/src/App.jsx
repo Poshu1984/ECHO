@@ -14,6 +14,8 @@ import {
 } from "./beats.js";
 import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
+import { VoiceLab } from "./VoiceLab.jsx";
+import { chirpVoiceFor, sampleRequest } from "./voiceLab.js";
 import { inferScene } from "./story.js";
 import {
   articlePrompt, chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
@@ -256,18 +258,35 @@ export default function App() {
       return true;
     }
     try {
-      const voices = await cachedVoices(speech, (code) => api.voices(code));
-      if (playSeq.current !== seq) return false;
-      const voice = pickGoogleVoice(voices, tutor, speech);
-      if (!voice) throw new Error("NO_VOICE");
-      const wantMarks = Boolean(id) && !String(id).startsWith("chat");
-      const data = await api.synthesize({
-        ...(wantMarks
-          ? { ssml: ssmlFromBeats(tokens, beatCode), marks: true }
-          : { input: { text }, marks: false }),
-        voice: { languageCode: voice.languageCodes?.[0] || speech, name: voice.name },
-        audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
-      });
+      // Owner decision 2026-11-26: learners hear Chirp 3: HD where Google
+      // offers it. It has no word timepoints, so karaoke timing is estimated.
+      // Any Chirp failure other than an exhausted quota falls back to the
+      // previous voice so playback never breaks.
+      let data = null;
+      const chirpName = chirpVoiceFor(tutor, speech);
+      if (chirpName) {
+        try {
+          data = await api.synthesize(sampleRequest(text, chirpName, speech, speakRate));
+        } catch (chirpErr) {
+          if (chirpErr.status === 429) throw chirpErr;
+          data = null;
+        }
+        if (playSeq.current !== seq) return false;
+      }
+      if (!data?.audioContent) {
+        const voices = await cachedVoices(speech, (code) => api.voices(code));
+        if (playSeq.current !== seq) return false;
+        const voice = pickGoogleVoice(voices, tutor, speech);
+        if (!voice) throw new Error("NO_VOICE");
+        const wantMarks = Boolean(id) && !String(id).startsWith("chat");
+        data = await api.synthesize({
+          ...(wantMarks
+            ? { ssml: ssmlFromBeats(tokens, beatCode), marks: true }
+            : { input: { text }, marks: false }),
+          voice: { languageCode: voice.languageCodes?.[0] || speech, name: voice.name },
+          audioConfig: { audioEncoding: "MP3", speakingRate: speakRate },
+        });
+      }
       if (playSeq.current !== seq) return false;
       if (!data.audioContent) throw new Error("NO_AUDIO");
       const audio = createCloudAudio(data.audioContent);
@@ -1145,6 +1164,7 @@ export default function App() {
             )}
             {voiceNote && <p className="notice">{voiceNote}</p>}
             <button onClick={() => speak((GREET[lang.code] || GREET.en).text)} className="btn btn-line">{tr("listen")}</button>
+            {user.role === "admin" && <VoiceLab tutor={tutor} lang={lang} speakRate={speakRate} />}
             {user.role === "admin" && (
               <div>
                 <h3 className="display text-sm">{tr("users")}</h3>
@@ -1270,6 +1290,8 @@ export default function App() {
                   onToggle={generatePassage}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
+                  theaterLabel={tr("theater")}
+                  exitTheaterLabel={tr("exitTheater")}
                 />
                 <div className="story-empty-copy">
                   <p>{tr("storyHint")}</p>
@@ -1297,6 +1319,8 @@ export default function App() {
                   }}
                   playLabel={tr("playStory")}
                   pauseLabel={tr("pauseStory")}
+                  theaterLabel={tr("theater")}
+                  exitTheaterLabel={tr("exitTheater")}
                 />
                 <div className="scroll-pane story-page">
                   <h2 className="story-title">{passage.title}</h2>

@@ -445,9 +445,9 @@ export const PASSAGES = {
   en: [
     { title: "Night Drive", title_zh: "夜車", scene: "rain", hook_zh: "雨夜裡的陌生人", sentences: [
       { text: "The wipers dragged rain across the glass.", zh: "雨刷把雨水從玻璃上拉開。" },
-      { text: "She accepted a ride from a quiet stranger.", zh: "她上了一個寡言陌生人的車。" },
-      { text: "He smiled and talked about his ordinary life.", zh: "他微笑著，談起自己平凡的生活。" },
-      { text: "Then she reached for the door and froze.", zh: "接著她去拉車門，整個人愣住了。" },
+      { focus: "a", text: "She accepted a ride from a quiet stranger.", zh: "她上了一個寡言陌生人的車。" },
+      { focus: "b", text: "He smiled and talked about his ordinary life.", zh: "他微笑著，談起自己平凡的生活。" },
+      { focus: "a", text: "Then she reached for the door and froze.", zh: "接著她去拉車門，整個人愣住了。" },
     ]},
     { title: "Saturday Market", title_zh: "週六市集", scene: "market", hook_zh: "雨前的芒果", sentences: [
       { text: "The fruit stall opened before the rain.", zh: "水果攤在下雨前就開了。" },
@@ -475,7 +475,7 @@ export const PASSAGES = {
   zh: [
     { title: "夜車", title_zh: "Night Drive", scene: "rain", hook_zh: "雨夜裡的陌生人", sentences: [
       { text: "雨刷把雨水從玻璃上拉開。", zh: "The wipers dragged rain across the glass." },
-      { text: "她上了一個寡言陌生人的車。", zh: "She accepted a ride from a quiet stranger." },
+      { focus: "a", text: "她上了一個寡言陌生人的車。", zh: "She accepted a ride from a quiet stranger." },
     ]},
     { title: "週六市場", title_zh: "Saturday Market", scene: "market", hook_zh: "雨前的芒果", sentences: [
       { text: "水果攤在下雨前就開了。", zh: "The fruit stall opened before the rain." },
@@ -485,11 +485,11 @@ export const PASSAGES = {
   ja: [
     { title: "夜の車", title_zh: "夜車", scene: "rain", hook_zh: "雨夜的車窗", sentences: [
       { text: "ワイパーがガラスの雨を払った。", zh: "雨刷把玻璃上的雨拉開。" },
-      { text: "彼女は寡黙な見知らぬ人の車に乗った。", zh: "她上了一個寡言陌生人的車。" },
+      { focus: "a", text: "彼女は寡黙な見知らぬ人の車に乗った。", zh: "她上了一個寡言陌生人的車。" },
     ]},
     { title: "土曜の市場", title_zh: "週六市集", scene: "market", hook_zh: "雨前的水果攤", sentences: [
       { text: "雨の前に果物屋が開いた。", zh: "下雨前水果攤就開了。" },
-      { text: "柔らかすぎないマンゴーを二つ頼んだ。", zh: "我要了兩顆不要太軟的芒果。" },
+      { focus: "a", text: "柔らかすぎないマンゴーを二つ頼んだ。", zh: "我要了兩顆不要太軟的芒果。" },
     ]},
   ],
   fr: [
