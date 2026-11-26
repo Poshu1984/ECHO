@@ -1030,3 +1030,145 @@ input, select, textarea {
   }
   .app-shell { gap: 6px; }
 }
+
+/* ---------- Story stage v2: illustrated, directed, video-like ---------- */
+.story-stage {
+  flex: 0 0 auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  background: #15130f;
+}
+.story-stage .story-fx {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 46vh;
+  overflow: hidden;
+  background: #15130f;
+}
+.story-cam {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 55%;
+  transition: transform 1.4s cubic-bezier(0.22, 0.8, 0.24, 1), transform-origin 1.4s ease;
+  will-change: transform;
+}
+.story-art { width: 100%; height: 100%; display: block; }
+.story-cam.shot-wide { transform: scale(1); }
+.story-cam.shot-push { transform: scale(1.14); transform-origin: 50% 50%; }
+.story-cam.shot-pan { transform: scale(1.1) translateX(-3%); transform-origin: 40% 50%; }
+.story-cam.shot-a { transform: scale(1.5); transform-origin: 30% 52%; }
+.story-cam.shot-b { transform: scale(1.5); transform-origin: 70% 52%; }
+.story-stage .story-scrim {
+  bottom: 4px;
+  background:
+    linear-gradient(180deg, rgba(12,10,8,0.5) 0%, rgba(12,10,8,0) 22%, rgba(12,10,8,0) 52%, rgba(12,10,8,0.78) 100%);
+}
+.story-stage .story-caption {
+  bottom: 12px;
+}
+.story-progress {
+  position: relative;
+  z-index: 3;
+  height: 4px;
+  background: rgba(244, 239, 230, 0.15);
+}
+.story-progress i {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  transition: width 0.25s linear;
+}
+.story-stage .story-play {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(240, 138, 60, 0.92);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  filter: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+.story-stage .story-play::after {
+  content: "";
+  position: absolute;
+  left: 26px;
+  top: 20px;
+  border-style: solid;
+  border-width: 12px 0 12px 20px;
+  border-color: transparent transparent transparent #fff;
+}
+.story-stage.is-live .story-play { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+@media (hover: hover) { .story-stage.is-live:hover .story-play { opacity: 0.6; } }
+.story-stage .story-play.is-pause::after {
+  left: 22px;
+  top: 20px;
+  width: 20px;
+  height: 24px;
+  border: none;
+  background:
+    linear-gradient(#fff, #fff) 0 0 / 7px 100% no-repeat,
+    linear-gradient(#fff, #fff) 13px 0 / 7px 100% no-repeat;
+}
+
+/* ambient motion (runs in preview and while playing) */
+.story-art .fx-rain line { stroke: rgba(200, 220, 255, 0.55); stroke-width: 1.6; animation: fx-fall 1s linear infinite; }
+.story-art .fx-wiper-l { transform-origin: 150px 252px; animation: fx-wipe 2.4s ease-in-out infinite; }
+.story-art .fx-wiper-r { transform-origin: 470px 252px; animation: fx-wipe 2.4s ease-in-out infinite; animation-delay: 0.1s; }
+.story-art .fx-twinkle { animation: fx-twinkle 3s ease-in-out infinite; }
+.story-art .fx-sway { animation: fx-sway 4s ease-in-out infinite; }
+.story-art .fx-sway-soft { animation: fx-sway-soft 6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.story-art .fx-awning { animation: fx-sway-soft 5s ease-in-out infinite; }
+.story-art .fx-steam { animation: fx-steam 3s ease-in-out infinite; }
+.story-art .fx-steam.s2 { animation-delay: 1.4s; }
+.story-art .fx-passby { animation: fx-passby 3.2s linear infinite; }
+.story-art .fx-drift { animation: fx-drift 14s ease-in-out infinite alternate; }
+.story-art .fx-blink { animation: fx-cursor 1s steps(1) infinite; }
+.story-art .fx-flicker { animation: fx-flicker 5s linear infinite; }
+.story-art .fx-clock-m { animation: fx-spin 30s linear infinite; }
+.story-art .fx-glow { animation: fx-twinkle 4s ease-in-out infinite; }
+
+/* characters */
+.story-art .char { animation: fx-breathe 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.story-art .char.is-talking { animation: fx-talk 0.9s ease-in-out infinite; }
+.story-art .char-eyes { animation: fx-blink-eyes 4.2s infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.story-art .char-head { transition: transform 0.4s ease; transform-box: fill-box; transform-origin: 50% 100%; }
+.story-art .char.is-talking .char-head { transform: rotate(-3deg); }
+
+.story-stage:not(.is-live):not(.is-preview) .story-art * { animation-play-state: paused; }
+
+@keyframes fx-fall { from { transform: translate(0, 0); } to { transform: translate(-40px, 400px); } }
+@keyframes fx-wipe { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(62deg); } }
+@keyframes fx-twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
+@keyframes fx-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes fx-sway-soft { 0%, 100% { transform: skewX(-1.5deg); } 50% { transform: skewX(1.5deg); } }
+@keyframes fx-steam { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-14px); } }
+@keyframes fx-passby { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+@keyframes fx-drift { from { transform: translateX(-6px); } to { transform: translateX(8px); } }
+@keyframes fx-cursor { 50% { opacity: 0; } }
+@keyframes fx-flicker { 0%, 18%, 22%, 60%, 100% { opacity: 0.9; } 20%, 61% { opacity: 0.25; } }
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+@keyframes fx-breathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-1px) scaleY(1.012); } }
+@keyframes fx-talk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes fx-blink-eyes { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .story-cam { transition: none; }
+  .story-art * { animation: none !important; }
+}
+
+/* ---------- Voice lab (admin A/B listening) ---------- */
+.voice-lab { border: 1px dashed var(--line, #d8d2c4); border-radius: 14px; padding: 12px; }
+.voice-lab-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.voice-lab small { color: var(--mute); display: block; margin-top: 6px; line-height: 1.5; }
+.story-art .char-arm { transform-box: fill-box; transform-origin: 0% 0%; transition: transform 0.5s ease; }
+.story-art .char.is-talking .arm-gesture { animation: fx-gesture 1.8s ease-in-out infinite; }
+@keyframes fx-gesture { 0%, 100% { transform: rotate(0deg); } 35% { transform: rotate(-38deg); } 65% { transform: rotate(-22deg); } }

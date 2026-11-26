@@ -14,6 +14,7 @@ import {
 } from "./beats.js";
 import { BeatLine, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
+import { VoiceLab } from "./VoiceLab.jsx";
 import { inferScene } from "./story.js";
 import {
   articlePrompt, chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
@@ -1145,6 +1146,7 @@ export default function App() {
             )}
             {voiceNote && <p className="notice">{voiceNote}</p>}
             <button onClick={() => speak((GREET[lang.code] || GREET.en).text)} className="btn btn-line">{tr("listen")}</button>
+            {user.role === "admin" && <VoiceLab tutor={tutor} lang={lang} speakRate={speakRate} />}
             {user.role === "admin" && (
               <div>
                 <h3 className="display text-sm">{tr("users")}</h3>
