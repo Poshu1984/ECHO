@@ -16,7 +16,7 @@ import { BeatLine, LearnLangContext, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { VoiceLab } from "./VoiceLab.jsx";
 import { chirpVoiceFor, sampleRequest } from "./voiceLab.js";
-import { partnerFor } from "./storyDirector.js";
+import { partnerFor, partnerName } from "./storyDirector.js";
 import { inferScene } from "./story.js";
 import {
   articlePrompt, chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
@@ -103,6 +103,9 @@ export default function App() {
   const endingHoldRef = useRef(false);
   const seenRef = useRef({ vocab: [], examples: [], scenes: [], exams: [], articles: [], greet: [] });
   const tutor = TUTORS.find((x) => x.id === tutorId) || TUTORS[0];
+  // Owner decision 2026-11-27: the chat partner is the language's brand
+  // character (Pip, Nami, ...); the tutor setting only picks the voice.
+  const chatPersona = { ...tutor, name: partnerName(lang.code) };
   const tr = (k) => t(ui, k);
   const levelRow = levelById(level);
   const joiner = isCjk(lang.code) ? "" : " ";
@@ -393,7 +396,7 @@ export default function App() {
     const next = [...msgs, { role: "me", text }];
     setMsgs(next);
     try {
-      const system = chatPrompt(tutor, lang, levelRow);
+      const system = chatPrompt(chatPersona, lang, levelRow);
       let data;
       try {
         data = await api.llm(system, toLlmMessages(next), 500, 0.7);
@@ -537,7 +540,7 @@ export default function App() {
     setErr("");
     armAudio();
     try {
-      const data = await api.llm(chatStartPrompt(tutor, lang, levelRow, seenRef.current.greet), [
+      const data = await api.llm(chatStartPrompt(chatPersona, lang, levelRow, seenRef.current.greet), [
         { role: "user", content: "Please start the conversation with a fresh greeting and a new question." },
       ], 500, 0.85);
       const raw = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
@@ -1196,7 +1199,7 @@ export default function App() {
 
         {tab === "chat" && (
           <section className="panel">
-            <h2>{tr("chat")} · {tutor.name}</h2>
+            <h2>{tr("chat")} · {partnerName(lang.code)}</h2>
             <div className="scroll-pane space-y-3 mt-3">
               {msgs.length === 0 && (
                 <div className="empty-pane">

@@ -90,8 +90,22 @@ export function progressOf(current, duration) {
   return Math.max(0, Math.min(1, c / d));
 }
 
-// Story partner next to Koto: Pip (English) or Nami (Japanese). Other
-// languages use Pip until their own partner is designed (CI v2 guidance).
+// Language partner next to Koto, one per learning language (CI v2: same
+// baseline and proportions, own silhouette and colour). Korean has no
+// partner yet and uses Pip.
+export const PARTNERS = {
+  en: { id: "pip", name: "Pip" },
+  ja: { id: "nami", name: "Nami" },
+  fr: { id: "leo", name: "Léo" },
+  es: { id: "sol", name: "Sol" },
+  zh: { id: "mo", name: "Mo" },
+  ru: { id: "mira", name: "Mira" },
+};
+
 export function partnerFor(langCode) {
-  return langCode === "ja" ? "nami" : "pip";
+  return (PARTNERS[langCode] || PARTNERS.en).id;
+}
+
+export function partnerName(langCode) {
+  return (PARTNERS[langCode] || PARTNERS.en).name;
 }

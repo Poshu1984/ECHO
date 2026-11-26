@@ -1078,5 +1078,1860 @@ export const MASCOTS = {
         ]
       }
     }
+  },
+  "leo": {
+    "viewBox": "0 0 240 270",
+    "faceColor": "#FFFFFF",
+    "looks": {
+      "hello": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 56 150 Q 38 160 26 176 M 186 140 Q 204 124 213 101",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 198 Q 88 207 85 216 M 146 198 Q 154 207 158 216",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "178",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "214",
+              "cy": "96",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 34 C 158 72 190 108 190 146 C 190 184 160 202 120 202 C 80 202 50 184 50 146 C 50 108 82 72 120 34 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 146 30 L 170 10",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "13",
+              "strokeLinecap": "round"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "140",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "140",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FFFFFF"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 112 162 Q 120 174 128 162",
+            "fill": "none",
+            "stroke": "#FFFFFF",
+            "strokeWidth": "5",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          168
+        ]
+      },
+      "focus": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 56 150 Q 38 160 26 176 M 186 140 Q 204 124 213 101",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 198 Q 88 207 85 216 M 146 198 Q 154 207 158 216",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "178",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "214",
+              "cy": "96",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 34 C 158 72 190 108 190 146 C 190 184 160 202 120 202 C 80 202 50 184 50 146 C 50 108 82 72 120 34 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 146 30 L 170 10",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "13",
+              "strokeLinecap": "round"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "140",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 95 124 L 108 122",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "140",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 131 126 L 144 124",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 113 162 L 127 162",
+            "fill": "none",
+            "stroke": "#FFFFFF",
+            "strokeWidth": "4",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          162
+        ]
+      },
+      "celebrate": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 56 150 Q 38 160 26 176 M 186 140 Q 204 124 213 101",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 198 Q 88 207 85 216 M 146 198 Q 154 207 158 216",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "178",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "214",
+              "cy": "96",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 34 C 158 72 190 108 190 146 C 190 184 160 202 120 202 C 80 202 50 184 50 146 C 50 108 82 72 120 34 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 146 30 L 170 10",
+              "fill": "none",
+              "stroke": "#2E5BCC",
+              "strokeWidth": "13",
+              "strokeLinecap": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 35 38 L 38 43 L 43 46 L 38 49 L 35 54 L 32 49 L 27 46 L 32 43 Z",
+              "fill": "#2E5BCC"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 204 21 L 207 26 L 212 29 L 207 32 L 204 37 L 201 32 L 196 29 L 201 26 Z",
+              "fill": "#2E5BCC"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 93 144 Q 102 127 111 144",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 129 144 Q 138 127 147 144",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": "120",
+            "cy": "168",
+            "rx": "10",
+            "ry": "7",
+            "fill": "#FFFFFF"
+          }
+        },
+        "mouthCenter": [
+          120,
+          168
+        ]
+      }
+    }
+  },
+  "sol": {
+    "viewBox": "0 0 240 270",
+    "faceColor": "#212033",
+    "looks": {
+      "hello": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 44 128 Q 28 142 22 162 M 196 122 Q 212 108 218 88",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 98 186 Q 88 202 85 216 M 142 186 Q 154 202 158 216",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "20",
+              "cy": "166",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "219",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "28.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "196.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "112",
+              "r": "78",
+              "fill": "#F7B32B"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "104",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#212033"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "104",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#212033"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 112 126 Q 120 138 128 126",
+            "fill": "none",
+            "stroke": "#212033",
+            "strokeWidth": "5",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          132
+        ]
+      },
+      "focus": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 44 128 Q 28 142 22 162 M 196 122 Q 212 108 218 88",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 98 186 Q 88 202 85 216 M 142 186 Q 154 202 158 216",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "20",
+              "cy": "166",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "219",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "28.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "196.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "112",
+              "r": "78",
+              "fill": "#F7B32B"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "104",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#212033"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 95 88 L 108 86",
+              "fill": "none",
+              "stroke": "#212033",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "104",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#212033"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 131 90 L 144 88",
+              "fill": "none",
+              "stroke": "#212033",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 113 126 L 127 126",
+            "fill": "none",
+            "stroke": "#212033",
+            "strokeWidth": "4",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          126
+        ]
+      },
+      "celebrate": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 44 128 Q 28 142 22 162 M 196 122 Q 212 108 218 88",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 98 186 Q 88 202 85 216 M 142 186 Q 154 202 158 216",
+              "fill": "none",
+              "stroke": "#F7B32B",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "20",
+              "cy": "166",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "219",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "28.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "199.9",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "169.4",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120.0",
+              "cy": "196.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "180.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "138.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "40.1",
+              "cy": "86.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "70.6",
+              "cy": "44.0",
+              "r": "17",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "112",
+              "r": "78",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 35 38 L 38 43 L 43 46 L 38 49 L 35 54 L 32 49 L 27 46 L 32 43 Z",
+              "fill": "#F7B32B"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 204 21 L 207 26 L 212 29 L 207 32 L 204 37 L 201 32 L 196 29 L 201 26 Z",
+              "fill": "#F7B32B"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 93 108 Q 102 91 111 108",
+              "fill": "none",
+              "stroke": "#212033",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 129 108 Q 138 91 147 108",
+              "fill": "none",
+              "stroke": "#212033",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": "120",
+            "cy": "132",
+            "rx": "10",
+            "ry": "7",
+            "fill": "#212033"
+          }
+        },
+        "mouthCenter": [
+          120,
+          132
+        ]
+      }
+    }
+  },
+  "mo": {
+    "viewBox": "0 0 240 270",
+    "faceColor": "#FAF8F2",
+    "looks": {
+      "hello": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 50 126 Q 32 140 24 160 M 190 120 Q 208 108 216 88",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 94 196 Q 87 206 85 216 M 146 196 Q 154 206 158 216",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "22",
+              "cy": "164",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "217",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 72 44 L 168 44 Q 192 44 192 68 L 192 172 Q 192 196 168 196 L 72 196 Q 48 196 48 172 L 48 68 Q 48 44 72 44 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 64 60 L 176 60 L 176 180 L 64 180 Z",
+              "fill": "none",
+              "stroke": "#F2A493",
+              "strokeWidth": "4",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 108 40 Q 116 14 140 12 Q 128 24 128 42 Z",
+              "fill": "#C8402F"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "112",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FAF8F2"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "112",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FAF8F2"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 112 134 Q 120 146 128 134",
+            "fill": "none",
+            "stroke": "#FAF8F2",
+            "strokeWidth": "5",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          140
+        ]
+      },
+      "focus": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 50 126 Q 32 140 24 160 M 190 120 Q 208 108 216 88",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 94 196 Q 87 206 85 216 M 146 196 Q 154 206 158 216",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "22",
+              "cy": "164",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "217",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 72 44 L 168 44 Q 192 44 192 68 L 192 172 Q 192 196 168 196 L 72 196 Q 48 196 48 172 L 48 68 Q 48 44 72 44 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 64 60 L 176 60 L 176 180 L 64 180 Z",
+              "fill": "none",
+              "stroke": "#F2A493",
+              "strokeWidth": "4",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 108 40 Q 116 14 140 12 Q 128 24 128 42 Z",
+              "fill": "#C8402F"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "102",
+              "cy": "112",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FAF8F2"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 95 96 L 108 94",
+              "fill": "none",
+              "stroke": "#FAF8F2",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "138",
+              "cy": "112",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FAF8F2"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 131 98 L 144 96",
+              "fill": "none",
+              "stroke": "#FAF8F2",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 113 134 L 127 134",
+            "fill": "none",
+            "stroke": "#FAF8F2",
+            "strokeWidth": "4",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          134
+        ]
+      },
+      "celebrate": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 50 126 Q 32 140 24 160 M 190 120 Q 208 108 216 88",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 94 196 Q 87 206 85 216 M 146 196 Q 154 206 158 216",
+              "fill": "none",
+              "stroke": "#C8402F",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "22",
+              "cy": "164",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "217",
+              "cy": "84",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 72 44 L 168 44 Q 192 44 192 68 L 192 172 Q 192 196 168 196 L 72 196 Q 48 196 48 172 L 48 68 Q 48 44 72 44 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 64 60 L 176 60 L 176 180 L 64 180 Z",
+              "fill": "none",
+              "stroke": "#F2A493",
+              "strokeWidth": "4",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 108 40 Q 116 14 140 12 Q 128 24 128 42 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 35 38 L 38 43 L 43 46 L 38 49 L 35 54 L 32 49 L 27 46 L 32 43 Z",
+              "fill": "#C8402F"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 204 21 L 207 26 L 212 29 L 207 32 L 204 37 L 201 32 L 196 29 L 201 26 Z",
+              "fill": "#C8402F"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 93 116 Q 102 99 111 116",
+              "fill": "none",
+              "stroke": "#FAF8F2",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 129 116 Q 138 99 147 116",
+              "fill": "none",
+              "stroke": "#FAF8F2",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": "120",
+            "cy": "140",
+            "rx": "10",
+            "ry": "7",
+            "fill": "#FAF8F2"
+          }
+        },
+        "mouthCenter": [
+          120,
+          140
+        ]
+      }
+    }
+  },
+  "mira": {
+    "viewBox": "0 0 240 270",
+    "faceColor": "#FFFFFF",
+    "looks": {
+      "hello": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 54 132 Q 36 144 26 164 M 186 126 Q 206 112 214 92",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 194 Q 88 205 85 216 M 144 194 Q 154 205 158 216",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "168",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "215",
+              "cy": "88",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "14",
+              "r": "9",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 116 22 L 124 22 L 124 30 L 116 30 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 26 Q 130 44 160 58 Q 198 80 194 132 Q 190 194 120 198 Q 50 194 46 132 Q 42 80 80 58 Q 110 44 120 26 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 66 160 Q 120 184 174 160",
+              "fill": "none",
+              "stroke": "#8CC3D0",
+              "strokeWidth": "5",
+              "strokeLinecap": "round"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "103",
+              "cy": "112",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "137",
+              "cy": "112",
+              "rx": "9",
+              "ry": "14",
+              "fill": "#FFFFFF"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 112 134 Q 120 146 128 134",
+            "fill": "none",
+            "stroke": "#FFFFFF",
+            "strokeWidth": "5",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          140
+        ]
+      },
+      "focus": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 54 132 Q 36 144 26 164 M 186 126 Q 206 112 214 92",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 194 Q 88 205 85 216 M 144 194 Q 154 205 158 216",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "168",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "215",
+              "cy": "88",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "14",
+              "r": "9",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 116 22 L 124 22 L 124 30 L 116 30 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 26 Q 130 44 160 58 Q 198 80 194 132 Q 190 194 120 198 Q 50 194 46 132 Q 42 80 80 58 Q 110 44 120 26 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 66 160 Q 120 184 174 160",
+              "fill": "none",
+              "stroke": "#8CC3D0",
+              "strokeWidth": "5",
+              "strokeLinecap": "round"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "103",
+              "cy": "112",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 96 L 109 94",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "137",
+              "cy": "112",
+              "rx": "6",
+              "ry": "10",
+              "fill": "#FFFFFF"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 130 98 L 143 96",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "3",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "path",
+          "attrs": {
+            "d": "M 113 134 L 127 134",
+            "fill": "none",
+            "stroke": "#FFFFFF",
+            "strokeWidth": "4",
+            "strokeLinecap": "round",
+            "strokeLinejoin": "round"
+          }
+        },
+        "mouthCenter": [
+          120,
+          134
+        ]
+      },
+      "celebrate": {
+        "body": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 54 132 Q 36 144 26 164 M 186 126 Q 206 112 214 92",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 96 194 Q 88 205 85 216 M 144 194 Q 154 205 158 216",
+              "fill": "none",
+              "stroke": "#1E6A7E",
+              "strokeWidth": "9",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 55 238 Q 55 217 77 217 L 89 217 Q 108 217 108 237 Q 108 247 98 247 L 65 247 Q 55 247 55 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 137 238 Q 137 217 155 217 L 167 217 Q 190 217 190 238 Q 190 247 181 247 L 146 247 Q 137 247 137 238 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "24",
+              "cy": "168",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "ellipse",
+            "attrs": {
+              "cx": "215",
+              "cy": "88",
+              "rx": "12",
+              "ry": "12",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "circle",
+            "attrs": {
+              "cx": "120",
+              "cy": "14",
+              "r": "9",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 116 22 L 124 22 L 124 30 L 116 30 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 120 26 Q 130 44 160 58 Q 198 80 194 132 Q 190 194 120 198 Q 50 194 46 132 Q 42 80 80 58 Q 110 44 120 26 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 66 160 Q 120 184 174 160",
+              "fill": "none",
+              "stroke": "#8CC3D0",
+              "strokeWidth": "5",
+              "strokeLinecap": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 35 38 L 38 43 L 43 46 L 38 49 L 35 54 L 32 49 L 27 46 L 32 43 Z",
+              "fill": "#1E6A7E"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 204 21 L 207 26 L 212 29 L 207 32 L 204 37 L 201 32 L 196 29 L 201 26 Z",
+              "fill": "#1E6A7E"
+            }
+          }
+        ],
+        "eyes": [
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 94 116 Q 103 99 112 116",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          },
+          {
+            "tag": "path",
+            "attrs": {
+              "d": "M 128 116 Q 137 99 146 116",
+              "fill": "none",
+              "stroke": "#FFFFFF",
+              "strokeWidth": "5",
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round"
+            }
+          }
+        ],
+        "mouth": {
+          "tag": "ellipse",
+          "attrs": {
+            "cx": "120",
+            "cy": "140",
+            "rx": "10",
+            "ry": "7",
+            "fill": "#FFFFFF"
+          }
+        },
+        "mouthCenter": [
+          120,
+          140
+        ]
+      }
+    }
   }
 };

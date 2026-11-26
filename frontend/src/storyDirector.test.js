@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { SHOTS, actorHint, directStory, partnerFor, isDialogue, moodOf, mouthOpen, progressOf } from "./storyDirector.js";
+import { SHOTS, actorHint, directStory, partnerFor, partnerName, isDialogue, moodOf, mouthOpen, progressOf } from "./storyDirector.js";
 import { CHIRP_PRICE_PER_M, NEURAL2_PRICE_PER_M, chirpVoiceFor, chirpSupported, costPerThousandStories, monthlyCostLine, sampleText } from "./voiceLab.js";
 import { TUTORS, LEARN_LANGS, LEVELS, PASSAGES } from "./content.js";
 import { readingPrompt } from "./prompts.js";
@@ -176,9 +176,12 @@ describe("voiceLab cost and samples", () => {
 });
 
 describe("story partner mascot", () => {
-  it("pairs Koto with Pip for English and Nami for Japanese", () => {
-    assert.equal(partnerFor("ja"), "nami");
-    assert.equal(partnerFor("en"), "pip");
-    assert.equal(partnerFor("fr"), "pip");
+  it("gives each learning language its own partner, Korean falls back to Pip", () => {
+    assert.deepEqual(
+      ["en", "ja", "fr", "es", "zh", "ru", "ko"].map(partnerFor),
+      ["pip", "nami", "leo", "sol", "mo", "mira", "pip"],
+    );
+    assert.equal(partnerName("fr"), "Léo");
+    assert.equal(partnerName("xx"), "Pip");
   });
 });

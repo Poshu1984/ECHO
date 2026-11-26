@@ -3,18 +3,22 @@
 // mouth) are split out so the story stage can blink and lip-sync them.
 import { readFileSync, writeFileSync } from "node:fs";
 
-const FACE = new Set(["#FFFFFF", "#D9F36B", "#FAF8F2"]);
+// Face colour per character (eyes and mouth are drawn in it).
+const FACE = {
+  koto: ["#FFFFFF"], pip: ["#D9F36B"], nami: ["#FAF8F2"],
+  leo: ["#FFFFFF"], sol: ["#212033"], mo: ["#FAF8F2"], mira: ["#FFFFFF"],
+};
 const ATTR = /([a-zA-Z-]+)="([^"]*)"/g;
 const camel = (k) => k.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
-function parse(file) {
+function parse(file, faceColors) {
   const text = readFileSync(file, "utf8");
   const items = [];
   for (const m of text.matchAll(/<(path|ellipse|circle|rect)\s([^>]*?)\/>/g)) {
     const attrs = {};
     for (const [, k, v] of m[2].matchAll(ATTR)) attrs[camel(k)] = v;
     const color = (attrs.fill && attrs.fill !== "none" ? attrs.fill : attrs.stroke || "").toUpperCase();
-    items.push({ tag: m[1], attrs, face: FACE.has(color) });
+    items.push({ tag: m[1], attrs, face: faceColors.includes(color) });
   }
   return items;
 }
@@ -29,11 +33,11 @@ function center(item) {
 }
 
 const out = {};
-for (const id of ["koto", "pip", "nami"]) {
+for (const id of Object.keys(FACE)) {
   const looks = {};
   let faceColor = "#FFFFFF";
   for (const look of ["hello", "focus", "celebrate"]) {
-    const items = parse(`public/brand/mascots/${id}-${look}.svg`);
+    const items = parse(`public/brand/mascots/${id}-${look}.svg`, FACE[id]);
     const face = items.filter((i) => i.face);
     const mouth = face[face.length - 1];
     faceColor = (mouth.attrs.stroke && mouth.attrs.stroke !== "none" ? mouth.attrs.stroke : mouth.attrs.fill);

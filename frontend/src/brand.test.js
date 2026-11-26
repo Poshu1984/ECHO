@@ -22,8 +22,8 @@ describe("ECHO brand assets", () => {
     for (const icon of manifest.icons) assert.ok(existsSync(new URL(icon.src.slice(1), pub)), icon.src);
   });
 
-  it("has three mascots with three looks, each with eyes and a mouth", () => {
-    for (const id of ["koto", "pip", "nami"]) {
+  it("has every mascot with three looks, each with eyes and a mouth", () => {
+    for (const id of ["koto", "pip", "nami", "leo", "sol", "mo", "mira"]) {
       for (const look of ["hello", "focus", "celebrate"]) {
         const l = MASCOTS[id].looks[look];
         assert.ok(l.body.length >= 6, `${id} ${look} body`);
@@ -35,5 +35,15 @@ describe("ECHO brand assets", () => {
 
   it("uses the new slogan in every UI language", () => {
     for (const ui of UI_LANGS) assert.doesNotMatch(t(ui.id, "tagShort"), /YOUR FUTURE/, ui.id);
+  });
+});
+
+describe("language partners", () => {
+  it("ships PNGs for every partner look (chat empty state uses -hello.png)", () => {
+    for (const id of ["pip", "nami", "leo", "sol", "mo", "mira"]) {
+      for (const look of ["hello", "focus", "celebrate"]) {
+        assert.ok(existsSync(new URL(`brand/mascots/${id}-${look}.png`, pub)), `${id}-${look}.png`);
+      }
+    }
   });
 });
