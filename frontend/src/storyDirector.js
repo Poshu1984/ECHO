@@ -13,9 +13,9 @@ const QUOTED = /"([^"]+)"|“([^”]+)”|«([^»]+)»|„([^“”]+)[“”]|�
 const SPOKEN = /[\s?!.,…。？！、，~]/;
 const DASH_LINE = /^\s*[—–]\s*\S/;
 
-const FEMALE = /\b(she|her|hers|elle|ella)\b|彼女|她|그녀/i;
-const MALE = /\b(he|him|his|il|él|lui)\b|彼(?!女)|他|그가|그는/i;
-// First-person narration follows the protagonist (A).
+// First-person narration follows the main character (A). Characters are
+// not tied to a gender, so third-person pronouns are not used for casting;
+// the story generator's "speaker" / "focus" fields carry that instead.
 const FIRST = /\b(I|me|my|je|moi|yo|mi)\b|\bj'|私|僕|我|나는|내가|저는|제가/i;
 
 function outsideQuotes(text) {
@@ -33,12 +33,9 @@ export function isDialogue(text) {
   return false;
 }
 
-export function genderHint(text) {
+export function actorHint(text) {
   const t = outsideQuotes(String(text || ""));
-  if (FEMALE.test(t)) return "a";
-  if (MALE.test(t)) return "b";
-  if (FIRST.test(t)) return "a";
-  return null;
+  return FIRST.test(t) ? "a" : null;
 }
 
 export function moodOf(text) {
@@ -62,11 +59,11 @@ export function directStory(passage) {
     if (given) {
       speaker = given;
     } else if (isDialogue(text)) {
-      speaker = genderHint(text) || (lastTalker === "a" ? "b" : "a");
+      speaker = lastTalker === "a" ? "b" : "a";
     }
     if (speaker !== "narrator") lastTalker = speaker;
     const givenFocus = s?.focus === "a" || s?.focus === "b" ? s.focus : null;
-    const focus = speaker !== "narrator" ? speaker : (givenFocus || genderHint(text));
+    const focus = speaker !== "narrator" ? speaker : (givenFocus || actorHint(text));
     let shot;
     if (speaker !== "narrator") shot = speaker;
     else if (focus) shot = `f${focus}`;

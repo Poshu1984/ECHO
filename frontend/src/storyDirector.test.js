@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { SHOTS, directStory, genderHint, isDialogue, moodOf, mouthOpen, progressOf } from "./storyDirector.js";
+import { SHOTS, actorHint, directStory, isDialogue, moodOf, mouthOpen, progressOf } from "./storyDirector.js";
 import { CHIRP_PRICE_PER_M, NEURAL2_PRICE_PER_M, chirpVoiceFor, chirpSupported, costPerThousandStories, monthlyCostLine, sampleText } from "./voiceLab.js";
 import { TUTORS, LEARN_LANGS, LEVELS, PASSAGES } from "./content.js";
 import { readingPrompt } from "./prompts.js";
@@ -41,7 +41,7 @@ describe("directStory", () => {
     for (let i = 1; i < plan.length; i += 1) assert.notEqual(plan[i].shot, plan[i - 1].shot);
   });
 
-  it("casts by pronoun: she -> A, he -> B", () => {
+  it("alternates speakers on back-to-back dialogue", () => {
     const plan = directStory(p("“Where to?” she asked.", "“The airport,” he said."));
     assert.deepEqual(plan.map((r) => r.speaker), ["a", "b"]);
     assert.deepEqual(plan.map((r) => r.shot), ["a", "b"]);
@@ -52,11 +52,17 @@ describe("directStory", () => {
     assert.deepEqual(plan.map((r) => r.speaker), ["a", "narrator", "b"]);
   });
 
-  it("follows a character on narration lines that mention them, without lip-sync", () => {
-    const plan = directStory(p("The night was quiet.", "She reached for the door."));
+  it("follows the main character on first-person narration, without lip-sync", () => {
+    const plan = directStory(p("The night was quiet.", "I reached for the door."));
     assert.equal(plan[1].speaker, "narrator");
     assert.equal(plan[1].focus, "a");
     assert.equal(plan[1].shot, "fa");
+  });
+
+  it("uses the generator's focus field on narration", () => {
+    const plan = directStory(p("Rain.", { text: "The driver smiled.", focus: "b" }));
+    assert.equal(plan[1].focus, "b");
+    assert.equal(plan[1].shot, "fb");
   });
 
   it("prefers an explicit speaker field from the story generator", () => {
@@ -76,8 +82,9 @@ describe("directStory", () => {
     assert.deepEqual(directStory({ sentences: [] }), []);
   });
 
-  it("ignores pronouns inside the quote when casting", () => {
-    assert.equal(genderHint("“He is late,” she said."), "a");
+  it("ignores first person inside the quote", () => {
+    assert.equal(actorHint("“I am late,” the driver said."), null);
+    assert.equal(actorHint("I paid by card."), "a");
   });
 
   it("gives every built-in multi-sentence story at least one character moment", () => {
@@ -147,7 +154,8 @@ describe("readingPrompt casting", () => {
   it("asks the model for dialogue and a speaker per sentence", () => {
     const text = readingPrompt(LEARN_LANGS[0], LEVELS[1]);
     assert.match(text, /"speaker"/);
-    assert.match(text, /dialogue/);
+    assert.match(text, /"focus"/);
+    assert.match(text, /any gender/);
   });
 });
 

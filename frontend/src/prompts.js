@@ -70,11 +70,11 @@ export function readingPrompt(lang, levelRow, topic = "") {
   const topicBit = topic ? ` about ${topic}` : "";
   return `Write a short ${lang.name} story passage for a read-along video, CEFR ${cefrOf(levelRow)} (${examStyleLine(levelRow, lang)}), 4-6 sentences, everyday adult life${topicBit}. Cinematic but not gory. Natural spoken rhythm, no lists. Do not reuse a stock "night shift / corridor lights" passage.
 Pick ONE scene mood from: rain, cafe, commute, market, office, night.
-The story has two recurring on-screen characters: A (a young woman) and B (a young man). Include 1-2 short lines of quoted dialogue between them, and refer to them as she / he (or the ${lang.name} equivalents).
+Two characters appear on screen, called A (the main character) and B (the other character). Choose whoever fits the story: any gender, age or relationship. When it fits the story, include 1-2 short lines of quoted dialogue.
 Break it into individual sentences. For EACH sentence provide the ${lang.name} text AND its Traditional Chinese translation on its own line (same meaning, same order). Every sentence must have zh.
-For EACH sentence also set "speaker": "a" or "b" if that character says the line out loud, otherwise "narrator".
+For EACH sentence also set "speaker": "a" or "b" if that character says the line out loud, otherwise "narrator"; and set "focus": "a" or "b" for the character the line is mainly about, otherwise null.
 Respond ONLY with JSON, no markdown fences:
-{"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","scene":"rain|cafe|commute|market|office|night","hook_zh":"<6-12字中文畫面標語>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<該句繁體中文翻譯>","speaker":"a|b|narrator"}]}`;
+{"title":"<short ${lang.name} title>","title_zh":"<繁體中文標題>","scene":"rain|cafe|commute|market|office|night","hook_zh":"<6-12字中文畫面標語>","sentences":[{"text":"<sentence in ${lang.name}>","zh":"<該句繁體中文翻譯>","speaker":"a|b|narrator","focus":"a|b|null"}]}`;
 }
 
 export function articlePrompt(lang, levelRow, avoid = [], focusTag = "", band) {

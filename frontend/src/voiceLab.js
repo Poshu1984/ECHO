@@ -1,5 +1,5 @@
-// Side-by-side ("A/B") listening between the current Google voices and
-// Chirp 3: HD. Shadow mode only: nothing here changes what learners hear.
+// Chirp 3: HD voice mapping (used for learners since the owner's 2026-11-26
+// decision) and the admin A/B listening helpers.
 // Prices from https://cloud.google.com/text-to-speech/pricing (USD per 1M
 // characters after the monthly free tier), checked 2026-11-26.
 export const WAVENET_PRICE_PER_M = 4;
@@ -59,5 +59,5 @@ export function monthlyCostLine() {
   const mid = costPerThousandStories(NEURAL2_PRICE_PER_M);
   const chirp = costPerThousandStories(CHIRP_PRICE_PER_M);
   const freeStories = Math.round(1e6 / STORY_CHARS);
-  return `費用估算（每篇故事約 ${STORY_CHARS} 字）：每 1,000 篇故事，目前聲音約 US$${low}–${mid}，Chirp 3 HD 約 US$${chirp}。每月前 100 萬字免費，約 ${freeStories.toLocaleString("en-US")} 篇故事。`;
+  return `費用估算（每篇故事約 ${STORY_CHARS} 字）：每 1,000 篇故事，舊聲音約 US$${low}–${mid}，Chirp 3 HD 約 US$${chirp}。每月前 100 萬字免費，約 ${freeStories.toLocaleString("en-US")} 篇故事。`;
 }

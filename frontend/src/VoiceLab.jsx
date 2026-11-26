@@ -12,8 +12,8 @@ function friendlyError(e) {
   return "現在無法播放，請稍後再試。";
 }
 
-// Admin-only A/B listening panel. It never changes the voice learners get;
-// it only lets the owner compare the current voice with Chirp 3: HD.
+// Admin-only A/B listening panel: compares the previous voice with Chirp 3: HD
+// (which learners use since the owner's 2026-11-26 decision).
 export function VoiceLab({ tutor: appTutor, lang: appLang, speakRate = 1 }) {
   const [langCode, setLangCode] = useState(appLang.code);
   const [tutorId, setTutorId] = useState(appTutor.id);
@@ -66,7 +66,7 @@ export function VoiceLab({ tutor: appTutor, lang: appLang, speakRate = 1 }) {
 
   function label(kind, i) {
     if (blind && !picked) return `聲音 ${i + 1}`;
-    return kind === "current" ? "目前聲音" : "Chirp 3 HD";
+    return kind === "current" ? "舊聲音" : "Chirp 3 HD";
   }
 
   function startBlind(on) {
@@ -78,7 +78,7 @@ export function VoiceLab({ tutor: appTutor, lang: appLang, speakRate = 1 }) {
   return (
     <div className="voice-lab">
       <h3 className="display text-sm">語音 A/B 試聽（僅管理員）</h3>
-      <p className="text-xs text-[var(--mute)] mt-1">只有您看得到。試聽不會改變學員聽到的聲音。</p>
+      <p className="text-xs text-[var(--mute)] mt-1">只有您看得到。學員目前聽到的是 Chirp 3 HD（中文維持台灣口音聲音）；這裡可以和舊聲音對照。</p>
       <div className="voice-lab-row">
         <label className="text-sm">語言
           <select className="field mt-1" value={langCode} onChange={(e) => { setLangCode(e.target.value); setPicked(""); }}>
@@ -121,7 +121,7 @@ export function VoiceLab({ tutor: appTutor, lang: appLang, speakRate = 1 }) {
             </div>
           )}
           {blind && picked && (
-            <p className="notice is-ok mt-2">您選的是「{picked === "chirp" ? "Chirp 3 HD" : "目前聲音"}」。</p>
+            <p className="notice is-ok mt-2">您選的是「{picked === "chirp" ? "Chirp 3 HD" : "舊聲音"}」。</p>
           )}
           <small>{monthlyCostLine()}</small>
           <small>切換的取捨：Chirp 3 HD 聲音更自然，但 Google 不提供逐字時間點，字幕逐字變色會改用估算，可能和聲音差一點點。</small>
