@@ -3,7 +3,32 @@ import { consumeQuota } from "../store.js";
 import { configuredKey, geminiModelList, rememberGeminiModel, shouldTryNextGeminiModel } from "../llmModels.js";
 
 const router = Router();
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_URL = process.env.ANTHROPIC_API_BASE
+  ? `${process.env.ANTHROPIC_API_BASE.replace(/\/$/, "")}/v1/messages`
+  : "https://api.anthropic.com/v1/messages";
+const GEMINI_ROOT = (process.env.GEMINI_API_BASE || "https://generativelanguage.googleapis.com").replace(/\/$/, "");
+
+// Latency guards: a provider that does not answer in time is skipped, and a
+// provider that rejects our key is skipped for a while instead of costing
+// every request a round trip before the fallback.
+export const CLAUDE_TIMEOUT_MS = Number(process.env.CLAUDE_TIMEOUT_MS) || 30000;
+export const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS) || 30000;
+const AUTH_COOLDOWN_MS = 10 * 60 * 1000;
+let claudeAuthFailedAt = 0;
+
+async function fetchWithTimeout(url, options, ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export function resetLlmGuards() {
+  claudeAuthFailedAt = 0;
+}
 
 function anthropicKey() {
   return configuredKey("ANTHROPIC_API_KEY");
@@ -28,21 +53,29 @@ function geminiText(body) {
 async function callClaude(system, messages, maxTokens, temperature) {
   const key = anthropicKey();
   if (!key) return { ok: false, skip: true };
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
-      max_tokens: maxTokens || 1200,
-      temperature: Number.isFinite(temperature) ? temperature : 0.7,
-      system: system || "",
-      messages: Array.isArray(messages) ? messages : [],
-    }),
-  });
+  if (claudeAuthFailedAt && Date.now() - claudeAuthFailedAt < AUTH_COOLDOWN_MS) {
+    return { ok: false, skip: true, status: 401, body: { error: "CLAUDE_AUTH_COOLDOWN" } };
+  }
+  let res;
+  try {
+    res = await fetchWithTimeout(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6",
+        max_tokens: maxTokens || 1200,
+        temperature: Number.isFinite(temperature) ? temperature : 0.7,
+        system: system || "",
+        messages: Array.isArray(messages) ? messages : [],
+      }),
+    }, CLAUDE_TIMEOUT_MS);
+  } catch {
+    return { ok: false, status: 504, body: { error: "CLAUDE_TIMEOUT" } };
+  }
   const raw = await res.text();
   let body;
   try {
@@ -50,13 +83,14 @@ async function callClaude(system, messages, maxTokens, temperature) {
   } catch {
     body = { error: raw || "Claude parse error" };
   }
+  if (res.status === 401 || res.status === 403) claudeAuthFailedAt = Date.now();
   if (!res.ok) return { ok: false, status: res.status, body };
   body.provider = "claude";
   return { ok: true, body };
 }
 
 async function callGeminiModel(key, model, system, messages, maxTokens, temperature, withThinkingOff) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const url = `${GEMINI_ROOT}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const contents = (Array.isArray(messages) ? messages : []).map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: [{ text: typeof m.content === "string" ? m.content : JSON.stringify(m.content) }],
@@ -67,15 +101,20 @@ async function callGeminiModel(key, model, system, messages, maxTokens, temperat
     responseMimeType: "application/json",
   };
   if (withThinkingOff) generationConfig.thinkingConfig = { thinkingBudget: 0 };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system || "" }] },
-      contents,
-      generationConfig,
-    }),
-  });
+  let res;
+  try {
+    res = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system || "" }] },
+        contents,
+        generationConfig,
+      }),
+    }, GEMINI_TIMEOUT_MS);
+  } catch {
+    return { ok: false, status: 504, body: { error: "GEMINI_TIMEOUT", model }, model };
+  }
   const raw = await res.text();
   let body;
   try {
@@ -93,7 +132,9 @@ async function callGemini(system, messages, maxTokens, temperature) {
   const key = geminiKey();
   if (!key) return { ok: false, skip: true };
   let last = { ok: false, skip: false };
+  const deadline = Date.now() + GEMINI_TIMEOUT_MS * 1.5;
   for (const model of geminiModelList()) {
+    if (Date.now() > deadline) return { ok: false, status: 504, body: { error: "GEMINI_TIMEOUT" } };
     let result = await callGeminiModel(key, model, system, messages, maxTokens, temperature, true);
     if (!result.ok && result.status === 400) {
       result = await callGeminiModel(key, model, system, messages, maxTokens, temperature, false);
@@ -126,12 +167,16 @@ router.post("/messages", async (req, res) => {
 
     const { system, messages, max_tokens, temperature } = req.body ?? {};
     const temp = Number(temperature);
+    const started = Date.now();
     const claude = await callClaude(system, messages, max_tokens, temp);
+    const claudeMs = Date.now() - started;
     if (claude.ok) {
+      console.log(`[llm] claude ok ms=${claudeMs}`);
       res.json(claude.body);
       return;
     }
     const gemini = await callGemini(system, messages, max_tokens, temp);
+    console.log(`[llm] claude=${claude.skip ? "skip" : claude.status} ms=${claudeMs} gemini=${gemini.ok ? "ok" : (gemini.skip ? "skip" : gemini.status)} total=${Date.now() - started}`);
     if (gemini.ok) {
       res.json(gemini.body);
       return;

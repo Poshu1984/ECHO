@@ -51,6 +51,7 @@ export const api = {
   ttsStatus: () => req("/api/tts/status"),
   voices: (languageCode) => req(`/api/tts/voices?languageCode=${encodeURIComponent(languageCode)}`),
   synthesize: (body) => req("/api/tts/synthesize", { method: "POST", body: JSON.stringify(body) }),
+  synthesizeParts: (body) => req("/api/tts/synthesize-parts", { method: "POST", body: JSON.stringify(body) }),
   llm: (system, messages, max_tokens = 1200, temperature) => req("/api/llm/messages", {
     method: "POST",
     body: JSON.stringify({ system, messages, max_tokens, temperature }),

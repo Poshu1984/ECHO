@@ -177,3 +177,92 @@ export function stopDeviceSpeech() {
   currentUtterance = null;
   try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
 }
+
+function base64Bytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function mediaDuration(bytes) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+    const a = new Audio();
+    const done = () => {
+      const d = Number.isFinite(a.duration) ? a.duration : 0;
+      try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+      resolve(d);
+    };
+    a.preload = "metadata";
+    a.addEventListener("loadedmetadata", done, { once: true });
+    a.addEventListener("error", done, { once: true });
+    setTimeout(done, 3000);
+    a.src = url;
+  });
+}
+
+async function clipDuration(bytes) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx) {
+      if (!audioCtx) audioCtx = new Ctx();
+      const buf = await audioCtx.decodeAudioData(bytes.slice().buffer);
+      if (buf?.duration > 0) return buf.duration;
+    }
+  } catch { /* fall back to the media element */ }
+  return mediaDuration(bytes);
+}
+
+const MP3_BITRATES = {
+  1: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+  2: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+};
+const MP3_RATES = { 3: [44100, 48000, 32000], 2: [22050, 24000, 16000], 0: [11025, 12000, 8000] };
+
+// Strips a leading ID3v2 tag and the Xing/Info header frame from one MP3
+// clip. Left in, the first clip's header would describe the whole joined
+// track wrongly (duration and seek table), so seeking would land off.
+export function mp3Body(bytes) {
+  let at = 0;
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    const size = ((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f);
+    at = 10 + size + ((bytes[5] & 0x10) ? 10 : 0);
+  }
+  if (bytes[at] !== 0xff || (bytes[at + 1] & 0xe0) !== 0xe0) return bytes.subarray(at);
+  const version = (bytes[at + 1] >> 3) & 0x03;
+  const layer = (bytes[at + 1] >> 1) & 0x03;
+  if (layer !== 1 || version === 1) return bytes.subarray(at);
+  const kbps = MP3_BITRATES[version === 3 ? 1 : 2][(bytes[at + 2] >> 4) & 0x0f];
+  const rate = (MP3_RATES[version] || [])[(bytes[at + 2] >> 2) & 0x03];
+  const padding = (bytes[at + 2] >> 1) & 0x01;
+  if (!kbps || !rate) return bytes.subarray(at);
+  const frameLen = Math.floor(((version === 3 ? 144 : 72) * kbps * 1000) / rate) + padding;
+  const head = String.fromCharCode(...bytes.subarray(at, Math.min(at + frameLen, bytes.length)));
+  if (head.includes("Xing") || head.includes("Info")) return bytes.subarray(at + frameLen);
+  return bytes.subarray(at);
+}
+
+// Joins per-sentence MP3 clips into one playable track and measures each
+// clip, so the caller can time every sentence inside its own clip.
+export async function joinCloudParts(base64Parts) {
+  const raw = base64Parts.map(base64Bytes);
+  const durations = await Promise.all(raw.map(clipDuration));
+  const clips = raw.map(mp3Body);
+  const total = clips.reduce((n, c) => n + c.length, 0);
+  const joined = new Uint8Array(total);
+  let at = 0;
+  for (const c of clips) {
+    joined.set(c, at);
+    at += c.length;
+  }
+  if (lastBlobUrl) {
+    try { URL.revokeObjectURL(lastBlobUrl); } catch { /* ignore */ }
+  }
+  const url = URL.createObjectURL(new Blob([joined], { type: "audio/mpeg" }));
+  lastBlobUrl = url;
+  const audio = markInline(new Audio());
+  audio.preload = "auto";
+  audio.src = url;
+  return { audio, durations };
+}

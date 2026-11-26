@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, clearSession, loadUser, setSession } from "./api.js";
 import { t } from "./i18n.js";
-import { armAudio, cachedVoices, createCloudAudio, listDeviceVoices, pickGoogleVoice, settleAudioRoute, speakOnDevice, stopDeviceSpeech } from "./tts.js";
+import { armAudio, cachedVoices, createCloudAudio, joinCloudParts, listDeviceVoices, pickGoogleVoice, settleAudioRoute, speakOnDevice, stopDeviceSpeech } from "./tts.js";
 import {
   LEARN_LANGS, LEVELS, LEVEL_DISCLAIMER, TUTORS, UNLOCKS, canAccess,
   GREET, VOCAB, EXAMPLES, SCENES,
@@ -15,7 +15,8 @@ import {
 import { BeatLine, LearnLangContext, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { VoiceLab } from "./VoiceLab.jsx";
-import { chirpVoiceFor, sampleRequest } from "./voiceLab.js";
+import { chirpVoiceFor } from "./voiceLab.js";
+import { segmentsFor, timesFromParts } from "./audioParts.js";
 import { partnerFor } from "./storyDirector.js";
 import { inferScene } from "./story.js";
 import {
@@ -225,7 +226,7 @@ export default function App() {
       const done = () => resolve(Number.isFinite(audio.duration) ? audio.duration : 0);
       audio.addEventListener("loadedmetadata", done, { once: true });
       audio.addEventListener("error", done, { once: true });
-      setTimeout(done, 400);
+      setTimeout(done, 2500);
     });
   }
 
@@ -233,7 +234,7 @@ export default function App() {
     return timesEstimated(tokens, Math.max(1.2, tokens.join("").length * 0.12));
   }
 
-  async function loadTrack(id, text, tokens, voiceLang = null) {
+  async function loadTrack(id, text, tokens, voiceLang = null, sentences = null) {
     const seq = playSeq.current;
     const speech = voiceLang || lang.speech;
     const beatCode = codeOfSpeech(speech) || lang.code;
@@ -263,11 +264,28 @@ export default function App() {
       // offers it. It has no word timepoints, so karaoke timing is estimated.
       // Any Chirp failure other than an exhausted quota falls back to the
       // previous voice so playback never breaks.
+      // Chirp 3: HD: one clip per sentence, synthesized in parallel and
+      // joined, so playback starts sooner and highlighting stays in step.
       let data = null;
       const chirpName = chirpVoiceFor(tutor, speech);
       if (chirpName) {
         try {
-          data = await api.synthesize(sampleRequest(text, chirpName, speech, speakRate));
+          const segments = segmentsFor(sentences, text, tokens);
+          const res = await api.synthesizeParts({
+            parts: segments.map((seg) => seg.text),
+            voice: { languageCode: speech, name: chirpName },
+            audioConfig: { speakingRate: speakRate },
+          });
+          if (playSeq.current !== seq) return false;
+          const { audio, durations } = await joinCloudParts(res.parts.map((p) => p.audioContent));
+          if (playSeq.current !== seq) {
+            try { audio.pause(); } catch { /* ignore */ }
+            return false;
+          }
+          beat.attach(audio, timesFromParts(durations, segments));
+          trackRef.current = { id, tokens, text, mode: "cloud", key, speech, beatCode };
+          setTrackId(id);
+          return true;
         } catch (chirpErr) {
           if (chirpErr.status === 429) throw chirpErr;
           data = null;
@@ -313,12 +331,12 @@ export default function App() {
     }
   }
 
-  async function playTokens(id, text, tokens, startAt = 0, loopRange = null, voiceLang = null) {
+  async function playTokens(id, text, tokens, startAt = 0, loopRange = null, voiceLang = null, sentences = null) {
     if (!text || !tokens?.length) return;
     const seq = playSeq.current;
     const speech = voiceLang || lang.speech;
     const beatCode = codeOfSpeech(speech) || lang.code;
-    const ready = await loadTrack(id, text, tokens, speech);
+    const ready = await loadTrack(id, text, tokens, speech, sentences);
     if (!ready || playSeq.current !== seq) return;
     const start = Math.max(0, Math.min(startAt, tokens.length - 1));
     const lineCode = trackRef.current.beatCode || beatCode;
@@ -492,7 +510,7 @@ export default function App() {
 
   async function playPassageFrom(globalIndex, loopRange = beat.loop, packed = passage) {
     if (!packed) return;
-    await playTokens("read", passageText(packed), packed.allTokens, globalIndex, loopRange);
+    await playTokens("read", passageText(packed), packed.allTokens, globalIndex, loopRange, null, packed.sentences);
   }
 
   // Kept for the sentence-loop control; not wired to the UI right now.
@@ -821,7 +839,7 @@ export default function App() {
 
   async function playArticleFrom(globalIndex, loopRange = beat.loop, packed = articleItem) {
     if (!packed) return;
-    await playTokens("article", articleText(packed), packed.allTokens, globalIndex, loopRange);
+    await playTokens("article", articleText(packed), packed.allTokens, globalIndex, loopRange, null, packed.sentences);
   }
 
   async function nextArticle(manual = true) {

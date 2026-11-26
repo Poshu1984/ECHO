@@ -34,8 +34,17 @@ export function ssmlFromBeats(tokens, code) {
   return `<speak>${body}</speak>`;
 }
 
+// Characters plus a short pause after commas and sentence ends.
+export function weightOf(token) {
+  const text = String(token || "");
+  const chars = Math.max(1, Array.from(text.trim()).length);
+  if (/[.!?。！？…]["」』”’)]*$/.test(text)) return chars + 4;
+  if (/[,;:，、；：]["」』”’)]*$/.test(text)) return chars + 2;
+  return chars;
+}
+
 export function timesEstimated(tokens, duration) {
-  const weights = tokens.map((t) => Math.max(1, Array.from(t).length));
+  const weights = tokens.map(weightOf);
   const total = weights.reduce((a, b) => a + b, 0) || 1;
   let t = 0;
   return weights.map((w) => {
