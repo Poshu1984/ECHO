@@ -33,7 +33,7 @@ export default [
     languageOptions: { globals: { ...globals.node } },
   },
   {
-    files: ["*.js"],
+    files: ["*.js", "scripts/**/*.mjs"],
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: { ...globals.node } },
   },
   {

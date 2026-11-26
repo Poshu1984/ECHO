@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { nativeProgress } from "./beats.js";
 
 export function useBeatAudio() {
@@ -127,11 +127,21 @@ export function useBeatAudio() {
   return { active, playing, loop, attach, attachClock, playFrom, stop, setLoop, audioRef, timesRef };
 }
 
-export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "", variant = "karaoke" }) {
+// Language of the text being learned, so browsers pick the right glyphs
+// (e.g. Japanese kanji shapes) and screen readers the right voice.
+export const LearnLangContext = createContext("");
+
+export function langTag(code) {
+  if (code === "zh") return "zh-Hant";
+  return code || undefined;
+}
+
+export function BeatLine({ tokens, joiner = " ", active, onToken, native, nativeRatio, fromHere, className = "", variant = "karaoke", lang }) {
   const { lit, rest } = nativeProgress(native, nativeRatio);
+  const learnLang = useContext(LearnLangContext);
   return (
     <div className={`beat-block is-${variant} ${className}`.trim()}>
-      <p className="beat-line">
+      <p className="beat-line" lang={langTag(lang || learnLang)}>
         {tokens.map((tok, i) => (
           <span key={i}>
             <button

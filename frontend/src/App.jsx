@@ -12,10 +12,11 @@ import {
   beatsOf, isCjk, joinBeats, sentenceRange, ssmlFromBeats,
   timesEstimated, timesFromPoints,
 } from "./beats.js";
-import { BeatLine, useBeatAudio } from "./karaoke.jsx";
+import { BeatLine, LearnLangContext, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { VoiceLab } from "./VoiceLab.jsx";
 import { chirpVoiceFor, sampleRequest } from "./voiceLab.js";
+import { partnerFor } from "./storyDirector.js";
 import { inferScene } from "./story.js";
 import {
   articlePrompt, chatPrompt, chatStartPrompt, parseChatPayload, parseModelJson, readingPrompt, SPEAK_RATES,
@@ -943,11 +944,12 @@ export default function App() {
     return (
       <div className="app-shell is-auth items-center justify-center">
         <form onSubmit={submitAuth} className="panel w-full max-w-md p-5 flex flex-col min-h-0 my-auto">
-          <img src="/logo.png" alt="Echo Studio" className="brand-seal mx-auto" />
-          <p className="slogan">{tr("tag")}</p>
-          <div className="brand-dots" aria-hidden="true">
-            <i className="d-olive" /><i className="d-orange" /><i className="d-beige" /><i className="d-gray" />
+          <div className="brand-login-lockup">
+            <img src="/brand/logo/mark-primary.svg" alt="" className="brand-seal brand-seal-lg" />
+            <span className="brand-name brand-name-lg">ECHO</span>
           </div>
+          <img src="/brand/mascots/lingostep-lineup.png" alt="" className="brand-lineup mx-auto" />
+          <p className="slogan">{tr("tag")}</p>
           <h1 className="text-2xl mt-3 text-center">{authMode === "login" ? tr("login") : tr("register")}</h1>
           <label className="block mt-4 text-sm text-[var(--mute)]">{tr("username")}
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="field mt-1" />
@@ -973,18 +975,19 @@ export default function App() {
     );
   }
 
+  const navIconUrl = (icon) => (icon.startsWith("x/") ? `/brand/icons-extra/${icon.slice(2)}.svg` : `/brand/icons/${icon}.svg`);
   const nav = [
-    { id: "chat", label: tr("chat") },
-    { id: "read", label: tr("read") },
-    { id: "articles", label: tr("articles") },
-    { id: "translate", label: tr("translate") },
-    { id: "vocab", label: tr("vocab") },
-    { id: "examples", label: tr("examples") },
-    { id: "scenes", label: tr("scenes") },
-    { id: "exams", label: tr("exams") },
-    { id: "saves", label: tr("saves") },
-    { id: "board", label: tr("board") },
-    { id: "settings", label: tr("settings") },
+    { id: "chat", label: tr("chat"), icon: "speak" },
+    { id: "read", label: tr("read"), icon: "listen" },
+    { id: "articles", label: tr("articles"), icon: "read" },
+    { id: "translate", label: tr("translate"), icon: "x/globe" },
+    { id: "vocab", label: tr("vocab"), icon: "write" },
+    { id: "examples", label: tr("examples"), icon: "x/quote" },
+    { id: "scenes", label: tr("scenes"), icon: "x/chat" },
+    { id: "exams", label: tr("exams"), icon: "x/quiz" },
+    { id: "saves", label: tr("saves"), icon: "x/bookmark" },
+    { id: "board", label: tr("board"), icon: "x/trophy" },
+    { id: "settings", label: tr("settings"), icon: "x/gear" },
   ];
 
   const v = vocabItem;
@@ -1064,11 +1067,10 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="panel app-header">
-        <img src="/mark.png" alt="" className="brand-seal brand-seal-sm shrink-0" />
+        <img src="/brand/logo/mark-primary.svg" alt="" className="brand-seal brand-seal-sm shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="brand-lockup">
-            <span className="echo">Echo</span>
-            <span className="studio">studio</span>
+            <span className="brand-name">ECHO</span>
           </div>
           <div className="slogan slogan-inline">{tr("tagShort")}</div>
           <div className="text-xs text-[var(--mute)] truncate">
@@ -1076,7 +1078,7 @@ export default function App() {
             {user.quota ? ` · ${user.plan}` : ""}
           </div>
         </div>
-        <button className="btn btn-ghost shrink-0" style={{ minHeight: 40, padding: "0 12px" }} onClick={() => { resetTrack(); stopMic(); clearSession(); setUser(null); }}>
+        <button className="btn btn-ghost shrink-0" style={{ minHeight: 44, padding: "0 12px" }} onClick={() => { resetTrack(); stopMic(); clearSession(); setUser(null); }}>
           {tr("logout")}
         </button>
       </header>
@@ -1086,11 +1088,13 @@ export default function App() {
           return (
             <button key={n.id} onClick={() => { if (!closed) goTab(n.id); }}
               className={`nav-btn ${tab === n.id ? "active" : ""} ${closed ? "lock" : ""}`}>
-              {n.label}
+              <span className="nav-ico" aria-hidden="true" style={{ "--ico": `url(${navIconUrl(n.icon)})` }} />
+              <span className="nav-label">{n.label}</span>
             </button>
           );
         })}
       </nav>
+      <LearnLangContext.Provider value={lang.code}>
       <main className="app-main">
         {tab === "settings" && (
           <section className="panel">
@@ -1196,6 +1200,7 @@ export default function App() {
             <div className="scroll-pane space-y-3 mt-3">
               {msgs.length === 0 && (
                 <div className="empty-pane">
+                  <img className="chat-mascot" src={`/brand/mascots/${partnerFor(lang.code)}-hello.png`} alt="" />
                   <button className="btn btn-accent w-full max-w-sm" disabled={busy} onClick={startChat}>{busy ? "…" : tr("startChat")}</button>
                 </div>
               )}
@@ -1439,6 +1444,7 @@ export default function App() {
                       <button type="button" className="btn btn-ghost btn-mini" onClick={() => playLine("translate-query", hit.query, hit.query_lang)}>{tr("listen")}</button>
                     </div>
                     <BeatLine
+                      lang={hit.query_lang}
                       tokens={qTokens}
                       joiner={isCjk(hit.query_lang) ? "" : " "}
                       active={trackId === "translate-query" ? highlight : -1}
@@ -1452,6 +1458,7 @@ export default function App() {
                       <button type="button" className="btn btn-line btn-mini" onClick={() => playLine("translate-hit", hit.translation, hit.translation_lang)}>{tr("listen")}</button>
                     </div>
                     <BeatLine
+                      lang={hit.translation_lang}
                       className="beat-hero"
                       tokens={tTokens}
                       joiner={isCjk(hit.translation_lang) ? "" : " "}
@@ -1721,6 +1728,7 @@ export default function App() {
           <section className="panel"><h2>{tr("locked")}</h2><p className="mt-2">{tr("xp")} {UNLOCKS.find((u) => u.id === tab)?.xp}</p></section>
         )}
       </main>
+      </LearnLangContext.Provider>
     </div>
   );
 }

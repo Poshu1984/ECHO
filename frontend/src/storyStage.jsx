@@ -84,6 +84,7 @@ export function StoryStage({
             focus={engaged ? cue.focus : null}
             mood={engaged ? cue.mood : "neutral"}
             open={mouthOpen(playing, local)}
+            langCode={langCode}
           />
         </div>
         <span className={`story-play ${playing ? "is-pause" : ""}`} />

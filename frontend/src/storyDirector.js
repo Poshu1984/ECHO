@@ -89,3 +89,9 @@ export function progressOf(current, duration) {
   if (!Number.isFinite(c) || !Number.isFinite(d) || d <= 0) return 0;
   return Math.max(0, Math.min(1, c / d));
 }
+
+// Story partner next to Koto: Pip (English) or Nami (Japanese). Other
+// languages use Pip until their own partner is designed (CI v2 guidance).
+export function partnerFor(langCode) {
+  return langCode === "ja" ? "nami" : "pip";
+}
