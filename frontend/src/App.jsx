@@ -15,6 +15,7 @@ import {
 import { BeatLine, LearnLangContext, useBeatAudio } from "./karaoke.jsx";
 import { StoryStage } from "./storyStage.jsx";
 import { VoiceLab } from "./VoiceLab.jsx";
+import KidsMode from "./KidsMode.jsx";
 import { chirpVoiceFor, sampleRequest } from "./voiceLab.js";
 import { partnerFor } from "./storyDirector.js";
 import { inferScene } from "./story.js";
@@ -52,6 +53,9 @@ export default function App() {
   const [pass, setPass] = useState("");
   const [authErr, setAuthErr] = useState("");
   const [ui, setUi] = useState(localStorage.getItem("echoo-ui") || "zh");
+  const [kidsOpen, setKidsOpen] = useState(() => {
+    try { return localStorage.getItem("echo-kids-open") === "1"; } catch { return false; }
+  });
   const [tab, setTab] = useState("chat");
   const [lang, setLang] = useState(LEARN_LANGS[0]);
   const [level, setLevel] = useState("B1");
@@ -113,6 +117,12 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem("echoo-ui", ui); }, [ui]);
   useEffect(() => { localStorage.setItem("echoo-tutor", tutorId); }, [tutorId]);
+  useEffect(() => {
+    try {
+      if (kidsOpen) localStorage.setItem("echo-kids-open", "1");
+      else localStorage.removeItem("echo-kids-open");
+    } catch { /* ignore */ }
+  }, [kidsOpen]);
   useEffect(() => {
     if (!user) return undefined;
     let gone = false;
@@ -1064,6 +1074,10 @@ export default function App() {
     );
   }
 
+  if (kidsOpen) {
+    return <KidsMode ui={ui} onExit={() => setKidsOpen(false)} />;
+  }
+
   return (
     <div className="app-shell">
       <header className="panel app-header">
@@ -1078,6 +1092,10 @@ export default function App() {
             {user.quota ? ` · ${user.plan}` : ""}
           </div>
         </div>
+        <button type="button" className="btn btn-kids shrink-0" onClick={() => { resetTrack(); stopMic(); closeMicStream(); setKidsOpen(true); }}>
+          <img src="/brand/mascots/nami-hello.svg" alt="" aria-hidden="true" />
+          <span>{tr("kidsEntry")}</span>
+        </button>
         <button className="btn btn-ghost shrink-0" style={{ minHeight: 44, padding: "0 12px" }} onClick={() => { resetTrack(); stopMic(); clearSession(); setUser(null); }}>
           {tr("logout")}
         </button>
