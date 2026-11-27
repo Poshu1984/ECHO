@@ -126,6 +126,7 @@ describe("kids quiz engine", () => {
     assert.equal(currentOf(s).target, "あ");
     assert.deepEqual(s.wrongPicks, ["お"]);
     assert.equal(s.queue.length, 3);
+    assert.deepEqual([...s.queue[2].options].sort(), ["あ", "お"].sort());
     // Tapping the same wrong card again changes nothing.
     assert.equal(answer(s, "お").state, s);
     r = answer(s, "あ");
@@ -216,10 +217,11 @@ describe("kids progress (device only)", () => {
 });
 
 describe("kids audio (no server TTS)", () => {
-  it("plans one file per kana and per picture word, with unique names", () => {
+  it("plans one file per kana and per picture word, with unique names and texts", () => {
     const plan = audioPlan();
-    assert.equal(plan.length, 92);
-    assert.equal(new Set(plan.map((x) => x.file)).size, 92);
+    assert.equal(plan.length, 90, "て and め are a kana and a word at once");
+    assert.equal(new Set(plan.map((x) => x.file)).size, 90);
+    assert.equal(new Set(plan.map((x) => x.text)).size, 90);
     assert.equal(kanaFileId(kanaByChar("を")), "wo");
     assert.equal(kanaFileId(kanaByChar("お")), "o");
     for (const row of plan) assert.match(row.file, /^[a-z-]+\.mp3$/);
@@ -254,7 +256,7 @@ describe("kids audio (no server TTS)", () => {
 
 describe("kids UI text", () => {
   it("has Chinese and English labels for the kids screens", () => {
-    for (const key of ["kidsEntry", "kidsTitle", "kidsExitHold", "kidsBandLittle", "kidsBandBig", "kidsLearn", "kidsQuiz", "kidsListenPick", "kidsGreat", "kidsTryAgain", "kidsNoVoice", "kidsParent", "kidsClear", "kidsLocked", "kidsRoundDone", "kidsPrivacy"]) {
+    for (const key of ["kidsEntry", "kidsTitle", "kidsExitHold", "kidsBandLittle", "kidsBandBig", "kidsLearn", "kidsQuiz", "kidsListenPick", "kidsGreat", "kidsTryAgain", "kidsNoVoice", "kidsParent", "kidsClear", "kidsLocked", "kidsRoundDone", "kidsPrivacy", "kidsGateTitle", "kidsGateCancel", "kidsPicturePick", "kidsNoVoiceQuiz"]) {
       assert.notEqual(t("zh", key), key, `zh ${key}`);
       assert.notEqual(t("en", key), key, `en ${key}`);
       assert.notEqual(t("en", key), t("zh", key), `en ${key} translated`);

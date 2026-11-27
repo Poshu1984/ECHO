@@ -106,6 +106,7 @@ export const KANA_TIPS = {
   "し": { zh: "念 shi，接近「西」，不是 si。", en: "Say \"shi\", not \"si\"." },
   "ち": { zh: "念 chi，接近「七」，不是 ti。", en: "Say \"chi\", not \"ti\"." },
   "つ": { zh: "念 tsu，舌尖頂住上牙後面再放開，像「ㄘ」加ㄨ。", en: "Say \"tsu\" like the end of \"cats\" plus a short u." },
+  "ひ": { zh: "念 hi，氣從舌面輕輕擦出，不要念成「西」（shi）。", en: "Say \"hi\" with a light breath; not \"shi\"." },
   "ふ": { zh: "上下唇輕輕靠近吹氣，介於 hu 和 fu 之間，牙齒不碰嘴唇。", en: "Blow gently between your lips; teeth don't touch the lip." },
   "ら": { zh: "ら行的 r 是舌尖輕彈一下，介於 l 和 r 之間，不捲舌。", en: "The r is a light tap of the tongue, between l and r. No rolling." },
   "り": { zh: "舌尖輕彈一下再念 i。", en: "A light tongue tap, then i." },
@@ -124,7 +125,7 @@ export const KANA_TIPS = {
 export const LOOKALIKES = [
   ["さ", "ち"], ["さ", "き"], ["ぬ", "め"], ["ね", "れ"], ["ね", "わ"], ["れ", "わ"],
   ["は", "ほ"], ["は", "け"], ["る", "ろ"], ["い", "こ"], ["あ", "お"], ["あ", "め"],
-  ["う", "ら"], ["ら", "ち"],
+  ["う", "ら"], ["ら", "ち"], ["ま", "も"], ["く", "へ"], ["こ", "に"],
 ];
 
 export const ALL_KANA = KANA_ROWS.flatMap((row) => row.kana.map((kana) => ({ ...kana, row: row.id })));

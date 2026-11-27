@@ -4,9 +4,46 @@ import { MASCOTS } from "./brandMascots.js";
 import { KANA_ROWS, KANA_TIPS, kanaByChar, rowById } from "./kidsHiragana.js";
 import { answer, bandOf, buildQuiz, currentOf, isUnlocked, startRound, starsFor } from "./kidsQuiz.js";
 import { clearProgress, loadProgress, recordRound, saveProgress, totalStars, withBand } from "./kidsProgress.js";
-import { hasJaVoice, sayJa, sayZh, stopKidsVoice } from "./kidsVoice.js";
+import { chime, hasJaVoice, hasRecordings, sayJa, sayZh, stopKidsVoice } from "./kidsVoice.js";
 
 const HOLD_MS = 2000;
+// Spoken to children who can't read yet; always Chinese (the native-language
+// side of this course), whatever the screen language is.
+const SAY_LISTEN = "聽聲音，點出對的字";
+const SAY_LOCKED = "先玩前一關喔";
+
+function gateQuestion(rng = Math.random) {
+  const a = 6 + Math.floor(rng() * 4);
+  const b = 6 + Math.floor(rng() * 4);
+  const right = a * b;
+  const wrong = new Set();
+  while (wrong.size < 2) {
+    const d = [-6, -2, 2, 6, 10][Math.floor(rng() * 5)];
+    if (right + d > 0) wrong.add(right + d);
+  }
+  const options = [right, ...wrong].sort(() => rng() - 0.5);
+  return { text: `${a} × ${b} = ?`, right, options };
+}
+
+// Parental gate (the common pattern in kids' apps): a grown-up question
+// between the child and anything that leaves kids mode or changes settings.
+function ParentGate({ kt, onPass, onClose }) {
+  const [q] = useState(() => gateQuestion());
+  return (
+    <div className="kids-gate" role="dialog" aria-modal="true" aria-labelledby="kids-gate-title">
+      <div className="kids-gate-card">
+        <h2 id="kids-gate-title" className="kids-gate-title">{kt("kidsGateTitle")}</h2>
+        <p className="kids-gate-q">{q.text}</p>
+        <div className="kids-gate-opts">
+          {q.options.map((n) => (
+            <button key={n} type="button" className="kids-chip" onClick={() => (n === q.right ? onPass() : onClose())}>{n}</button>
+          ))}
+        </div>
+        <button type="button" className="kids-chip ghost" onClick={onClose}>{kt("kidsGateCancel")}</button>
+      </div>
+    </div>
+  );
+}
 
 function Shape({ tag, attrs }) {
   const Tag = tag;
@@ -103,28 +140,46 @@ export default function KidsMode({ ui, onExit }) {
   const [note, setNote] = useState("");
   const [parentOpen, setParentOpen] = useState(false);
   const [voiceOk, setVoiceOk] = useState(true);
-  const advanceTimer = useRef(null);
+  const [recorded, setRecorded] = useState(false);
+  const [gate, setGate] = useState(null);
+  const [shakeRow, setShakeRow] = useState("");
+  const timers = useRef([]);
+  const skipSave = useRef(false);
   const band = bandOf(progress.band);
   const row = rowById(rowId) || KANA_ROWS[0];
 
-  useEffect(() => { saveProgress(progress); }, [progress]);
-  useEffect(() => () => { stopKidsVoice(); clearTimeout(advanceTimer.current); }, []);
+  const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
+  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  const canHear = recorded || voiceOk;
+
+  useEffect(() => {
+    if (skipSave.current) { skipSave.current = false; return; }
+    saveProgress(progress);
+  }, [progress]);
+  useEffect(() => () => { stopKidsVoice(); timers.current.forEach(clearTimeout); }, []);
+  useEffect(() => {
+    let gone = false;
+    hasRecordings().then((yes) => { if (!gone) setRecorded(yes); });
+    return () => { gone = true; };
+  }, []);
   useEffect(() => {
     const check = () => setVoiceOk(hasJaVoice());
-    check();
+    // Voices often load a moment after start; give them time before warning.
+    const first = setTimeout(check, 800);
     const s = typeof window !== "undefined" ? window.speechSynthesis : null;
     s?.addEventListener?.("voiceschanged", check);
-    return () => s?.removeEventListener?.("voiceschanged", check);
+    return () => { clearTimeout(first); s?.removeEventListener?.("voiceschanged", check); };
   }, []);
 
   async function play(text, opts) {
+    if (gate) return;
     const via = await sayJa(text, opts);
-    setVoiceOk(via !== "none");
+    if (via === "file" || via === "device") setVoiceOk(true);
   }
 
   function goMap() {
     stopKidsVoice();
-    clearTimeout(advanceTimer.current);
+    clearTimers();
     setRound(null);
     setFeedback("");
     setScreen("map");
@@ -133,6 +188,9 @@ export default function KidsMode({ ui, onExit }) {
   function openRow(id) {
     if (!isUnlocked(id, progress)) {
       setNote(kt("kidsLocked"));
+      setShakeRow(id);
+      later(() => setShakeRow(""), 400);
+      if (band.id === "little") sayZh(SAY_LOCKED);
       return;
     }
     setNote("");
@@ -153,9 +211,13 @@ export default function KidsMode({ ui, onExit }) {
     setRound(r);
     setFeedback("");
     setScreen("quiz");
-    if (band.id === "little") sayZh(kt("kidsListenPick"));
     const q = currentOf(r);
-    if (q) setTimeout(() => play(q.target), band.id === "little" ? 1600 : 200);
+    if (!q || !canHear) return; // picture mode: nothing to play
+    if (band.id === "little") {
+      sayZh(SAY_LISTEN).then((via) => later(() => play(q.target), via === "none" ? 200 : 300));
+    } else {
+      later(() => play(q.target), 200);
+    }
   }
 
   function pick(ch) {
@@ -164,13 +226,15 @@ export default function KidsMode({ ui, onExit }) {
     if (!correct) {
       setRound(state);
       setFeedback("again");
+      chime("again");
       const q = currentOf(state);
-      if (q) setTimeout(() => play(q.target), 450);
+      if (q && canHear) later(() => play(q.target), 450);
       return;
     }
     setFeedback("ok");
+    chime("ok");
     setRound(state);
-    advanceTimer.current = setTimeout(() => {
+    later(() => {
       setFeedback("");
       if (state.done) {
         const stars = starsFor(state);
@@ -179,7 +243,7 @@ export default function KidsMode({ ui, onExit }) {
         return;
       }
       const q = currentOf(state);
-      if (q) play(q.target);
+      if (q && canHear) play(q.target);
     }, 900);
   }
 
@@ -187,6 +251,15 @@ export default function KidsMode({ ui, onExit }) {
     const idx = KANA_ROWS.findIndex((r) => r.id === rowId);
     return KANA_ROWS[idx + 1]?.id || "";
   }
+
+  function askParent(action) {
+    stopKidsVoice();
+    setGate(() => action);
+  }
+
+  const gateView = gate ? (
+    <ParentGate kt={kt} onClose={() => setGate(null)} onPass={() => { const act = gate; setGate(null); act(); }} />
+  ) : null;
 
   function chooseBand(id) {
     setProgress((p) => withBand(p, id));
@@ -201,7 +274,7 @@ export default function KidsMode({ ui, onExit }) {
         </button>
       ) : <span className="kids-total" aria-label={`${totalStars(progress)} ${kt("kidsStars")}`}>★ {totalStars(progress)}</span>}
       <h1 className="kids-title">{kt("kidsTitle")}</h1>
-      <HoldButton label={kt("kidsExitHold")} hint={kt("kidsExitHint")} onDone={() => { stopKidsVoice(); onExit(); }} />
+      <HoldButton label={kt("kidsExitHold")} hint={kt("kidsExitHint")} onDone={() => askParent(() => { stopKidsVoice(); onExit(); })} />
     </header>
   );
 
@@ -209,6 +282,7 @@ export default function KidsMode({ ui, onExit }) {
     return (
       <div className="kids-shell" data-screen="band">
         {header}
+        {gateView}
         <main className="kids-main kids-center">
           <KidsMascot look="hello" size={140} />
           <h2 className="kids-h2">{kt("kidsBandAsk")}</h2>
@@ -235,6 +309,7 @@ export default function KidsMode({ ui, onExit }) {
     return (
       <div className="kids-shell" data-screen="learn">
         {header}
+        {gateView}
         <main className="kids-main kids-center">
           <p className="kids-step" aria-live="polite">{row.label} · {learnAt + 1} / {row.kana.length}</p>
           <button type="button" className="kids-kana-big" lang="ja" onClick={() => play(kana.k)} aria-label={`${kana.k}（${kana.r}）`}>
@@ -246,7 +321,7 @@ export default function KidsMode({ ui, onExit }) {
             <WordLine kana={kana} />
             <span className="kids-gloss">{lang === "zh" ? kana.zh : kana.en}</span>
           </button>
-          {!voiceOk ? <p className="kids-warn" role="status">{kt("kidsNoVoice")}</p> : null}
+          {!canHear ? <p className="kids-warn" role="status">{kt("kidsNoVoice")}</p> : null}
           {tip ? (
             <details className="kids-tip">
               <summary>{kt("kidsTipTitle")}</summary>
@@ -277,17 +352,27 @@ export default function KidsMode({ ui, onExit }) {
     return (
       <div className="kids-shell" data-screen="quiz">
         {header}
+        {gateView}
         <main className="kids-main kids-center">
           <div className="kids-progress" role="progressbar" aria-valuemin={0} aria-valuemax={round.queue.length} aria-valuenow={round.at}>
             <span style={{ width: `${(round.at / round.queue.length) * 100}%` }} />
           </div>
           <div className="kids-ask">
             <KidsMascot look={answered ? "celebrate" : "focus"} size={96} />
-            <button type="button" className="kids-listen" onClick={() => play(shown.target)} aria-label={kt("kidsListenAgain")}>
-              <span aria-hidden="true">🔊</span>
-            </button>
+            {canHear ? (
+              <button type="button" className="kids-listen" onClick={() => play(shown.target)} aria-label={kt("kidsListenAgain")}>
+                <span aria-hidden="true">🔊</span>
+              </button>
+            ) : (
+              <span className="kids-picture-wrap">
+                <span className="kids-listen kids-picture" role="img" aria-label={lang === "zh" ? target.zh : target.en}>{target.pic}</span>
+                <span lang="ja" className="kids-word" aria-hidden="true">
+                  {[...target.word].map((c, i) => <span key={i} className={i === target.at ? "blank" : ""}>{i === target.at && !answered ? "□" : c}</span>)}
+                </span>
+              </span>
+            )}
           </div>
-          <p className="kids-prompt">{kt("kidsListenPick")} <span className="sr-only">({asked} / {round.queue.length})</span></p>
+          <p className="kids-prompt">{canHear ? kt("kidsListenPick") : kt("kidsPicturePick")} <span className="sr-only">({asked} / {round.queue.length})</span></p>
           <div className={`kids-choices n${shown.options.length}`}>
             {shown.options.map((ch) => {
               const wrong = round.wrongPicks.includes(ch);
@@ -311,7 +396,7 @@ export default function KidsMode({ ui, onExit }) {
             {feedback === "ok" ? kt("kidsGreat") : feedback === "again" ? kt("kidsTryAgain") : " "}
             {answered && band.romaji && target ? <span className="kids-romaji-inline"> {target.k} = {target.r}</span> : null}
           </p>
-          {!voiceOk ? <p className="kids-warn" role="status">{kt("kidsNoVoice")}</p> : null}
+          {!canHear ? <p className="kids-warn" role="status">{kt("kidsNoVoiceQuiz")}</p> : null}
         </main>
       </div>
     );
@@ -323,6 +408,7 @@ export default function KidsMode({ ui, onExit }) {
     return (
       <div className="kids-shell" data-screen="done">
         {header}
+        {gateView}
         <main className="kids-main kids-center">
           <KidsMascot look="celebrate" size={160} />
           <h2 className="kids-h2" role="status">{kt("kidsRoundDone")}</h2>
@@ -339,6 +425,7 @@ export default function KidsMode({ ui, onExit }) {
   return (
     <div className="kids-shell" data-screen="map">
       {header}
+      {gateView}
       <main className="kids-main">
         <div className="kids-hello">
           <KidsMascot look="hello" size={88} />
@@ -352,14 +439,14 @@ export default function KidsMode({ ui, onExit }) {
               <li key={r.id}>
                 <button
                   type="button"
-                  className={`kids-tile ${open ? "" : "locked"} ${stars ? "done" : ""}`}
+                  className={`kids-tile ${open ? "" : "locked"} ${stars ? "done" : ""} ${shakeRow === r.id ? "shake" : ""}`}
                   onClick={() => openRow(r.id)}
                   aria-disabled={!open}
                   aria-label={`${r.label}${open ? "" : `（${kt("kidsLocked")}）`}`}
                 >
-                  <span lang="ja" className="kids-tile-kana">{open ? r.kana[0].k : "🔒"}</span>
+                  <span lang="ja" className="kids-tile-kana">{r.kana[0].k}</span>
                   <span lang="ja" className="kids-tile-label">{r.label}</span>
-                  <Stars n={stars} label={kt("kidsStars")} />
+                  {open ? <Stars n={stars} label={kt("kidsStars")} /> : <span className="kids-stars" aria-hidden="true">&nbsp;</span>}
                 </button>
               </li>
             );
@@ -367,7 +454,7 @@ export default function KidsMode({ ui, onExit }) {
         </ol>
         <p className="kids-note" role="status" aria-live="polite">{note}</p>
         <section className="kids-parent">
-          <button type="button" className="kids-parent-toggle" aria-expanded={parentOpen} onClick={() => setParentOpen((v) => !v)}>
+          <button type="button" className="kids-parent-toggle" aria-expanded={parentOpen} onClick={() => (parentOpen ? setParentOpen(false) : askParent(() => setParentOpen(true)))}>
             {kt("kidsParent")}
           </button>
           {parentOpen ? (
@@ -382,6 +469,7 @@ export default function KidsMode({ ui, onExit }) {
                 className="kids-chip danger"
                 onClick={() => {
                   if (typeof window !== "undefined" && !window.confirm(kt("kidsClearConfirm"))) return;
+                  skipSave.current = true;
                   setProgress(clearProgress());
                   setParentOpen(false);
                 }}

@@ -15,14 +15,16 @@ export function kanaFileId(kana) {
   return kana.k === "を" ? "wo" : kana.r;
 }
 
+// て and め are both a kana and a whole word, so they are recorded once.
 export function audioPlan() {
+  const seen = new Set();
   return ALL_KANA.flatMap((kana) => {
     const id = kanaFileId(kana);
     return [
       { text: kana.k, file: `${id}.mp3` },
       { text: kana.word, file: `w-${id}.mp3` },
     ];
-  });
+  }).filter((row) => (seen.has(row.text) ? false : (seen.add(row.text), true)));
 }
 
 // manifest: { files: { "<text>": "<file>.mp3" } }. Only plain file names
@@ -58,12 +60,19 @@ export function loadManifest(fetcher = globalThis.fetch) {
   return manifestPromise;
 }
 
+export async function hasRecordings() {
+  const manifest = await loadManifest();
+  return Boolean(manifest && Object.keys(manifest.files || {}).length);
+}
+
 let player = null;
+let seq = 0;
 function synth() {
   return typeof window !== "undefined" ? window.speechSynthesis : null;
 }
 
 export function stopKidsVoice() {
+  seq += 1;
   try { player?.pause(); } catch { /* ignore */ }
   player = null;
   try { synth()?.cancel(); } catch { /* ignore */ }
@@ -73,13 +82,17 @@ export function hasJaVoice() {
   return Boolean(pickJaVoice(synth()?.getVoices?.() || []));
 }
 
-function speakDevice(text, voice, lang, rate) {
+// eslint-disable-next-line no-unused-vars
+let current = null; // keeps the utterance alive until it finishes
+function speakDevice(text, voice, lang, rate, onEnd) {
   const s = synth();
   if (!s || typeof SpeechSynthesisUtterance === "undefined") return false;
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
   u.rate = rate;
   if (voice) u.voice = voice;
+  if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
+  current = u;
   s.cancel();
   s.speak(u);
   return true;
@@ -88,7 +101,10 @@ function speakDevice(text, voice, lang, rate) {
 // Speak Japanese. Returns how it was played: "file" | "device" | "none".
 export async function sayJa(text, { slow = false } = {}) {
   stopKidsVoice();
+  const mine = seq;
   const manifest = await loadManifest();
+  // A newer sound (or leaving the screen) started while we waited.
+  if (mine !== seq) return "skipped";
   const url = fileFor(text, manifest);
   if (url && typeof Audio !== "undefined") {
     try {
@@ -105,8 +121,42 @@ export async function sayJa(text, { slow = false } = {}) {
 }
 
 // Short spoken instruction in Chinese for children who can't read yet.
-export function sayZh(text) {
+// Resolves when it has finished (or after a few seconds at most), so the
+// next sound does not cut it off.
+export function sayZh(text, maxMs = 4000) {
   const voice = pickZhVoice(synth()?.getVoices?.() || []);
-  if (!voice) return "none";
-  return speakDevice(text, voice, voice.lang || "zh-TW", 0.95) ? "device" : "none";
+  if (!voice) return Promise.resolve("none");
+  stopKidsVoice();
+  return new Promise((resolve) => {
+    let finished = false;
+    const done = () => { if (!finished) { finished = true; resolve("device"); } };
+    if (!speakDevice(text, voice, voice.lang || "zh-TW", 0.95, done)) { resolve("none"); return; }
+    setTimeout(done, maxMs);
+  });
+}
+
+// Tiny generated sound effects (no files, no network): a bright two-note
+// chime for a right answer, one soft low note for "try again".
+let fx = null;
+export function chime(kind) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    fx = fx || new Ctx();
+    if (fx.state === "suspended") fx.resume();
+    const notes = kind === "ok" ? [[784, 0], [1047, 0.12]] : [[262, 0]];
+    for (const [freq, at] of notes) {
+      const o = fx.createOscillator();
+      const g = fx.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      const t0 = fx.currentTime + at;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(kind === "ok" ? 0.25 : 0.12, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+      o.connect(g).connect(fx.destination);
+      o.start(t0);
+      o.stop(t0 + 0.32);
+    }
+  } catch { /* sound effects are optional */ }
 }

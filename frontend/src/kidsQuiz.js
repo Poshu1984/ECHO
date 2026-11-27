@@ -87,7 +87,7 @@ export function currentOf(state) {
 
 // A wrong pick keeps the child on the same question (that option is greyed
 // out) and schedules the kana once more at the end of the round.
-export function answer(state, pick) {
+export function answer(state, pick, rng = Math.random) {
   const q = currentOf(state);
   if (!q) return { state, correct: false };
   if (pick === q.target) {
@@ -108,10 +108,14 @@ export function answer(state, pick) {
   const missed = state.missed.includes(q.target) ? state.missed : [...state.missed, q.target];
   // At most one extra copy per kana per round, so a round stays short.
   const already = state.queue.filter((x) => x.target === q.target).length >= 2;
-  const queue = already ? state.queue : [...state.queue, { ...q, options: q.options.slice() }];
+  // Shuffle the retry's options so it can't be answered by remembering a position.
+  const queue = already ? state.queue : [...state.queue, { ...q, options: shuffle(q.options, rng) }];
   return { correct: false, state: { ...state, queue, missed, wrongPicks: [...state.wrongPicks, pick] } };
 }
 
+// Finishing a row always earns at least one star and opens the next row:
+// young children should never get stuck. Accuracy shows in the star count,
+// and weak kana come back as review in later rows.
 export function starsFor(state) {
   if (!state.asked) return 0;
   const rate = state.firstTry / state.asked;

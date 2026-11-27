@@ -53,7 +53,9 @@ export default function App() {
   const [pass, setPass] = useState("");
   const [authErr, setAuthErr] = useState("");
   const [ui, setUi] = useState(localStorage.getItem("echoo-ui") || "zh");
-  const [kidsOpen, setKidsOpen] = useState(() => localStorage.getItem("echo-kids-open") === "1");
+  const [kidsOpen, setKidsOpen] = useState(() => {
+    try { return localStorage.getItem("echo-kids-open") === "1"; } catch { return false; }
+  });
   const [tab, setTab] = useState("chat");
   const [lang, setLang] = useState(LEARN_LANGS[0]);
   const [level, setLevel] = useState("B1");
