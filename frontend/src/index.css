@@ -1573,3 +1573,5 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ls-purpl
 @media (prefers-reduced-motion: reduce) { .kids-tile.shake { animation: none; } }
 .kids-picture-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .kids-word .blank { color: var(--ls-wine); }
+.kids-top { position: relative; }
+.kids-note-top { position: absolute; left: 16px; right: 16px; top: 100%; z-index: 5; padding: 6px 10px; border-radius: 12px; background: #fff; }

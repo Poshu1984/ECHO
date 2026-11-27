@@ -141,6 +141,13 @@ describe("kids quiz engine", () => {
     assert.equal(starsFor(s), 1);
   });
 
+  it("reshuffles the options of a retried question", () => {
+    const s = startRound([{ target: "あ", options: ["あ", "お"] }]);
+    const next = answer(s, "お", () => 0).state;
+    assert.deepEqual(next.queue[1].options, ["お", "あ"]);
+    assert.deepEqual(next.queue[0].options, ["あ", "お"], "the current card does not move");
+  });
+
   it("requeues a missed kana only once", () => {
     let s = startRound([{ target: "う", options: ["う", "ら", "え"] }]);
     s = answer(s, "ら").state;
@@ -256,7 +263,7 @@ describe("kids audio (no server TTS)", () => {
 
 describe("kids UI text", () => {
   it("has Chinese and English labels for the kids screens", () => {
-    for (const key of ["kidsEntry", "kidsTitle", "kidsExitHold", "kidsBandLittle", "kidsBandBig", "kidsLearn", "kidsQuiz", "kidsListenPick", "kidsGreat", "kidsTryAgain", "kidsNoVoice", "kidsParent", "kidsClear", "kidsLocked", "kidsRoundDone", "kidsPrivacy", "kidsGateTitle", "kidsGateCancel", "kidsPicturePick", "kidsNoVoiceQuiz"]) {
+    for (const key of ["kidsEntry", "kidsTitle", "kidsExitHold", "kidsBandLittle", "kidsBandBig", "kidsLearn", "kidsQuiz", "kidsListenPick", "kidsGreat", "kidsTryAgain", "kidsNoVoice", "kidsParent", "kidsClear", "kidsLocked", "kidsRoundDone", "kidsPrivacy", "kidsGateTitle", "kidsGateCancel", "kidsGateWait", "kidsPicturePick", "kidsNoVoiceQuiz"]) {
       assert.notEqual(t("zh", key), key, `zh ${key}`);
       assert.notEqual(t("en", key), key, `en ${key}`);
       assert.notEqual(t("en", key), t("zh", key), `en ${key} translated`);

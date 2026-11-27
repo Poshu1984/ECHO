@@ -17,7 +17,7 @@ function gateQuestion(rng = Math.random) {
   const b = 6 + Math.floor(rng() * 4);
   const right = a * b;
   const wrong = new Set();
-  while (wrong.size < 2) {
+  while (wrong.size < 3) {
     const d = [-6, -2, 2, 6, 10][Math.floor(rng() * 5)];
     if (right + d > 0) wrong.add(right + d);
   }
@@ -36,10 +36,10 @@ function ParentGate({ kt, onPass, onClose }) {
         <p className="kids-gate-q">{q.text}</p>
         <div className="kids-gate-opts">
           {q.options.map((n) => (
-            <button key={n} type="button" className="kids-chip" onClick={() => (n === q.right ? onPass() : onClose())}>{n}</button>
+            <button key={n} type="button" className="kids-chip" onClick={() => (n === q.right ? onPass() : onClose(true))}>{n}</button>
           ))}
         </div>
-        <button type="button" className="kids-chip ghost" onClick={onClose}>{kt("kidsGateCancel")}</button>
+        <button type="button" className="kids-chip ghost" onClick={() => onClose(false)}>{kt("kidsGateCancel")}</button>
       </div>
     </div>
   );
@@ -144,12 +144,17 @@ export default function KidsMode({ ui, onExit }) {
   const [gate, setGate] = useState(null);
   const [shakeRow, setShakeRow] = useState("");
   const timers = useRef([]);
+  // Bumped whenever the child leaves a screen or a grown-up gate opens, so
+  // sounds scheduled for the old screen never play.
+  const epoch = useRef(0);
+  const gateOpen = useRef(false);
+  const gateLockedUntil = useRef(0);
   const skipSave = useRef(false);
   const band = bandOf(progress.band);
   const row = rowById(rowId) || KANA_ROWS[0];
 
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
-  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  const clearTimers = () => { epoch.current += 1; timers.current.forEach(clearTimeout); timers.current = []; };
   const canHear = recorded || voiceOk;
 
   useEffect(() => {
@@ -172,7 +177,7 @@ export default function KidsMode({ ui, onExit }) {
   }, []);
 
   async function play(text, opts) {
-    if (gate) return;
+    if (gateOpen.current) return;
     const via = await sayJa(text, opts);
     if (via === "file" || via === "device") setVoiceOk(true);
   }
@@ -214,7 +219,11 @@ export default function KidsMode({ ui, onExit }) {
     const q = currentOf(r);
     if (!q || !canHear) return; // picture mode: nothing to play
     if (band.id === "little") {
-      sayZh(SAY_LISTEN).then((via) => later(() => play(q.target), via === "none" ? 200 : 300));
+      const mine = epoch.current;
+      sayZh(SAY_LISTEN).then((via) => {
+        if (mine !== epoch.current) return;
+        later(() => play(q.target), via === "none" ? 200 : 300);
+      });
     } else {
       later(() => play(q.target), 200);
     }
@@ -253,12 +262,32 @@ export default function KidsMode({ ui, onExit }) {
   }
 
   function askParent(action) {
+    if (Date.now() < gateLockedUntil.current) {
+      setNote(kt("kidsGateWait"));
+      return;
+    }
+    clearTimers();
     stopKidsVoice();
+    gateOpen.current = true;
     setGate(() => action);
   }
 
+  function closeGate(wrong) {
+    gateOpen.current = false;
+    // A wrong answer locks the gate for a while, so guessing doesn't work.
+    if (wrong) {
+      gateLockedUntil.current = Date.now() + 30000;
+      setNote(kt("kidsGateWait"));
+    }
+    setGate(null);
+  }
+
   const gateView = gate ? (
-    <ParentGate kt={kt} onClose={() => setGate(null)} onPass={() => { const act = gate; setGate(null); act(); }} />
+    <ParentGate
+      kt={kt}
+      onClose={(wrong) => closeGate(wrong === true)}
+      onPass={() => { const act = gate; closeGate(false); act(); }}
+    />
   ) : null;
 
   function chooseBand(id) {
@@ -275,6 +304,7 @@ export default function KidsMode({ ui, onExit }) {
       ) : <span className="kids-total" aria-label={`${totalStars(progress)} ${kt("kidsStars")}`}>★ {totalStars(progress)}</span>}
       <h1 className="kids-title">{kt("kidsTitle")}</h1>
       <HoldButton label={kt("kidsExitHold")} hint={kt("kidsExitHint")} onDone={() => askParent(() => { stopKidsVoice(); onExit(); })} />
+      {screen !== "map" && note ? <p className="kids-note kids-note-top" role="status">{note}</p> : null}
     </header>
   );
 
